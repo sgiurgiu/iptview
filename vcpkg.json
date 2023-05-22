@@ -1,0 +1,34 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "iptview",
+  "version-string": "0.0.1",
+  "dependencies": [
+    {
+      "name":"qtbase",
+      "features": [
+        "brotli",
+        "concurrent",
+        "dbus",
+        "default-features",
+        "doubleconversion",
+        "freetype",
+        "gui",
+        "harfbuzz",
+        "icu",
+        "jpeg",
+        "network",
+        "opengl",
+        "openssl",
+        "pcre2",
+        "png",
+        "sql",
+        "sql-sqlite",
+        "testlib",
+        "thread",
+        "widgets",
+        "zstd"
+      ],
+      "default-features":false
+    }
+  ]
+}

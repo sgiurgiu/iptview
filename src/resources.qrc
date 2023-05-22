@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/open.svg</file>
+        <file>icons/save.svg</file>
+        <file>icons/folder-open.svg</file>
+        <file>icons/exit.svg</file>
+        <file>icons/arrow-back.svg</file>
+        <file>icons/arrow-forward.svg</file>
+        <file>icons/chevron-back.svg</file>
+        <file>icons/chevron-forward.svg</file>
+    </qresource>
+</RCC>
