@@ -29,6 +29,7 @@
         "zstd"
       ],
       "default-features":false
-    }
+    },
+    "qtsvg"
   ]
 }

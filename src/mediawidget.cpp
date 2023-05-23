@@ -20,5 +20,10 @@ MediaWidget::MediaWidget(QWidget *parent)
 
 void MediaWidget::play()
 {
-    mpvWidget->command(QStringList() << "loadfile" << "");
+
+}
+
+void MediaWidget::PlayChannel(QString uri)
+{
+    mpvWidget->command(QStringList() << "loadfile" << uri);
 }

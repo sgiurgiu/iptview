@@ -13,13 +13,16 @@ public:
 
 signals:
 protected:
-  void closeEvent(QCloseEvent * event);
+  void closeEvent(QCloseEvent * event) override;
+private slots:
+  void openPlaylist();
 private:
   void centerOnScreen();
   void createActions();
   void createMenus();
   void addStatusBar();
   void addWindowWidgets();
+  void loadPlaylist(const QString& fileName);
 private:
   QMenu* viewMenu;
   QAction* fileNewAction;

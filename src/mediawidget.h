@@ -11,6 +11,8 @@ class MediaWidget : public QWidget
     Q_OBJECT
 public:
     explicit MediaWidget(QWidget *parent = nullptr);
+public slots:
+    void PlayChannel(QString uri);
 private slots:
     void play();
 private:

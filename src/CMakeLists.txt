@@ -17,9 +17,11 @@ set(IPTVIEWLIB_SRCS
     channelswidget.h channelswidget.cpp
     mediawidget.h mediawidget.cpp
     mpvwidget.h mpvwidget.cpp
+    channelsmodel.h channelsmodel.cpp
+    abstractchanneltreeitem.h abstractchanneltreeitem.cpp
     )
 
-add_library(${LIBRARY_NAME} STATIC ${IPTVIEWLIB_SRCS})
+add_library(${LIBRARY_NAME} STATIC ${IPTVIEWLIB_SRCS} )
 
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${IPTVIEW_APP_LIBARIES})
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${LIBRARY_NAME})

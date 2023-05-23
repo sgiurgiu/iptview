@@ -8,5 +8,6 @@
         <file>icons/arrow-forward.svg</file>
         <file>icons/chevron-back.svg</file>
         <file>icons/chevron-forward.svg</file>
+        <file>icons/star.svg</file>
     </qresource>
 </RCC>

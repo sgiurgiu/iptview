@@ -22,4 +22,10 @@ IPTViewMainWidget::IPTViewMainWidget(QWidget *parent): QSplitter{Qt::Horizontal,
     channelsExpandingPolicy.setVerticalStretch(1);
     channelsWidget->setSizePolicy(channelsExpandingPolicy);
 
+    connect(channelsWidget, SIGNAL(playChannel(QString)), mediaWidget, SLOT(PlayChannel(QString)));
+}
+
+void IPTViewMainWidget::ImportPlaylist(M3UList list)
+{
+    channelsWidget->ImportPlaylist(std::move(list));
 }
