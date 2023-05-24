@@ -19,6 +19,8 @@ set(IPTVIEWLIB_SRCS
     mpvwidget.h mpvwidget.cpp
     channelsmodel.h channelsmodel.cpp
     abstractchanneltreeitem.h abstractchanneltreeitem.cpp
+    databaseprovider.h databaseprovider.cpp
+    database.h database.cpp
     )
 
 add_library(${LIBRARY_NAME} STATIC ${IPTVIEWLIB_SRCS} )

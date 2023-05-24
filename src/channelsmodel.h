@@ -36,6 +36,7 @@ private slots:
     void aquiredIcon(AbstractChannelTreeItem*);
 private:
     QModelIndex indexFromItem(AbstractChannelTreeItem* item);
+    void loadChannels();
 private:
     QNetworkAccessManager* networkManager;
     std::unique_ptr<RootTreeItem> rootItem;

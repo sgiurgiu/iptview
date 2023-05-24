@@ -3,6 +3,8 @@
 #include <QSettings>
 #include <QByteArray>
 #include <QSslSocket>
+#include <QSqlDatabase>
+#include <QMessageBox>
 
 #include "iptviewmainwindow.h"
 
@@ -27,6 +29,17 @@ int main(int argc, char** argv)
         qDebug() << QSslSocket::sslLibraryVersionNumber();
         qDebug() << QSslSocket::activeBackend();
     }
+
+    if (!QSqlDatabase::drivers().contains("QSQLITE"))
+    {
+        QMessageBox::critical(
+                    nullptr,
+                    "Unable to load database driver",
+                    "Cannot find the SQLITE driver"
+                    );
+        return EXIT_FAILURE;
+    }
+
 
     IPTViewMainWindow window;
     QSettings settings;

@@ -1,6 +1,7 @@
 #include "channelsmodel.h"
 #include "abstractchanneltreeitem.h"
-
+#include "databaseprovider.h"
+#include "database.h"
 #include <QtDebug>
 #include <QNetworkAccessManager>
 
@@ -10,15 +11,27 @@ ChannelsModel::ChannelsModel(QObject *parent)
       rootItem{std::make_unique<RootTreeItem>(networkManager)}
 {
     connect(rootItem.get(), SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SLOT(aquiredIcon(AbstractChannelTreeItem*)), Qt::QueuedConnection);
+    loadChannels();
+}
+
+void ChannelsModel::loadChannels()
+{
+    auto db = DatabaseProvider::GetDatabase();
+    db->LoadChannelsAndGroups(rootItem.get());
 }
 
 void ChannelsModel::AddList(M3UList list)
 {
     beginResetModel();
-    for(qsizetype i =0; i< list.GetSegmentsCount(); i++)
-    {
-        rootItem->addMediaSegment(list.GetSegmentAt(i));
-    }
+    auto db = DatabaseProvider::GetDatabase();
+    db->WithTransaction([&list, db, this](){
+        for(qsizetype i =0; i< list.GetSegmentsCount(); i++)
+        {
+            auto channelPtr = rootItem->addMediaSegment(list.GetSegmentAt(i));
+            db->AddChannelAndGroup(channelPtr);
+            rootItem->updateMaps(channelPtr);
+        }
+    });
     endResetModel();
 }
 QHash<int, QByteArray> ChannelsModel::roleNames() const
@@ -28,6 +41,7 @@ QHash<int, QByteArray> ChannelsModel::roleNames() const
     roles[ChannelRoles::UriRole] = "uri";
     return roles;
 }
+
 QVariant ChannelsModel::headerData(int section, Qt::Orientation orientation,
                             int role) const
 {
@@ -149,6 +163,16 @@ QModelIndex ChannelsModel::indexFromItem(AbstractChannelTreeItem* item)
 }
 void ChannelsModel::aquiredIcon(AbstractChannelTreeItem* item)
 {
+    if(item->getType() == ChannelTreeItemType::Channel)
+    {
+        auto channel = dynamic_cast<ChannelTreeItem*>(item);
+        if(channel)
+        {
+            auto db = DatabaseProvider::GetDatabase();
+            db->SetChannelLogo(channel);
+        }
+    }
+
     auto index = indexFromItem(item);
     emit dataChanged(index,index);
 }

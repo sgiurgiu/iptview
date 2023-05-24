@@ -46,12 +46,12 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 find_package(Threads REQUIRED)
-find_package(Qt6 COMPONENTS Core Gui Test Widgets OpenGLWidgets Svg Network REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Test Widgets OpenGLWidgets Svg Network Sql REQUIRED)
 
 set(IPTVIEW_APP_LIBARIES ${CMAKE_DL_LIBS} Threads::Threads Qt6::Core)
 set(IPTVIEW_APP_INCLUDES)
 
-set(IPTVIEW_LIB_LIBARIES Qt6::Core Qt6::Widgets Qt6::OpenGLWidgets Qt6::Svg Qt6::Network)
+set(IPTVIEW_LIB_LIBARIES Qt6::Core Qt6::Widgets Qt6::OpenGLWidgets Qt6::Svg Qt6::Network Qt6::Sql)
 set(IPTVIEW_LIB_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 set(IPTVIEW_TEST_LIBARIES Qt6::Core Qt6::Test ${CMAKE_DL_LIBS} Threads::Threads)
