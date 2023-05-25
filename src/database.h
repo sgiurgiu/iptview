@@ -5,8 +5,7 @@
 #include <stdexcept>
 #include <functional>
 #include <optional>
-
-#include <sqlite3.h>
+#include <QString>
 
 class DatabaseProvider;
 class ChannelTreeItem;
@@ -15,7 +14,10 @@ class RootTreeItem;
 
 class DatabaseException : public std::runtime_error
 {
-   using std::runtime_error::runtime_error;
+public:
+    DatabaseException(const QString& message): std::runtime_error(message.toLocal8Bit().data())
+    {
+    }
 };
 
 
@@ -41,19 +43,6 @@ private:
     int getSchemaVersion() const;
     void incrementSchemaVersion(int version) const;
     void executeStatement(const char* sql, const char* errMsg) const;
-private:
-    struct DBConnectionDeleter
-    {
-        void operator()(sqlite3* db)
-        {
-            if(db)
-            {
-                sqlite3_close(db);
-            }
-        }
-    };
-
-    std::unique_ptr<sqlite3, DBConnectionDeleter> db;
 };
 
 #endif // DATABASE_H

@@ -2,37 +2,20 @@
 #include "roottreeitem.h"
 #include "channeltreeitem.h"
 #include "grouptreeitem.h"
-#include "favouritestreeitem.h"
 
-#include <cassert>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
 
-namespace
+Database::Database(ConstructorKey, const std::filesystem::path& dbPath)
 {
-#define DB_ERR_CHECK(return_code__, msg) \
-    if (return_code__ != SQLITE_OK && return_code__ < SQLITE_ROW) \
-    {\
-        std::string err = sqlite3_errmsg(db.get());\
-        int code = sqlite3_errcode(db.get()); \
-        throw DatabaseException(std::string(msg)+":"+err+"("+std::to_string(code)+")");\
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName(dbPath.c_str());
+    if(!db.open())
+    {
+        throw DatabaseException(QString{("Cannot open database "+dbPath.string()).c_str()});
     }
 
-    struct StatementFinalizer
-    {
-        void operator()(sqlite3_stmt* stm)
-        {
-            if(stm)
-            {
-                sqlite3_finalize(stm);
-            }
-        }
-    };
-}
-Database::Database(ConstructorKey, const std::filesystem::path& dbPath) : db{nullptr, Database::DBConnectionDeleter{}}
-{
-    sqlite3* db_ptr;
-    int rc = sqlite3_open(dbPath.string().c_str(),&db_ptr);
-    DB_ERR_CHECK(rc, "Cannot open database");
-    db.reset(db_ptr);
     executeStatement("PRAGMA foreign_keys = ON", "Cannot enable foreign_keys support");
     executeStatement("CREATE TABLE IF NOT EXISTS SCHEMA_VERSION(VERSION INT)", "Cannot create table SCHEMA_VERSION");
     executeStatement("CREATE TABLE IF NOT EXISTS CHANNEL_GROUPS(GROUP_ID INTEGER NOT NULL PRIMARY KEY, "
@@ -51,34 +34,36 @@ Database::Database(ConstructorKey, const std::filesystem::path& dbPath) : db{nul
 }
 void Database::executeStatement(const char* sql, const char* errMsg) const
 {
-    int rc = sqlite3_exec(db.get(),sql,nullptr,nullptr,nullptr);
-    DB_ERR_CHECK(rc, errMsg);
+    QSqlQuery query{sql};
+    if(!query.exec())
+    {
+        throw DatabaseException(errMsg + query.lastError().text());
+    }
 }
 
 void Database::LoadChannelsAndGroups(RootTreeItem* rootItem) const
 {
-    std::unique_ptr<sqlite3_stmt,StatementFinalizer> stmt;
-    sqlite3_stmt *stmt_ptr;
-    int rc = sqlite3_prepare_v2(db.get(),"SELECT CHANNEL_ID,GROUP_ID,NAME,URI,LOGO_URI,LOGO,FAVOURITE FROM CHANNELS ORDER BY CHANNEL_ID",-1,&stmt_ptr, nullptr);
-    stmt.reset(stmt_ptr);
-    DB_ERR_CHECK(rc, "Cannot select from CHANNELS");
-    while(sqlite3_step(stmt.get()) == SQLITE_ROW)
+    QSqlQuery query;
+
+    if(!query.exec("SELECT CHANNEL_ID,GROUP_ID,NAME,URI,LOGO_URI,LOGO,FAVOURITE FROM CHANNELS ORDER BY CHANNEL_ID"))
     {
-        int64_t id = sqlite3_column_int64(stmt.get(), 0);
-        auto groupType = sqlite3_column_type(stmt.get(), 1);
+        throw DatabaseException("Cannot select from CHANNELS " + query.lastError().text());
+    }
+    while(query.next())
+    {
+        int64_t id = query.value(0).toLongLong();
+        auto groupVariant = query.value(1);
         std::optional<int64_t> groupId;
-        if(groupType == SQLITE_INTEGER)
+        if(!groupVariant.isNull())
         {
-            groupId = sqlite3_column_int64(stmt.get(), 1);
+            groupId = groupVariant.toLongLong();
         }
-        QByteArray nameArray{reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(),2)), sqlite3_column_bytes(stmt.get(),2)};
-        QString name{nameArray};
-        QByteArray uriArray{reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(),3)), sqlite3_column_bytes(stmt.get(),3)};
-        QString uri{uriArray};
-        QByteArray logoUriArray{reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(),4)), sqlite3_column_bytes(stmt.get(),4)};
-        QString logoUri{logoUriArray};
-        QByteArray logo{reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(),5)), sqlite3_column_bytes(stmt.get(),5)};
-        bool favourite = sqlite3_column_int64(stmt.get(), 6) ? true : false;
+
+        QString name = query.value(2).toString();
+        QString uri = query.value(3).toString();
+        QString logoUri = query.value(4).toString();
+        QByteArray logo = query.value(5).toByteArray();
+        bool favourite = query.value(6).toBool();
         std::unique_ptr<ChannelTreeItem> channel;
         ChannelTreeItem* channelPtr = nullptr;
         if(groupId)
@@ -109,25 +94,25 @@ void Database::LoadChannelsAndGroups(RootTreeItem* rootItem) const
 
 GroupTreeItem* Database::loadGroup(int64_t id, RootTreeItem* rootItem) const
 {
-    std::unique_ptr<sqlite3_stmt,StatementFinalizer> stmt;
-    sqlite3_stmt *stmt_ptr;
-    int rc = sqlite3_prepare_v2(db.get(),"SELECT PARENT_GROUP_ID,NAME FROM CHANNEL_GROUPS WHERE GROUP_ID=?",-1,&stmt_ptr, nullptr);
-    stmt.reset(stmt_ptr);
-    DB_ERR_CHECK(rc, "Cannot select from CHANNEL_GROUPS");
-    rc = sqlite3_bind_int64(stmt.get(), 1,id);
-    DB_ERR_CHECK(rc, "Cannot bind values to id");
+    QSqlQuery query;
+    query.prepare("SELECT PARENT_GROUP_ID,NAME FROM CHANNEL_GROUPS WHERE GROUP_ID=?");
+    query.bindValue(0, static_cast<qlonglong>(id));
+    if(!query.exec())
+    {
+        throw DatabaseException("Cannot select from CHANNEL_GROUPS " + query.lastError().text());
+    }
 
-    if(sqlite3_step(stmt.get()) == SQLITE_ROW)
+    if(query.next())
     {
         GroupTreeItem* groupPtr = nullptr;
-        auto parentGroupType = sqlite3_column_type(stmt.get(), 0);
+        auto groupVariant = query.value(0);
         std::optional<int64_t> parentGroupId;
-        if(parentGroupType == SQLITE_INTEGER)
+        if(!groupVariant.isNull())
         {
-            parentGroupId = sqlite3_column_int64(stmt.get(), 0);
+            parentGroupId = groupVariant.toLongLong();
         }
-        QByteArray nameArray{reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(),1)), sqlite3_column_bytes(stmt.get(),1)};
-        QString name{nameArray};
+
+        QString name = query.value(1).toString();
 
         if(parentGroupId)
         {
@@ -151,25 +136,16 @@ GroupTreeItem* Database::loadGroup(int64_t id, RootTreeItem* rootItem) const
 
 void Database::SetChannelLogo(ChannelTreeItem* channel) const
 {
-    std::unique_ptr<sqlite3_stmt,StatementFinalizer> stmt;
-    sqlite3_stmt *stmt_ptr;
-    int rc = sqlite3_prepare_v2(db.get(),"UPDATE CHANNELS SET LOGO =? WHERE CHANNEL_ID =?",-1,&stmt_ptr, nullptr);
-    stmt.reset(stmt_ptr);
-    DB_ERR_CHECK(rc, "Cannot update CHANNELS");
-    auto const& logo = channel->getLogo();
-    if(logo.isEmpty())
+    QSqlQuery query;
+    query.prepare("UPDATE CHANNELS SET LOGO =? WHERE CHANNEL_ID =?");
+
+    query.bindValue(0, channel->getLogo());
+    query.bindValue(1, static_cast<qlonglong>(channel->getID()));
+
+    if(!query.exec())
     {
-        rc = sqlite3_bind_null(stmt.get(), 1);
+        throw DatabaseException("Cannot update CHANNELS " + query.lastError().text());
     }
-    else
-    {
-        rc = sqlite3_bind_blob(stmt.get(), 1, logo.data(), logo.size(), nullptr);
-    }
-    DB_ERR_CHECK(rc, "Cannot bind values to channel logo");
-    rc = sqlite3_bind_int64(stmt.get(), 2, channel->getID());
-    DB_ERR_CHECK(rc, "Cannot bind values to channel ID");
-    rc = sqlite3_step(stmt.get());
-    DB_ERR_CHECK(rc, "Cannot update channel");
 }
 
 void Database::AddChannelAndGroup(ChannelTreeItem* channel) const
@@ -193,84 +169,73 @@ void Database::AddChannelAndGroup(ChannelTreeItem* channel) const
 
 void Database::addChannel(ChannelTreeItem* channel, std::optional<int64_t> groupId) const
 {
-    std::unique_ptr<sqlite3_stmt,StatementFinalizer> stmt;
-    sqlite3_stmt *stmt_ptr;
-    int rc = sqlite3_prepare_v2(db.get(),"INSERT INTO CHANNELS(NAME, URI, LOGO_URI, LOGO, FAVOURITE, GROUP_ID) VALUES (?,?,?,?,0,?) RETURNING CHANNEL_ID",-1,&stmt_ptr, nullptr);
-    stmt.reset(stmt_ptr);
-    DB_ERR_CHECK(rc, "Cannot insert CHANNELS");
-    auto const nameArray = channel->getName().toLocal8Bit();
-    rc = sqlite3_bind_text(stmt.get(), 1,nameArray.data(),nameArray.size(),nullptr);
-    DB_ERR_CHECK(rc, "Cannot bind values to "+channel->getName().toStdString());
-    auto const uriArray = channel->getUri().toLocal8Bit();
-    rc = sqlite3_bind_text(stmt.get(), 2,uriArray.data(),uriArray.size(),nullptr);
-    DB_ERR_CHECK(rc, "Cannot bind values to "+channel->getUri().toStdString());
-    auto const logoUriArray = channel->getLogoUri().toLocal8Bit();
-    rc = sqlite3_bind_text(stmt.get(), 3,logoUriArray.data(),logoUriArray.size(),nullptr);
-    DB_ERR_CHECK(rc, "Cannot bind values to "+channel->getLogoUri().toStdString());
-    auto const& logo = channel->getLogo();
-    if(logo.isEmpty())
-    {
-        rc = sqlite3_bind_null(stmt.get(), 4);
-    }
-    else
-    {
-        rc = sqlite3_bind_blob(stmt.get(), 4, logo.data(), logo.size(), nullptr);
-    }
-    DB_ERR_CHECK(rc, "Cannot bind values to channel logo");
+    QSqlQuery query;
+    query.prepare("INSERT INTO CHANNELS(NAME, URI, LOGO_URI, LOGO, FAVOURITE, GROUP_ID) VALUES (?,?,?,?,0,?) RETURNING CHANNEL_ID");
+
+    query.bindValue(0, channel->getName());
+    query.bindValue(1, channel->getUri());
+    query.bindValue(2, channel->getLogoUri());
+    query.bindValue(3, channel->getLogo());
 
     if(groupId)
     {
-        rc = sqlite3_bind_int64(stmt.get(), 5, groupId.value());
+        query.bindValue(4, static_cast<qlonglong>(groupId.value()));
     }
     else
     {
-        rc = sqlite3_bind_null(stmt.get(), 5);
+        query.bindValue(4, QVariant{});
     }
-    DB_ERR_CHECK(rc, "Cannot bind values to "+channel->getName().toStdString());
-    if(sqlite3_step(stmt.get()) == SQLITE_ROW)
+
+    if(!query.exec())
     {
-        channel->setID(sqlite3_column_int64(stmt.get(),0));
+        throw DatabaseException("Cannot insert into CHANNELS " + query.lastError().text());
+    }
+
+    if(query.next())
+    {
+        channel->setID(query.value(0).toLongLong());
     }
 }
 
 void Database::addGroup(GroupTreeItem* group, std::optional<int64_t> parentGroupId) const
 {
-    std::unique_ptr<sqlite3_stmt,StatementFinalizer> stmt;
-    sqlite3_stmt *stmt_ptr;
-    int rc = sqlite3_prepare_v2(db.get(),"INSERT INTO CHANNEL_GROUPS(NAME, PARENT_GROUP_ID) VALUES (?,?) RETURNING GROUP_ID",-1,&stmt_ptr, nullptr);
-    stmt.reset(stmt_ptr);
-    DB_ERR_CHECK(rc, "Cannot insert CHANNEL_GROUPS");
-    auto const nameArray = group->getName().toLocal8Bit();
-    rc = sqlite3_bind_text(stmt.get(), 1,nameArray.data(),nameArray.size(),nullptr);
-    DB_ERR_CHECK(rc, "Cannot bind values to "+group->getName().toStdString());
+    QSqlQuery query;
+    query.prepare("INSERT INTO CHANNEL_GROUPS(NAME, PARENT_GROUP_ID) VALUES (?,?) RETURNING GROUP_ID");
+
+    query.bindValue(0, group->getName());
+
     if(parentGroupId)
     {
-        rc = sqlite3_bind_int64(stmt.get(), 2, parentGroupId.value());
+        query.bindValue(1, static_cast<qlonglong>(parentGroupId.value()));
     }
     else
     {
-        rc = sqlite3_bind_null(stmt.get(), 2);
+        query.bindValue(1, QVariant{});
     }
-    DB_ERR_CHECK(rc, "Cannot bind values to "+group->getName().toStdString());
-    if(sqlite3_step(stmt.get()) == SQLITE_ROW)
+
+    if(!query.exec())
     {
-        group->setID(sqlite3_column_int64(stmt.get(),0));
+        throw DatabaseException("Cannot insert into groups " + query.lastError().text());
+    }
+
+    if(query.next())
+    {
+        group->setID(query.value(0).toLongLong());
     }
 }
 
 void Database::SetFavourite(int64_t id, bool flag) const
 {
-    std::unique_ptr<sqlite3_stmt,StatementFinalizer> stmt;
-    sqlite3_stmt *stmt_ptr;
-    int rc = sqlite3_prepare_v2(db.get(),"UPDATE CHANNELS SET FAVOURITE=? WHERE CHANNEL_ID=?",-1,&stmt_ptr, nullptr);
-    stmt.reset(stmt_ptr);
-    DB_ERR_CHECK(rc, "Cannot update CHANNELS");
-    rc = sqlite3_bind_int(stmt.get(), 1, flag?1:0);
-    DB_ERR_CHECK(rc, "Cannot bind values to favourite");
-    rc = sqlite3_bind_int64(stmt.get(), 2, id);
-    DB_ERR_CHECK(rc, "Cannot bind values to id");
-    rc = sqlite3_step(stmt.get());
-    DB_ERR_CHECK(rc, "Cannot update channel");
+    QSqlQuery query;
+    query.prepare("UPDATE CHANNELS SET FAVOURITE=? WHERE CHANNEL_ID=?");
+
+    query.bindValue(0, flag);
+    query.bindValue(1, static_cast<qlonglong>(id));
+
+    if(!query.exec())
+    {
+        throw DatabaseException("Cannot update CHANNELS " + query.lastError().text());
+    }
 }
 
 void Database::addGroupTree(GroupTreeItem* group) const
@@ -291,28 +256,31 @@ void Database::addGroupTree(GroupTreeItem* group) const
 
 void Database::WithTransaction(std::function<void()> callback) const
 {
-    executeStatement("BEGIN TRANSACTION", "Cannot begin transaction");
+    auto db = QSqlDatabase::database();
     try
     {
+        db.transaction();
         callback();
-        executeStatement("COMMIT TRANSACTION", "Cannot commit transaction");
+        db.commit();
     }
     catch(...)
     {
-        executeStatement("ROLLBACK TRANSACTION", "Cannot rollback transaction");
+        db.rollback();
     }
 }
 
 int Database::getSchemaVersion() const
 {
-    std::unique_ptr<sqlite3_stmt,StatementFinalizer> stmt;
-    sqlite3_stmt *stmt_ptr;
-    int rc = sqlite3_prepare_v2(db.get(),"SELECT VERSION FROM SCHEMA_VERSION",-1,&stmt_ptr, nullptr);
-    stmt.reset(stmt_ptr);
-    DB_ERR_CHECK(rc, "Cannot find SCHEMA_VERSION");
-    if(sqlite3_step(stmt.get()) == SQLITE_ROW)
+    QSqlQuery query;
+    query.prepare("SELECT VERSION FROM SCHEMA_VERSION");
+    if(!query.exec())
     {
-        return sqlite3_column_int(stmt.get(),0);
+        throw DatabaseException("Cannot find SCHEMA_VERSION " + query.lastError().text());
+    }
+
+    if(query.next())
+    {
+        return query.value(0).toInt();
     }
     return 0;
 }
