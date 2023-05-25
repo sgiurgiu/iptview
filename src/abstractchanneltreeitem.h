@@ -7,6 +7,7 @@
 #include <QHash>
 
 #include <shared_mutex>
+#include <atomic>
 
 class QNetworkAccessManager;
 
@@ -35,6 +36,7 @@ public:
     int64_t getID() const;
     void setID(int64_t id);
     QNetworkAccessManager* getNetworkManager() const;
+    virtual void setCancelOgoingOperations(bool flag);
 signals:
     void aquiredIcon(AbstractChannelTreeItem*);
 protected:
@@ -44,6 +46,7 @@ protected:
     QIcon icon;
     QNetworkAccessManager* networkManager;
     mutable std::shared_mutex iconMutex;
+    std::atomic_bool cancelOngoingOperations = {false};
 };
 
 #endif // ABSTRACTCHANNELTREEITEM_H

@@ -14,8 +14,11 @@ GroupTreeItem::GroupTreeItem(QString name, QNetworkAccessManager* networkManager
 
 void GroupTreeItem::loadChannelsIcons()
 {
+    if(cancelOngoingOperations) return;
+
     for(auto&& child : children)
     {
+        if(cancelOngoingOperations) return;
         auto type = child->getType();
         if(type == ChannelTreeItemType::Channel)
         {

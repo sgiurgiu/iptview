@@ -17,7 +17,7 @@ ChannelTreeItem::ChannelTreeItem(QString name, QString uri, QString logoUri, QBy
 }
 void ChannelTreeItem::loadIcon()
 {
-    if(!this->logo.isEmpty() && icon.isNull())
+    if(!this->logo.isEmpty() && icon.isNull() && !cancelOngoingOperations)
     {
         QImage image = QImage::fromData(this->logo);
         {

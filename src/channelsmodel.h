@@ -11,12 +11,14 @@
 class QNetworkAccessManager;
 class AbstractChannelTreeItem;
 class RootTreeItem;
+class QThread;
 
 class ChannelsModel : public QAbstractItemModel
 {
     Q_OBJECT
 public:
     explicit ChannelsModel(QObject *parent = nullptr);
+    ~ChannelsModel();
     void AddList(M3UList list);
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     virtual int columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -42,6 +44,7 @@ private:
 private:
     QNetworkAccessManager* networkManager;
     std::unique_ptr<RootTreeItem> rootItem;
+    QThread* loadingIconsThread = nullptr;
 };
 
 #endif // CHANNELSMODEL_H

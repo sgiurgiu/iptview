@@ -17,16 +17,27 @@ ChannelsModel::ChannelsModel(QObject *parent)
     connect(rootItem.get(), SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SLOT(aquiredIcon(AbstractChannelTreeItem*)), Qt::QueuedConnection);
     loadChannels();
 }
-
+ChannelsModel::~ChannelsModel()
+{
+    rootItem->setCancelOgoingOperations(true);
+    if(loadingIconsThread)
+    {
+        loadingIconsThread->wait();
+    }
+}
 void ChannelsModel::loadChannels()
 {
     auto db = DatabaseProvider::GetDatabase();
     db->LoadChannelsAndGroups(rootItem.get());
-    auto thread = QThread::create([this](){
+    if(loadingIconsThread)
+    {
+        loadingIconsThread->wait();
+        delete loadingIconsThread;
+    }
+    loadingIconsThread = QThread::create([this](){
         rootItem->loadChannelsIcons();
     });
-    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-    thread->start();
+    loadingIconsThread->start();
 }
 
 void ChannelsModel::AddList(M3UList list)

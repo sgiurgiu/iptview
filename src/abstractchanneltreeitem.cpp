@@ -58,5 +58,12 @@ QNetworkAccessManager* AbstractChannelTreeItem::getNetworkManager() const
 {
     return networkManager;
 }
-
+void AbstractChannelTreeItem::setCancelOgoingOperations(bool flag)
+{
+    cancelOngoingOperations = flag;
+    for(auto&& child : children)
+    {
+        child->setCancelOgoingOperations(flag);
+    }
+}
 

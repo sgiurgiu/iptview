@@ -78,6 +78,7 @@ void RootTreeItem::loadChannelsIcons()
 {
     for(auto&& child : children)
     {
+        if(cancelOngoingOperations) return;
         auto type = child->getType();
         if(type == ChannelTreeItemType::Channel)
         {
