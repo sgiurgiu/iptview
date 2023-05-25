@@ -1,9 +1,13 @@
 #include "channelsmodel.h"
 #include "abstractchanneltreeitem.h"
+#include "roottreeitem.h"
+#include "channeltreeitem.h"
+
 #include "databaseprovider.h"
 #include "database.h"
 #include <QtDebug>
 #include <QNetworkAccessManager>
+#include <QThread>
 
 ChannelsModel::ChannelsModel(QObject *parent)
     : QAbstractItemModel{parent},
@@ -18,6 +22,11 @@ void ChannelsModel::loadChannels()
 {
     auto db = DatabaseProvider::GetDatabase();
     db->LoadChannelsAndGroups(rootItem.get());
+    auto thread = QThread::create([this](){
+        rootItem->loadChannelsIcons();
+    });
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    thread->start();
 }
 
 void ChannelsModel::AddList(M3UList list)
@@ -34,6 +43,26 @@ void ChannelsModel::AddList(M3UList list)
     });
     endResetModel();
 }
+void ChannelsModel::AddToFavourites(AbstractChannelTreeItem* item)
+{
+    auto [parent, child] = rootItem->addToFavourites(item);
+    auto db = DatabaseProvider::GetDatabase();
+    db->SetFavourite(child->getID(), true);
+    auto parentIndex = indexFromItem(parent);
+    beginInsertRows(parentIndex, child->row(), child->row());
+    endInsertRows();
+}
+void ChannelsModel::RemoveFromFavourites(AbstractChannelTreeItem* item)
+{
+    auto id = item->getID();
+    auto parentIndex = indexFromItem(item->getParent());
+    beginRemoveRows(parentIndex, item->row(), item->row());
+    rootItem->removeFromFavourites(item);
+    auto db = DatabaseProvider::GetDatabase();
+    db->SetFavourite(id, false);
+    endRemoveRows();
+}
+
 QHash<int, QByteArray> ChannelsModel::roleNames() const
 {
     QHash<int, QByteArray> roles = QAbstractItemModel::roleNames();

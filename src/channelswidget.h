@@ -6,6 +6,8 @@
 
 class QTreeView;
 class ChannelsModel;
+class QMenu;
+class QAction;
 
 class ChannelsWidget : public QWidget
 {
@@ -17,9 +19,15 @@ signals:
     void playChannel(QString uri);
 private slots:
     void onDoubleClickedTreeItem(const QModelIndex &index);
+    void onCustomContextMenu(const QPoint &point);
+    void onAddToFavourites();
+    void onRemoveFromFavourites();
 private:
     QTreeView* channels;
     ChannelsModel* model;
+    QMenu* contextMenu;
+    QAction* addToFavouritesAction;
+    QAction* removeFromFavouritesAction;
 };
 
 #endif // CHANNELSWIDGET_H

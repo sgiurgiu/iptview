@@ -21,6 +21,10 @@ set(IPTVIEWLIB_SRCS
     abstractchanneltreeitem.h abstractchanneltreeitem.cpp
     databaseprovider.h databaseprovider.cpp
     database.h database.cpp
+    channeltreeitem.h channeltreeitem.cpp
+    grouptreeitem.h grouptreeitem.cpp
+    roottreeitem.h roottreeitem.cpp
+    favouritestreeitem.h favouritestreeitem.cpp
     )
 
 add_library(${LIBRARY_NAME} STATIC ${IPTVIEWLIB_SRCS} )

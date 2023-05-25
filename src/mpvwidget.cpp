@@ -31,14 +31,21 @@ MpvWidget::MpvWidget(QWidget *parent): QOpenGLWidget{parent}
 
     mpv_set_option_string(mpv, "terminal", "yes");
     mpv_set_option_string(mpv, "msg-level", "all=v");
+    mpv_observe_property(mpv, 0, "height", MPV_FORMAT_DOUBLE);
+    mpv_observe_property(mpv, 0, "width", MPV_FORMAT_DOUBLE);
+    mpv_observe_property(mpv, 0, "pause", MPV_FORMAT_FLAG);
+
     if (mpv_initialize(mpv) < 0)
         throw std::runtime_error("could not initialize mpv context");
 
     // Request hw decoding, just for testing.
-    mpv::qt::set_option_variant(mpv, "hwdec", "auto");
+   //mpv::qt::set_option_variant(mpv, "hwdec", "auto");
 
     mpv_observe_property(mpv, 0, "duration", MPV_FORMAT_DOUBLE);
     mpv_observe_property(mpv, 0, "time-pos", MPV_FORMAT_DOUBLE);
+    mpv_observe_property(mpv, 0, "volume", MPV_FORMAT_DOUBLE);
+    double vol = 100.0;
+    mpv_set_property(mpv,"volume",MPV_FORMAT_DOUBLE,&vol);
     mpv_set_wakeup_callback(mpv, wakeup, this);
 }
 
@@ -114,12 +121,12 @@ void MpvWidget::handleMpvEvent(mpv_event *event)
         if (strcmp(prop->name, "time-pos") == 0) {
             if (prop->format == MPV_FORMAT_DOUBLE) {
                 double time = *(double *)prop->data;
-                Q_EMIT positionChanged(time);
+                emit positionChanged(time);
             }
         } else if (strcmp(prop->name, "duration") == 0) {
             if (prop->format == MPV_FORMAT_DOUBLE) {
                 double time = *(double *)prop->data;
-                Q_EMIT durationChanged(time);
+                emit durationChanged(time);
             }
         }
         break;

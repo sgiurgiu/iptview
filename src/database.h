@@ -31,6 +31,7 @@ public:
     void AddChannelAndGroup(ChannelTreeItem* channel) const;
     void SetChannelLogo(ChannelTreeItem* channel) const;
     void LoadChannelsAndGroups(RootTreeItem* rootItem) const;
+    void SetFavourite(int64_t id, bool flag) const;
 private:
     void addGroupTree(GroupTreeItem* group) const;
     void addGroup(GroupTreeItem* group, std::optional<int64_t> parentGroupId) const;

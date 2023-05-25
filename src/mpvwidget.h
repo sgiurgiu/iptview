@@ -32,6 +32,7 @@ private:
 
     mpv_handle *mpv;
     mpv_render_context *mpv_gl;
+    double volume = 100.0;
 };
 
 #endif // MPVWIDGET_H

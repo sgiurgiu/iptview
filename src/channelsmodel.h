@@ -7,9 +7,10 @@
 
 #include <memory>
 #include "m3ulist.h"
-#include "abstractchanneltreeitem.h"
 
 class QNetworkAccessManager;
+class AbstractChannelTreeItem;
+class RootTreeItem;
 
 class ChannelsModel : public QAbstractItemModel
 {
@@ -31,7 +32,8 @@ public:
            NameRole = Qt::UserRole + 1,
            UriRole
     };
-
+    void AddToFavourites(AbstractChannelTreeItem* item);
+    void RemoveFromFavourites(AbstractChannelTreeItem* item);
 private slots:
     void aquiredIcon(AbstractChannelTreeItem*);
 private:

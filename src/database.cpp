@@ -1,5 +1,9 @@
 #include "database.h"
-#include "abstractchanneltreeitem.h"
+#include "roottreeitem.h"
+#include "channeltreeitem.h"
+#include "grouptreeitem.h"
+#include "favouritestreeitem.h"
+
 #include <cassert>
 
 namespace
@@ -76,6 +80,7 @@ void Database::LoadChannelsAndGroups(RootTreeItem* rootItem) const
         QByteArray logo{reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(),5)), sqlite3_column_bytes(stmt.get(),5)};
         bool favourite = sqlite3_column_int64(stmt.get(), 6) ? true : false;
         std::unique_ptr<ChannelTreeItem> channel;
+        ChannelTreeItem* channelPtr = nullptr;
         if(groupId)
         {
             auto group = rootItem->getGroup(groupId.value());
@@ -85,17 +90,19 @@ void Database::LoadChannelsAndGroups(RootTreeItem* rootItem) const
             }
             channel = std::make_unique<ChannelTreeItem>(std::move(name), std::move(uri), std::move(logoUri), std::move(logo), rootItem->getNetworkManager(), group);
             channel->setID(id);
+            channelPtr = channel.get();
             group->addChannel(std::move(channel));
         }
         else
         {
             channel = std::make_unique<ChannelTreeItem>(std::move(name), std::move(uri), std::move(logoUri), std::move(logo), rootItem->getNetworkManager(), rootItem);
             channel->setID(id);
+            channelPtr = channel.get();
             rootItem->addChannel(std::move(channel));
         }
         if(favourite)
         {
-            //rootItem->setFavourite(channel.get());
+            rootItem->addToFavourites(channelPtr);
         }
     }
 }
@@ -249,6 +256,21 @@ void Database::addGroup(GroupTreeItem* group, std::optional<int64_t> parentGroup
     {
         group->setID(sqlite3_column_int64(stmt.get(),0));
     }
+}
+
+void Database::SetFavourite(int64_t id, bool flag) const
+{
+    std::unique_ptr<sqlite3_stmt,StatementFinalizer> stmt;
+    sqlite3_stmt *stmt_ptr;
+    int rc = sqlite3_prepare_v2(db.get(),"UPDATE CHANNELS SET FAVOURITE=? WHERE CHANNEL_ID=?",-1,&stmt_ptr, nullptr);
+    stmt.reset(stmt_ptr);
+    DB_ERR_CHECK(rc, "Cannot update CHANNELS");
+    rc = sqlite3_bind_int(stmt.get(), 1, flag?1:0);
+    DB_ERR_CHECK(rc, "Cannot bind values to favourite");
+    rc = sqlite3_bind_int64(stmt.get(), 2, id);
+    DB_ERR_CHECK(rc, "Cannot bind values to id");
+    rc = sqlite3_step(stmt.get());
+    DB_ERR_CHECK(rc, "Cannot update channel");
 }
 
 void Database::addGroupTree(GroupTreeItem* group) const
