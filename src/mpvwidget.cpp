@@ -31,6 +31,8 @@ MpvWidget::MpvWidget(QWidget *parent): QOpenGLWidget{parent}
 
     mpv_set_option_string(mpv, "terminal", "yes");
     mpv_set_option_string(mpv, "msg-level", "all=v");
+    mpv_set_option_string(mpv, "sub-create-cc-track", "yes");
+
     mpv_observe_property(mpv, 0, "height", MPV_FORMAT_DOUBLE);
     mpv_observe_property(mpv, 0, "width", MPV_FORMAT_DOUBLE);
     mpv_observe_property(mpv, 0, "pause", MPV_FORMAT_FLAG);
@@ -122,7 +124,8 @@ void MpvWidget::onMpvEvents()
 void MpvWidget::handleMpvEvent(mpv_event *event)
 {
     switch (event->event_id) {
-    case MPV_EVENT_PROPERTY_CHANGE: {
+    case MPV_EVENT_PROPERTY_CHANGE:
+    {
         mpv_event_property *prop = (mpv_event_property *)event->data;
         if (strcmp(prop->name, "time-pos") == 0) {
             if (prop->format == MPV_FORMAT_DOUBLE) {
@@ -137,6 +140,9 @@ void MpvWidget::handleMpvEvent(mpv_event *event)
         }
         break;
     }
+    case MPV_EVENT_FILE_LOADED:
+        emit fileLoaded();
+        break;
     default: ;
         // Ignore uninteresting or unknown events.
     }

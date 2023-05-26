@@ -8,6 +8,8 @@ class MpvWidget;
 class QAction;
 class QSlider;
 class QTimer;
+class QToolButton;
+class QMenu;
 
 class MediaWidget : public QWidget
 {
@@ -26,11 +28,20 @@ private slots:
     void volumeOsdTimerTimeout();
     void volumeToggled(bool);
     void mediaWheelEvent(QPoint delta);
-
+    void fileLoaded();
+    void subtitleChanged(bool);
 private:
     QWidget* createControlsWidget();
     QIcon getVolumeIcon();
+    void setupSubtitlesMenu();
+    void setSubtitle(const QString& id);
 private:
+    struct Subtitle
+    {
+        QString id;
+        QString title;
+        QString lang;
+    };
     MpvWidget* mpvWidget;
     QAction* playPauseAction;
     QAction* stopAction;
@@ -51,6 +62,10 @@ private:
     QIcon volumeLowIcon = QIcon{":/icons/volume-low.svg"};
     QIcon volumeMediumIcon = QIcon{":/icons/volume-medium.svg"};
     QIcon volumeHighIcon = QIcon{":/icons/volume-high.svg"};
+    QList<Subtitle> subtitles;
+    QToolButton* subtitlesChoicesButton;
+    QActionGroup* subtitlesChoicesActionGroup;
+    QMenu* subtitlesMenu;
 };
 
 #endif // MEDIAWIDGET_H

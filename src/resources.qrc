@@ -19,5 +19,6 @@
         <file>icons/volume-medium.svg</file>
         <file>icons/volume-mute.svg</file>
         <file>icons/volume-off.svg</file>
+        <file>icons/text.svg</file>
     </qresource>
 </RCC>

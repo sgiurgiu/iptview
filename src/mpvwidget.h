@@ -21,6 +21,7 @@ signals:
     void durationChanged(int value);
     void positionChanged(int value);
     void wheelScrolled(QPoint delta);
+    void fileLoaded();
 protected:
     void initializeGL() Q_DECL_OVERRIDE;
     void paintGL() Q_DECL_OVERRIDE;

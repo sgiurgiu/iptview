@@ -6,6 +6,9 @@
 #include <QSlider>
 #include <QDebug>
 #include <QTimer>
+#include <QToolButton>
+#include <QMenu>
+#include <QActionGroup>
 
 #include "mpvwidget.h"
 
@@ -20,6 +23,7 @@ MediaWidget::MediaWidget(QWidget *parent)
     QVBoxLayout *layout = new QVBoxLayout(this);
     mpvWidget = new MpvWidget(this);
     connect(mpvWidget,SIGNAL(wheelScrolled(QPoint)), this, SLOT(mediaWheelEvent(QPoint)));
+    connect(mpvWidget,SIGNAL(fileLoaded()), this, SLOT(fileLoaded()));
     layout->addWidget(mpvWidget, 1);
 
     auto controlsWidget = createControlsWidget();
@@ -60,6 +64,7 @@ QWidget* MediaWidget::createControlsWidget()
     volumeSlider->setMaximum(150);
     volumeSlider->setValue(100);
     volumeSlider->setSingleStep(5);
+    volumeSlider->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
     connect(volumeSlider,SIGNAL(valueChanged(int)), this, SLOT(volumeChanged(int)));
 
     volumeAction = new QAction(volumeMediumIcon, "", this);
@@ -67,11 +72,19 @@ QWidget* MediaWidget::createControlsWidget()
     volumeAction->setEnabled(true);
     connect(volumeAction, SIGNAL(toggled(bool)), this, SLOT(volumeToggled(bool)));
 
+    subtitlesChoicesButton = new QToolButton(this);
+    subtitlesChoicesButton->setIcon(QIcon(":/icons/text.svg"));
+    subtitlesChoicesButton->setPopupMode(QToolButton::MenuButtonPopup);
+    subtitlesChoicesButton->setEnabled(false);
+    subtitlesChoicesActionGroup = new QActionGroup(this);
+    subtitlesMenu = new QMenu(this);
+    subtitlesChoicesButton->setMenu(subtitlesMenu);
     QToolBar* widget = new QToolBar(this);
     widget->addAction(skipBackAction);
     widget->addAction(playPauseAction);
     widget->addAction(stopAction);
     widget->addAction(skipForwardAction);
+    widget->addWidget(subtitlesChoicesButton);
 
     QWidget* empty = new QWidget(this);
     empty->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
@@ -79,6 +92,7 @@ QWidget* MediaWidget::createControlsWidget()
 
     widget->addAction(volumeAction);
     widget->addWidget(volumeSlider);
+
 
     widget->setFloatable(false);
     widget->setOrientation(Qt::Orientation::Horizontal);
@@ -118,7 +132,7 @@ void MediaWidget::skipForwardTriggered()
 void MediaWidget::PlayChannel(QString uri)
 {
     if(uri.isEmpty()) return;
-
+    subtitles.clear();
     selectedUri = uri;
     mpvWidget->command(QStringList() << "loadfile" << uri);
     playPauseAction->setEnabled(true);
@@ -126,6 +140,7 @@ void MediaWidget::PlayChannel(QString uri)
     playPauseAction->setToolTip("Pause");
     stopAction->setEnabled(true);
     mpvWidget->setProperty("pause", QVariant{false});
+    mpvWidget->setProperty("sid", QVariant{"no"});
     stopped = false;
 }
 void MediaWidget::SelectChannel(QString uri)
@@ -202,4 +217,74 @@ void MediaWidget::mediaWheelEvent(QPoint delta)
     int volume = volumeSlider->value();
     int step = volumeSlider->singleStep() * (delta.y() < 0 ? -1 : 1);
     volumeSlider->setValue(volume+step);
+}
+
+void MediaWidget::fileLoaded()
+{
+    subtitles.clear();
+    int tracksCount = mpvWidget->getProperty("track-list/count").toInt();
+    qDebug() << "track count "<<tracksCount;
+    Subtitle offSub = {"no", "Off", ""};
+    subtitles.append(std::move(offSub));
+    for(int i=0;i<tracksCount;i++)
+    {
+        QString type = mpvWidget->getProperty(QString("track-list/%1/type").arg(i)).toString();
+        QString id = mpvWidget->getProperty(QString("track-list/%1/id").arg(i)).toString();
+        QString title = mpvWidget->getProperty(QString("track-list/%1/title").arg(i)).toString();
+        if(title.isEmpty())
+        {
+            title = QString("Subtitle %1").arg(id);
+        }
+        QString lang = mpvWidget->getProperty(QString("track-list/%1/lang").arg(i)).toString();
+        if(!lang.isEmpty())
+        {
+            title.append(" ("+lang+")");
+        }
+        qDebug() << "track "<<i<<" type "<<type<<", id "<<id << ", title "<<title <<", lang "<<lang;
+        if(type == "sub")
+        {
+            Subtitle sub = {id, title, lang};
+            subtitles.append(std::move(sub));
+        }
+    }
+    setupSubtitlesMenu();
+}
+void MediaWidget::setupSubtitlesMenu()
+{
+    subtitlesMenu->clear();
+    auto actions = subtitlesChoicesActionGroup->actions();
+    for(auto action : actions)
+    {
+        subtitlesChoicesActionGroup->removeAction(action);
+        delete action;
+    }
+
+    for(const auto& sub : subtitles)
+    {
+        auto action = subtitlesChoicesActionGroup->addAction(sub.title);
+        action->setData(sub.id);
+        action->setCheckable(true);
+        connect(action, SIGNAL(toggled(bool)), this, SLOT(subtitleChanged(bool)));
+    }
+    if(!subtitles.empty())
+    {
+        setSubtitle(subtitles.front().id);
+        subtitlesChoicesActionGroup->actions().constFirst()->setChecked(true);
+    }
+
+    subtitlesMenu->addActions(subtitlesChoicesActionGroup->actions());
+    subtitlesChoicesButton->setEnabled(subtitles.size() > 1);
+}
+void MediaWidget::setSubtitle(const QString& id)
+{
+    mpvWidget->setProperty("sid", id);
+}
+void MediaWidget::subtitleChanged(bool checked)
+{
+    if(!checked) return;
+    auto checkedAction = subtitlesChoicesActionGroup->checkedAction();
+    if(checkedAction)
+    {
+        setSubtitle(checkedAction->data().toString());
+    }
 }
