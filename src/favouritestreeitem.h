@@ -14,6 +14,7 @@ public:
     {
         return ChannelTreeItemType::Favourite;
     }
+
     //returns the last child or nullptr if none
     AbstractChannelTreeItem* removeChild(AbstractChannelTreeItem* item);
 };

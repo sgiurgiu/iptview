@@ -5,6 +5,8 @@
 #include <QMenu>
 #include <QAction>
 
+#include <QDebug>
+
 #include "channelsmodel.h"
 #include "abstractchanneltreeitem.h"
 
@@ -22,6 +24,7 @@ ChannelsWidget::ChannelsWidget(QWidget *parent)
     setLayout(layout);
 
     connect(channels,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(onDoubleClickedTreeItem(QModelIndex)));
+    connect(channels->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),this, SLOT(itemsSelectionChanged(QItemSelection,QItemSelection)));
     contextMenu = new QMenu(this);
     addToFavouritesAction = new QAction("Add to Favourites", this);
     removeFromFavouritesAction = new QAction("Remove from Favourites", this);
@@ -29,6 +32,7 @@ ChannelsWidget::ChannelsWidget(QWidget *parent)
     connect(channels, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onCustomContextMenu(QPoint)));
     connect(addToFavouritesAction, SIGNAL(triggered(bool)), this, SLOT(onAddToFavourites()));
     connect(removeFromFavouritesAction, SIGNAL(triggered(bool)), this, SLOT(onRemoveFromFavourites()));
+
 }
 void ChannelsWidget::ImportPlaylist(M3UList list)
 {
@@ -42,6 +46,20 @@ void ChannelsWidget::onDoubleClickedTreeItem(const QModelIndex &index)
         if(data.isValid())
         {
             emit playChannel(data.toString());
+        }
+    }
+}
+void ChannelsWidget::itemsSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+{
+    Q_UNUSED(deselected);
+    if(selected.isEmpty()) return;
+    auto firstSelected = selected.indexes().front();
+    if(firstSelected.isValid())
+    {
+        auto data = firstSelected.data(ChannelsModel::ChannelRoles::UriRole);
+        if(data.isValid())
+        {
+            emit selectChannel(data.toString());
         }
     }
 }

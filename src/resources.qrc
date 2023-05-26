@@ -9,5 +9,10 @@
         <file>icons/chevron-back.svg</file>
         <file>icons/chevron-forward.svg</file>
         <file>icons/star.svg</file>
+        <file>icons/pause.svg</file>
+        <file>icons/play-skip-back.svg</file>
+        <file>icons/play-skip-forward.svg</file>
+        <file>icons/play.svg</file>
+        <file>icons/stop.svg</file>
     </qresource>
 </RCC>

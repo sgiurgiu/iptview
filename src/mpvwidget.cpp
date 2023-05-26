@@ -56,10 +56,13 @@ MpvWidget::~MpvWidget()
         mpv_render_context_free(mpv_gl);
     mpv_terminate_destroy(mpv);
 }
-
+void MpvWidget::displayTextOverlay(const QString& text)
+{
+    //mpv_command_node(mpv,);
+}
 void MpvWidget::command(const QVariant& params)
 {
-    mpv::qt::command_variant(mpv, params);
+    mpv::qt::command(mpv, params);
 }
 
 void MpvWidget::setProperty(const QString& name, const QVariant& value)

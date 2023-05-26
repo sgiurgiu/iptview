@@ -4,7 +4,9 @@
 #include <QWidget>
 
 class MpvWidget;
-class QPushButton;
+class QAction;
+class QSlider;
+class QTimer;
 
 class MediaWidget : public QWidget
 {
@@ -13,12 +15,27 @@ public:
     explicit MediaWidget(QWidget *parent = nullptr);
 public slots:
     void PlayChannel(QString uri);
+    void SelectChannel(QString uri);
 private slots:
-    void play();
+    void playPauseTriggered();
+    void stopTriggered();
+    void skipBackTriggered();
+    void skipForwardTriggered();
+    void volumeChanged(int);
+    void volumeOsdTimerTimeout();
+private:
+    QWidget* createControlsWidget();
+
 private:
     MpvWidget* mpvWidget;
-    QPushButton* playButton;
-
+    QAction* playPauseAction;
+    QAction* stopAction;
+    QAction* skipForwardAction;
+    QAction* skipBackAction;
+    QSlider* volumeSlider;
+    QString selectedUri;
+    bool stopped = true;
+    QTimer* volumeOsdTimer;
 };
 
 #endif // MEDIAWIDGET_H

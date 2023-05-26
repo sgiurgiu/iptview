@@ -16,7 +16,7 @@ public:
     void setProperty(const QString& name, const QVariant& value);
     QVariant getProperty(const QString& name) const;
     QSize sizeHint() const override { return QSize(640,480);}
-
+    void displayTextOverlay(const QString& text);
 signals:
     void durationChanged(int value);
     void positionChanged(int value);

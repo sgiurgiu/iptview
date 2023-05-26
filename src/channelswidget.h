@@ -8,6 +8,7 @@ class QTreeView;
 class ChannelsModel;
 class QMenu;
 class QAction;
+class QItemSelection;
 
 class ChannelsWidget : public QWidget
 {
@@ -17,11 +18,13 @@ public:
     void ImportPlaylist(M3UList list);
 signals:
     void playChannel(QString uri);
+    void selectChannel(QString uri);
 private slots:
     void onDoubleClickedTreeItem(const QModelIndex &index);
     void onCustomContextMenu(const QPoint &point);
     void onAddToFavourites();
     void onRemoveFromFavourites();
+    void itemsSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
 private:
     QTreeView* channels;
     ChannelsModel* model;
