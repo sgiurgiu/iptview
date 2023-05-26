@@ -14,5 +14,10 @@
         <file>icons/play-skip-forward.svg</file>
         <file>icons/play.svg</file>
         <file>icons/stop.svg</file>
+        <file>icons/volume-high.svg</file>
+        <file>icons/volume-low.svg</file>
+        <file>icons/volume-medium.svg</file>
+        <file>icons/volume-mute.svg</file>
+        <file>icons/volume-off.svg</file>
     </qresource>
 </RCC>

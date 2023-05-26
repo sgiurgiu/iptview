@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <QMetaObject>
 #include <QOpenGLContext>
-
+#include <QWheelEvent>
 #include "mpvqthelper.hpp"
 
 
@@ -45,7 +45,10 @@ MpvWidget::MpvWidget(QWidget *parent): QOpenGLWidget{parent}
     mpv_observe_property(mpv, 0, "time-pos", MPV_FORMAT_DOUBLE);
     mpv_observe_property(mpv, 0, "volume", MPV_FORMAT_DOUBLE);
     double vol = 100.0;
+    double volMax = 150.0;
     mpv_set_property(mpv,"volume",MPV_FORMAT_DOUBLE,&vol);
+    mpv_set_property(mpv,"volume-max",MPV_FORMAT_DOUBLE,&volMax);
+
     mpv_set_wakeup_callback(mpv, wakeup, this);
 }
 
@@ -162,4 +165,14 @@ void MpvWidget::maybeUpdate()
 void MpvWidget::onUpdate(void *ctx)
 {
     QMetaObject::invokeMethod((MpvWidget*)ctx, "maybeUpdate");
+}
+
+void MpvWidget::wheelEvent (QWheelEvent * event)
+{
+    QPoint delta = event->angleDelta();
+    if(!delta.isNull())
+    {
+        emit wheelScrolled(std::move(delta));
+    }
+    event->accept();
 }

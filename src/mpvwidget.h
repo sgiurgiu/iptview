@@ -20,9 +20,11 @@ public:
 signals:
     void durationChanged(int value);
     void positionChanged(int value);
+    void wheelScrolled(QPoint delta);
 protected:
     void initializeGL() Q_DECL_OVERRIDE;
     void paintGL() Q_DECL_OVERRIDE;
+    void wheelEvent (QWheelEvent * event) override;
 private slots:
     void onMpvEvents();
     void maybeUpdate();

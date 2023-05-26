@@ -3,7 +3,6 @@
 #include <QHBoxLayout>
 #include <QToolBar>
 #include <QAction>
-#include <QIcon>
 #include <QSlider>
 #include <QDebug>
 #include <QTimer>
@@ -20,6 +19,7 @@ MediaWidget::MediaWidget(QWidget *parent)
 {
     QVBoxLayout *layout = new QVBoxLayout(this);
     mpvWidget = new MpvWidget(this);
+    connect(mpvWidget,SIGNAL(wheelScrolled(QPoint)), this, SLOT(mediaWheelEvent(QPoint)));
     layout->addWidget(mpvWidget, 1);
 
     auto controlsWidget = createControlsWidget();
@@ -35,22 +35,22 @@ MediaWidget::MediaWidget(QWidget *parent)
 
 QWidget* MediaWidget::createControlsWidget()
 {
-    stopAction = new QAction(QIcon(":/icons/stop.svg"), "", this);
+    stopAction = new QAction(stopIcon, "", this);
     stopAction->setCheckable(false);
     stopAction->setEnabled(false);
     connect(stopAction, SIGNAL(triggered(bool)), this, SLOT(stopTriggered()));
 
-    playPauseAction = new QAction(QIcon(":/icons/play.svg"), "", this);
+    playPauseAction = new QAction(playIcon, "", this);
     playPauseAction->setCheckable(false);
     playPauseAction->setEnabled(false);
     connect(playPauseAction, SIGNAL(triggered(bool)), this, SLOT(playPauseTriggered()));
 
-    skipForwardAction = new QAction(QIcon(":/icons/play-skip-forward.svg"), "", this);
+    skipForwardAction = new QAction(playSkipForwardIcon, "", this);
     skipForwardAction->setCheckable(false);
     skipForwardAction->setEnabled(false);
     connect(skipForwardAction, SIGNAL(triggered(bool)), this, SLOT(skipForwardTriggered()));
 
-    skipBackAction = new QAction(QIcon(":/icons/play-skip-back.svg"), "", this);
+    skipBackAction = new QAction(playSkipBackIcon, "", this);
     skipBackAction->setCheckable(false);
     skipBackAction->setEnabled(false);
     connect(skipBackAction, SIGNAL(triggered(bool)), this, SLOT(skipBackTriggered()));
@@ -62,17 +62,23 @@ QWidget* MediaWidget::createControlsWidget()
     volumeSlider->setSingleStep(5);
     connect(volumeSlider,SIGNAL(valueChanged(int)), this, SLOT(volumeChanged(int)));
 
+    volumeAction = new QAction(volumeMediumIcon, "", this);
+    volumeAction->setCheckable(true);
+    volumeAction->setEnabled(true);
+    connect(volumeAction, SIGNAL(toggled(bool)), this, SLOT(volumeToggled(bool)));
+
     QToolBar* widget = new QToolBar(this);
     widget->addAction(skipBackAction);
     widget->addAction(playPauseAction);
     widget->addAction(stopAction);
     widget->addAction(skipForwardAction);
 
-    widget->addSeparator();
+    QWidget* empty = new QWidget(this);
+    empty->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+    widget->addWidget(empty);
 
+    widget->addAction(volumeAction);
     widget->addWidget(volumeSlider);
-
-    widget->addSeparator();
 
     widget->setFloatable(false);
     widget->setOrientation(Qt::Orientation::Horizontal);
@@ -89,7 +95,7 @@ void MediaWidget::playPauseTriggered()
     bool paused = pausedVariant.toBool();
     qInfo() << "paused property is:"<<paused;
     playPauseAction->setToolTip(paused ? "Pause" : "Play");
-    playPauseAction->setIcon(paused ? QIcon(":/icons/pause.svg") : QIcon(":/icons/play.svg"));
+    playPauseAction->setIcon(paused ? pauseIcon : playIcon);
     mpvWidget->setProperty("pause", QVariant{!paused});
 }
 
@@ -97,7 +103,7 @@ void MediaWidget::stopTriggered()
 {
     mpvWidget->command(QStringList() << "stop");
     stopped = true;
-    playPauseAction->setIcon(QIcon(":/icons/play.svg"));
+    playPauseAction->setIcon(playIcon);
     playPauseAction->setToolTip("Play");
 }
 void MediaWidget::skipBackTriggered()
@@ -116,7 +122,7 @@ void MediaWidget::PlayChannel(QString uri)
     selectedUri = uri;
     mpvWidget->command(QStringList() << "loadfile" << uri);
     playPauseAction->setEnabled(true);
-    playPauseAction->setIcon(QIcon(":/icons/pause.svg"));
+    playPauseAction->setIcon(pauseIcon);
     playPauseAction->setToolTip("Pause");
     stopAction->setEnabled(true);
     mpvWidget->setProperty("pause", QVariant{false});
@@ -128,11 +134,44 @@ void MediaWidget::SelectChannel(QString uri)
 
     selectedUri = uri;
     playPauseAction->setEnabled(true);
-    playPauseAction->setIcon(QIcon(":/icons/play.svg"));
+    playPauseAction->setIcon(playIcon);
     playPauseAction->setToolTip("Play");
 
 }
-
+void MediaWidget::volumeToggled(bool checked)
+{
+    mpvWidget->setProperty("mute", QVariant{checked});
+    volumeAction->setIcon(checked ? volumeMuteIcon: getVolumeIcon());
+    QVariantMap map;
+    map["name"] = "osd-overlay";
+    map["id"] = VOLUME_OVERLAY_ID;
+    map["format"] = "ass-events";
+    map["data"] = QString(R"({\an9\fs36}Mute %1)").arg(checked?"on":"off");
+    map["res_x"] = width();
+    map["res_y"] = height();
+    mpvWidget->command(map);
+    volumeOsdTimer->start();
+}
+QIcon MediaWidget::getVolumeIcon()
+{
+    int volume = volumeSlider->value();
+    if(volume < 10)
+    {
+        return volumeOffIcon;
+    }
+    else if(volume < 50)
+    {
+        return volumeLowIcon;
+    }
+    else if(volume < 85)
+    {
+        return volumeMediumIcon;
+    }
+    else
+    {
+        return volumeHighIcon;
+    }
+}
 void MediaWidget::volumeChanged(int volume)
 {
     mpvWidget->setProperty("volume", QVariant{(double)volume});
@@ -140,8 +179,12 @@ void MediaWidget::volumeChanged(int volume)
     map["name"] = "osd-overlay";
     map["id"] = VOLUME_OVERLAY_ID;
     map["format"] = "ass-events";
-    map["data"] = QString("Volume %1").arg(volume);
+    map["data"] = QString(R"({\an9\fs36}Volume %1)").arg(volume);
+    map["res_x"] = width();
+    map["res_y"] = height();
     mpvWidget->command(map);
+    volumeAction->setIcon(getVolumeIcon());
+    volumeAction->setChecked(false);
     volumeOsdTimer->start();
 }
 void MediaWidget::volumeOsdTimerTimeout()
@@ -152,4 +195,11 @@ void MediaWidget::volumeOsdTimerTimeout()
     map["format"] = "none";
     map["data"] = "";
     mpvWidget->command(map);
+}
+
+void MediaWidget::mediaWheelEvent(QPoint delta)
+{
+    int volume = volumeSlider->value();
+    int step = volumeSlider->singleStep() * (delta.y() < 0 ? -1 : 1);
+    volumeSlider->setValue(volume+step);
 }
