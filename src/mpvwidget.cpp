@@ -45,7 +45,7 @@ MpvWidget::MpvWidget(QWidget *parent): QOpenGLWidget{parent}
 
     mpv_observe_property(mpv, 0, "duration", MPV_FORMAT_DOUBLE);
     mpv_observe_property(mpv, 0, "time-pos", MPV_FORMAT_DOUBLE);
-    mpv_observe_property(mpv, 0, "volume", MPV_FORMAT_DOUBLE);
+
     double vol = 100.0;
     double volMax = 150.0;
     mpv_set_property(mpv,"volume",MPV_FORMAT_DOUBLE,&vol);

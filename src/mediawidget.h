@@ -43,17 +43,17 @@ private:
         QString title;
         QString lang;
     };
-    MpvWidget* mpvWidget;
-    QAction* playPauseAction;
-    QAction* stopAction;
-    QAction* skipForwardAction;
-    QAction* skipBackAction;
-    QSlider* volumeSlider;
-    QAction* volumeAction;
+    MpvWidget* mpvWidget = nullptr;
+    QAction* playPauseAction = nullptr;
+    QAction* stopAction = nullptr;
+    QAction* skipForwardAction = nullptr;
+    QAction* skipBackAction = nullptr;
+    QSlider* volumeSlider = nullptr;
+    QAction* volumeAction = nullptr;
     QString selectedUri;
     QString selectedName;
     bool stopped = true;
-    QTimer* volumeOsdTimer;
+    QTimer* volumeOsdTimer = nullptr;
     QIcon stopIcon = QIcon{":/icons/stop.svg"};
     QIcon playIcon = QIcon{":/icons/play.svg"};
     QIcon pauseIcon = QIcon{":/icons/pause.svg"};
@@ -65,10 +65,10 @@ private:
     QIcon volumeMediumIcon = QIcon{":/icons/volume-medium.svg"};
     QIcon volumeHighIcon = QIcon{":/icons/volume-high.svg"};
     QList<Subtitle> subtitles;
-    QToolButton* subtitlesChoicesButton;
-    QActionGroup* subtitlesChoicesActionGroup;
-    QMenu* subtitlesMenu;
-    QLabel* mediaTitleLabel;
+    QToolButton* subtitlesChoicesButton = nullptr;
+    QActionGroup* subtitlesChoicesActionGroup = nullptr;
+    QMenu* subtitlesMenu = nullptr;
+    QLabel* mediaTitleLabel = nullptr;
 };
 
 #endif // MEDIAWIDGET_H

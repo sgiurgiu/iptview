@@ -10,6 +10,7 @@
 #include <QMenu>
 #include <QActionGroup>
 #include <QLabel>
+#include <QSettings>
 
 #include "mpvwidget.h"
 
@@ -27,15 +28,15 @@ MediaWidget::MediaWidget(QWidget *parent)
     connect(mpvWidget,SIGNAL(fileLoaded()), this, SLOT(fileLoaded()));
     layout->addWidget(mpvWidget, 1);
 
-    auto controlsWidget = createControlsWidget();
-    layout->addWidget(controlsWidget, 0);
-
-    setLayout(layout);
-
     volumeOsdTimer = new QTimer(this);
     volumeOsdTimer->setSingleShot(true);
     volumeOsdTimer->setInterval(1000);
     connect(volumeOsdTimer, SIGNAL(timeout()), this, SLOT(volumeOsdTimerTimeout()));
+
+    auto controlsWidget = createControlsWidget();
+    layout->addWidget(controlsWidget, 0);
+
+    setLayout(layout);
 }
 
 QWidget* MediaWidget::createControlsWidget()
@@ -60,18 +61,19 @@ QWidget* MediaWidget::createControlsWidget()
     skipBackAction->setEnabled(false);
     connect(skipBackAction, SIGNAL(triggered(bool)), this, SLOT(skipBackTriggered()));
 
-    volumeSlider = new QSlider(Qt::Horizontal, this);
-    volumeSlider->setMinimum(0);
-    volumeSlider->setMaximum(150);
-    volumeSlider->setValue(100);
-    volumeSlider->setSingleStep(5);
-    volumeSlider->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
-    connect(volumeSlider,SIGNAL(valueChanged(int)), this, SLOT(volumeChanged(int)));
-
     volumeAction = new QAction(volumeMediumIcon, "", this);
     volumeAction->setCheckable(true);
     volumeAction->setEnabled(true);
     connect(volumeAction, SIGNAL(toggled(bool)), this, SLOT(volumeToggled(bool)));
+
+    volumeSlider = new QSlider(Qt::Horizontal, this);
+    volumeSlider->setMinimum(0);
+    volumeSlider->setMaximum(150);    
+    volumeSlider->setSingleStep(5);
+    volumeSlider->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
+    connect(volumeSlider,SIGNAL(valueChanged(int)), this, SLOT(volumeChanged(int)));
+    QSettings settings;
+    volumeSlider->setValue(settings.value("player/volume", 100.0).toDouble());
 
     subtitlesChoicesButton = new QToolButton(this);
     subtitlesChoicesButton->setIcon(QIcon(":/icons/text.svg"));
@@ -197,7 +199,14 @@ QIcon MediaWidget::getVolumeIcon()
 }
 void MediaWidget::volumeChanged(int volume)
 {
-    mpvWidget->setProperty("volume", QVariant{(double)volume});
+    double vol = static_cast<double>(volume);
+    mpvWidget->setProperty("volume", QVariant{vol});
+    volumeAction->setIcon(getVolumeIcon());
+    volumeAction->setChecked(false);
+    QSettings settings;
+    settings.setValue("player/volume", vol);
+    if(selectedUri.isEmpty()) return;
+
     QVariantMap map;
     map["name"] = "osd-overlay";
     map["id"] = VOLUME_OVERLAY_ID;
@@ -206,8 +215,6 @@ void MediaWidget::volumeChanged(int volume)
     map["res_x"] = width();
     map["res_y"] = height();
     mpvWidget->command(map);
-    volumeAction->setIcon(getVolumeIcon());
-    volumeAction->setChecked(false);
     volumeOsdTimer->start();
 }
 void MediaWidget::volumeOsdTimerTimeout()
