@@ -9,6 +9,7 @@
 #include <QToolButton>
 #include <QMenu>
 #include <QActionGroup>
+#include <QLabel>
 
 #include "mpvwidget.h"
 
@@ -79,12 +80,16 @@ QWidget* MediaWidget::createControlsWidget()
     subtitlesChoicesActionGroup = new QActionGroup(this);
     subtitlesMenu = new QMenu(this);
     subtitlesChoicesButton->setMenu(subtitlesMenu);
+
+    mediaTitleLabel = new QLabel(this);
+    mediaTitleLabel->setMargin(10);
     QToolBar* widget = new QToolBar(this);
     widget->addAction(skipBackAction);
     widget->addAction(playPauseAction);
     widget->addAction(stopAction);
     widget->addAction(skipForwardAction);
     widget->addWidget(subtitlesChoicesButton);
+    widget->addWidget(mediaTitleLabel);
 
     QWidget* empty = new QWidget(this);
     empty->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
@@ -102,7 +107,7 @@ void MediaWidget::playPauseTriggered()
 {
     if(stopped && !selectedUri.isEmpty())
     {
-        PlayChannel(selectedUri);
+        PlayChannel(selectedName, selectedUri);
         return;
     }
     auto pausedVariant = mpvWidget->getProperty("pause");
@@ -129,11 +134,12 @@ void MediaWidget::skipForwardTriggered()
 
 }
 
-void MediaWidget::PlayChannel(QString uri)
+void MediaWidget::PlayChannel(const QString& name, const QString& uri)
 {
     if(uri.isEmpty()) return;
     subtitles.clear();
     selectedUri = uri;
+    selectedName = name;
     mpvWidget->command(QStringList() << "loadfile" << uri);
     playPauseAction->setEnabled(true);
     playPauseAction->setIcon(pauseIcon);
@@ -141,17 +147,19 @@ void MediaWidget::PlayChannel(QString uri)
     stopAction->setEnabled(true);
     mpvWidget->setProperty("pause", QVariant{false});
     mpvWidget->setProperty("sid", QVariant{"no"});
+    mediaTitleLabel->setText(name);
     stopped = false;
 }
-void MediaWidget::SelectChannel(QString uri)
+void MediaWidget::SelectChannel(const QString& name, const QString& uri)
 {
     if(uri.isEmpty() || !stopped) return;
 
     selectedUri = uri;
+    selectedName = name;
     playPauseAction->setEnabled(true);
     playPauseAction->setIcon(playIcon);
     playPauseAction->setToolTip("Play");
-
+    mediaTitleLabel->setText(name);
 }
 void MediaWidget::volumeToggled(bool checked)
 {
@@ -231,18 +239,18 @@ void MediaWidget::fileLoaded()
         QString type = mpvWidget->getProperty(QString("track-list/%1/type").arg(i)).toString();
         QString id = mpvWidget->getProperty(QString("track-list/%1/id").arg(i)).toString();
         QString title = mpvWidget->getProperty(QString("track-list/%1/title").arg(i)).toString();
-        if(title.isEmpty())
-        {
-            title = QString("Subtitle %1").arg(id);
-        }
         QString lang = mpvWidget->getProperty(QString("track-list/%1/lang").arg(i)).toString();
-        if(!lang.isEmpty())
-        {
-            title.append(" ("+lang+")");
-        }
         qDebug() << "track "<<i<<" type "<<type<<", id "<<id << ", title "<<title <<", lang "<<lang;
         if(type == "sub")
         {
+            if(title.isEmpty())
+            {
+                title = QString("Subtitle %1").arg(id);
+            }
+            if(!lang.isEmpty())
+            {
+                title.append(" ("+lang+")");
+            }
             Subtitle sub = {id, title, lang};
             subtitles.append(std::move(sub));
         }

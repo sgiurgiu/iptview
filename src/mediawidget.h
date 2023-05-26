@@ -10,6 +10,7 @@ class QSlider;
 class QTimer;
 class QToolButton;
 class QMenu;
+class QLabel;
 
 class MediaWidget : public QWidget
 {
@@ -17,8 +18,8 @@ class MediaWidget : public QWidget
 public:
     explicit MediaWidget(QWidget *parent = nullptr);
 public slots:
-    void PlayChannel(QString uri);
-    void SelectChannel(QString uri);
+    void PlayChannel(const QString& name, const QString& uri);
+    void SelectChannel(const QString& name, const QString& uri);
 private slots:
     void playPauseTriggered();
     void stopTriggered();
@@ -50,6 +51,7 @@ private:
     QSlider* volumeSlider;
     QAction* volumeAction;
     QString selectedUri;
+    QString selectedName;
     bool stopped = true;
     QTimer* volumeOsdTimer;
     QIcon stopIcon = QIcon{":/icons/stop.svg"};
@@ -66,6 +68,7 @@ private:
     QToolButton* subtitlesChoicesButton;
     QActionGroup* subtitlesChoicesActionGroup;
     QMenu* subtitlesMenu;
+    QLabel* mediaTitleLabel;
 };
 
 #endif // MEDIAWIDGET_H
