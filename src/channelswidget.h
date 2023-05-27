@@ -9,6 +9,8 @@ class ChannelsModel;
 class QMenu;
 class QAction;
 class QItemSelection;
+class QLineEdit;
+class ChannelsFilteringModel;
 
 class ChannelsWidget : public QWidget
 {
@@ -25,12 +27,15 @@ private slots:
     void onAddToFavourites();
     void onRemoveFromFavourites();
     void itemsSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+    void searchTextChanged(const QString& text);
 private:
     QTreeView* channels;
     ChannelsModel* model;
     QMenu* contextMenu;
     QAction* addToFavouritesAction;
     QAction* removeFromFavouritesAction;
+    QLineEdit* searchField;
+    ChannelsFilteringModel* proxyModel;
 };
 
 #endif // CHANNELSWIDGET_H

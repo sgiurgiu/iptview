@@ -4,9 +4,10 @@
 #include <QVBoxLayout>
 #include <QMenu>
 #include <QAction>
-
+#include <QLineEdit>
 #include <QDebug>
 
+#include "channelsfilteringmodel.h"
 #include "channelsmodel.h"
 #include "abstractchanneltreeitem.h"
 
@@ -15,14 +16,22 @@ ChannelsWidget::ChannelsWidget(QWidget *parent)
 {
     channels = new QTreeView(this);
     model = new ChannelsModel(this);
+    proxyModel = new ChannelsFilteringModel(this);
+    proxyModel->setSourceModel(model);
+    proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    proxyModel->setFilterRole(ChannelsModel::NameRole);
     channels->setSelectionBehavior(QAbstractItemView::SelectItems);
+    channels->setModel(proxyModel);
+    searchField = new QLineEdit(this);
+    searchField->setPlaceholderText("Search");
 
-    channels->setModel(model);
     QVBoxLayout* layout = new QVBoxLayout(this);
 
+    layout->addWidget(searchField, 0);
     layout->addWidget(channels, 1);
     setLayout(layout);
 
+    connect(searchField, SIGNAL(textChanged(QString)), this, SLOT(searchTextChanged(QString)));
     connect(channels,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(onDoubleClickedTreeItem(QModelIndex)));
     connect(channels->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),this, SLOT(itemsSelectionChanged(QItemSelection,QItemSelection)));
     contextMenu = new QMenu(this);
@@ -32,7 +41,10 @@ ChannelsWidget::ChannelsWidget(QWidget *parent)
     connect(channels, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onCustomContextMenu(QPoint)));
     connect(addToFavouritesAction, SIGNAL(triggered(bool)), this, SLOT(onAddToFavourites()));
     connect(removeFromFavouritesAction, SIGNAL(triggered(bool)), this, SLOT(onRemoveFromFavourites()));
-
+}
+void ChannelsWidget::searchTextChanged(const QString& text)
+{
+    proxyModel->setFilterWildcard(text);
 }
 void ChannelsWidget::ImportPlaylist(M3UList list)
 {
