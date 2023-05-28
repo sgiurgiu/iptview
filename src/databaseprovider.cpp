@@ -20,7 +20,7 @@ Database const* DatabaseProvider::GetDatabase()
         std::string relativeConfigFolder;
     #ifdef _WIN32
         char homeDirStr[MAX_PATH];
-        if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, homeDirStr)))
+        if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_APPDATA, NULL, 0, homeDirStr)))
         {
             homePath = homeDirStr;
         }

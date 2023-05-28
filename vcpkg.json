@@ -30,6 +30,7 @@
       ],
       "default-features":false
     },
+	"qtimageformats",
     "qtsvg"
   ]
 }

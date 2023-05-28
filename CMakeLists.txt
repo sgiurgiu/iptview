@@ -65,7 +65,7 @@ endif()
 if(WIN32)
     find_library(LIBMPV mpv ${LIBMPV_DIR})
     list(APPEND IPTVIEW_LIB_LIBARIES ${LIBMPV} "crypt32.lib")
-#    list(APPEND IPTVIEW_LIB_INCLUDES "win" ${LIBMPV_INCLUDE})
+    list(APPEND IPTVIEW_LIB_INCLUDES ${LIBMPV_INCLUDE})
 endif()
 
 include(GNUInstallDirs)

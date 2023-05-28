@@ -10,7 +10,7 @@
 Database::Database(ConstructorKey, const std::filesystem::path& dbPath)
 {
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName(dbPath.c_str());
+    db.setDatabaseName(dbPath.string().c_str());
     if(!db.open())
     {
         throw DatabaseException(QString{("Cannot open database "+dbPath.string()).c_str()});
