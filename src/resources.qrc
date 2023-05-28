@@ -20,5 +20,6 @@
         <file>icons/volume-mute.svg</file>
         <file>icons/volume-off.svg</file>
         <file>icons/text.svg</file>
+        <file>icons/iptview-icon.png</file>
     </qresource>
 </RCC>

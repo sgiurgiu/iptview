@@ -11,6 +11,9 @@
 #include <QActionGroup>
 #include <QLabel>
 #include <QSettings>
+#include <QDBusConnection>
+#include <QDBusInterface>
+#include <QDBusReply>
 
 #include "mpvwidget.h"
 
@@ -126,6 +129,7 @@ void MediaWidget::stopTriggered()
     stopped = true;
     playPauseAction->setIcon(playIcon);
     playPauseAction->setToolTip("Play");
+    toggleSystemSleep();
 }
 void MediaWidget::skipBackTriggered()
 {
@@ -151,6 +155,7 @@ void MediaWidget::PlayChannel(const QString& name, const QString& uri)
     mpvWidget->setProperty("sid", QVariant{"no"});
     mediaTitleLabel->setText(name);
     stopped = false;
+    toggleSystemSleep();
 }
 void MediaWidget::SelectChannel(const QString& name, const QString& uri)
 {
@@ -303,3 +308,71 @@ void MediaWidget::subtitleChanged(bool checked)
         setSubtitle(checkedAction->data().toString());
     }
 }
+void MediaWidget::toggleSystemSleep()
+{
+#ifdef Q_OS_LINUX
+    const int MAX_SERVICES = 2;
+
+    QDBusConnection bus = QDBusConnection::sessionBus();
+    if(bus.isConnected())
+    {
+        QString services[MAX_SERVICES] =
+        {
+            "org.freedesktop.ScreenSaver",
+            "org.gnome.SessionManager"
+        };
+        QString paths[MAX_SERVICES] =
+        {
+            "/org/freedesktop/ScreenSaver",
+            "/org/gnome/SessionManager"
+        };
+
+        static uint cookies[2];
+
+        for(int i = 0; i < MAX_SERVICES ; i++)
+        {
+            QDBusInterface screenSaverInterface( services[i], paths[i],services[i], bus);
+
+            if (!screenSaverInterface.isValid())
+                continue;
+
+            QDBusReply<uint> reply;
+
+            if(!stopped)
+            {
+                reply = screenSaverInterface.call("Inhibit", "iptview", "playing video");
+            }
+            else
+            {
+                reply  = screenSaverInterface.call("UnInhibit", cookies[i]);
+            }
+
+            if (reply.isValid())
+            {
+                cookies[i] = reply.value();
+
+                // qDebug()<<"succesful: " << reply;
+            }
+            else
+            {
+                // QDBusError error =reply.error();
+                // qDebug()<<error.message()<<error.name();
+            }
+        }
+    }
+
+#elif defined  Q_OS_WIN
+
+    EXECUTION_STATE result;
+
+    if(!stopped)
+        result = SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
+    else
+        result = SetThreadExecutionState(ES_CONTINUOUS);
+
+    if(result == NULL)
+        qDebug() << "EXECUTION_STATE failed";
+
+#endif
+}
+

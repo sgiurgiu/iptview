@@ -18,6 +18,7 @@
 IPTViewMainWindow::IPTViewMainWindow(QWidget *parent)
     : QMainWindow{parent}
 {
+    setWindowIcon(QIcon(":/icons/iptview-icon.png"));
     setMinimumSize(640,480);
     setWindowTitle(QCoreApplication::applicationName());
     centerOnScreen();

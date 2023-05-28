@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Name=IPTView
+GenericName=IPTView
+Comment=Watch TV
+Exec=/usr/bin/iptview
+Icon=iptview-icon
+Terminal=false
+Type=Application
+Categories=Network;Internet;
+StartupNotify=true
+Keywords=internet;

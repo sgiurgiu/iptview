@@ -46,12 +46,12 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 find_package(Threads REQUIRED)
-find_package(Qt6 COMPONENTS Core Gui Test Widgets OpenGLWidgets Svg Network Sql REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Test Widgets OpenGLWidgets Svg Network Sql DBus REQUIRED)
 
 set(IPTVIEW_APP_LIBARIES ${CMAKE_DL_LIBS} Threads::Threads Qt6::Core)
 set(IPTVIEW_APP_INCLUDES)
 
-set(IPTVIEW_LIB_LIBARIES Qt6::Core Qt6::Widgets Qt6::OpenGLWidgets Qt6::Svg Qt6::Network Qt6::Sql)
+set(IPTVIEW_LIB_LIBARIES Qt6::Core Qt6::Widgets Qt6::OpenGLWidgets Qt6::Svg Qt6::Network Qt6::Sql Qt6::DBus)
 set(IPTVIEW_LIB_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 set(IPTVIEW_TEST_LIBARIES Qt6::Core Qt6::Test ${CMAKE_DL_LIBS} Threads::Threads)
@@ -87,24 +87,36 @@ SET(CPACK_PACKAGE_VERSION_MINOR ${IPTVIEW_VERSION_MINOR})
 SET(CPACK_PACKAGE_VERSION_PATCH ${IPTVIEW_VERSION_PATCH})
 SET(CPACK_PACKAGE_CONTACT "Sergiu Giurgiu <sgiurgiu11@gmail.com>")
 SET(CPACK_PACKAGE_VENDOR "Sergiu Giurgiu <sgiurgiu11@gmail.com>")
-
+set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
 set(CPACK_RPM_RELOCATION_PATHS "/${CMAKE_INSTALL_SYSCONFDIR}" "${CMAKE_INSTALL_BINDIR}")
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0) # don't prepend package name
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmpv1, libssl1.1, libfreetype6, libopengl0, ")
+set(CPACK_FREEBSD_PACKAGE_MAINTAINER "Sergiu Giurgiu <sgiurgiu11@gmail.com>")
+set(CPACK_FREEBSD_PACKAGE_DEPS "multimedia/mpv" "security/openssl" "graphics/mesa-dri")
+
 #set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-#set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/postinstall")
 
 SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
 if(CPACK_DISTRIBUTION)
     SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}-${CPACK_DISTRIBUTION}")
 endif()
-set(CPACK_PACKAGE_EXECUTABLES "${EXECUTABLE_NAME};M3U Edit")
+
+install(FILES "${CMAKE_SOURCE_DIR}/icons/iptview-icon_24.png"  DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/24x24/apps" RENAME "iptview-icon.png")
+install(FILES "${CMAKE_SOURCE_DIR}/icons/iptview-icon_32.png"  DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/32x32/apps" RENAME "iptview-icon.png")
+install(FILES "${CMAKE_SOURCE_DIR}/icons/iptview-icon_48.png"  DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/48x48/apps" RENAME "iptview-icon.png")
+install(FILES "${CMAKE_SOURCE_DIR}/icons/iptview-icon_64.png"  DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/64x64/apps" RENAME "iptview-icon.png")
+install(FILES "${CMAKE_SOURCE_DIR}/icons/iptview-icon_128.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/128x128/apps" RENAME "iptview-icon.png")
+install(FILES "${CMAKE_SOURCE_DIR}/icons/iptview-icon_256.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256/apps" RENAME "iptview-icon.png")
+install(FILES "${CMAKE_SOURCE_DIR}/iptview.desktop" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications" RENAME "iptview.desktop")
+
+set(CPACK_PACKAGE_EXECUTABLES "${EXECUTABLE_NAME};IPTView")
 if(CPACK_GENERATOR STREQUAL "WIX")
     set(CPACK_WIX_UPGRADE_GUID "2a9d812f-6f64-4c1b-b250-dbde0216e869")
-    #set(CPACK_WIX_PRODUCT_ICON "${CMAKE_SOURCE_DIR}/icons/reddit_icon_48.png")
-    #set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/icons/reddit_icon_48.png")
-    set(CPACK_WIX_PROGRAM_MENU_FOLDER "M3U Edit")
+    set(CPACK_WIX_PRODUCT_ICON "${CMAKE_SOURCE_DIR}/icons/iptview-icon_48.png")
+    set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/icons/iptview-icon_48.png")
+    set(CPACK_WIX_PROGRAM_MENU_FOLDER "IPTView")
     set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/gpl-3.0.rtf")
-    set(CPACK_PACKAGE_INSTALL_DIRECTORY "M3U Edit")
+    set(CPACK_PACKAGE_INSTALL_DIRECTORY "IPTView")
 endif()
 
 

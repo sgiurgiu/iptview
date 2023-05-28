@@ -36,6 +36,7 @@ private:
     QIcon getVolumeIcon();
     void setupSubtitlesMenu();
     void setSubtitle(const QString& id);
+    void toggleSystemSleep();
 private:
     struct Subtitle
     {

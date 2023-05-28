@@ -2,8 +2,9 @@
 set(IPTVIEW_SRCS main.cpp)
 
 qt_add_resources(IPTVIEW_SRCS_RS_SRCS resources.qrc)
+set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/../resources/iptview.rc")
 
-qt_add_executable(${EXECUTABLE_NAME} ${IPTVIEW_SRCS} ${IPTVIEW_SRCS_RS_SRCS})
+qt_add_executable(${EXECUTABLE_NAME} ${IPTVIEW_SRCS} ${IPTVIEW_SRCS_RS_SRCS} ${app_icon_resource_windows})
 
 
 
