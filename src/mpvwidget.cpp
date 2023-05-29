@@ -4,7 +4,7 @@
 #include <QOpenGLContext>
 #include <QWheelEvent>
 #include "mpvqthelper.hpp"
-
+#include <QDebug>
 
 namespace
 {
@@ -82,6 +82,11 @@ QVariant MpvWidget::getProperty(const QString &name) const
 
 void MpvWidget::initializeGL()
 {
+//    glClearColor(0.7f, 0.75f, 0.8f, 1.0f);
+//    glEnable(GL_MULTISAMPLE);
+//    glEnable(GL_BLEND);
+//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     mpv_opengl_init_params gl_init_params{get_proc_address, nullptr};
     mpv_render_param params[]{
         {MPV_RENDER_PARAM_API_TYPE, const_cast<char *>(MPV_RENDER_API_TYPE_OPENGL)},
@@ -96,7 +101,13 @@ void MpvWidget::initializeGL()
 
 void MpvWidget::paintGL()
 {
-    mpv_opengl_fbo mpfbo{static_cast<int>(defaultFramebufferObject()), width(), height(), 0};
+    int iwidth = width();
+    int iheight = height();
+    double dwidth = iwidth * devicePixelRatioF();
+    double dheight = iheight * devicePixelRatioF();
+    iwidth = static_cast<int>(dwidth);
+    iheight = static_cast<int>(dheight);
+    mpv_opengl_fbo mpfbo{static_cast<int>(defaultFramebufferObject()), iwidth, iheight , GL_RGBA };
     int flip_y{1};
 
     mpv_render_param params[] = {
@@ -108,7 +119,11 @@ void MpvWidget::paintGL()
     // other API details.
     mpv_render_context_render(mpv_gl, params);
 }
-
+void MpvWidget::resizeGL(int w, int h)
+{
+    newWidth = (int)((double)w * 1.3);
+    newHeight = (int)((double)h * 1.3);
+}
 void MpvWidget::onMpvEvents()
 {
     // Process all events, until the event queue is empty.

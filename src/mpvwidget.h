@@ -25,6 +25,7 @@ signals:
 protected:
     void initializeGL() Q_DECL_OVERRIDE;
     void paintGL() Q_DECL_OVERRIDE;
+    void resizeGL(int w, int h) override;
     void wheelEvent (QWheelEvent * event) override;
 private slots:
     void onMpvEvents();
@@ -36,6 +37,8 @@ private:
     mpv_handle *mpv;
     mpv_render_context *mpv_gl;
     double volume = 100.0;
+    int newWidth = 0;
+    int newHeight = 0;
 };
 
 #endif // MPVWIDGET_H
