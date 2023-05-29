@@ -33,11 +33,11 @@ void IPTViewMainWindow::createActions()
     quitApplicationAction->setText( tr("&Quit") );
     quitApplicationAction->setShortcuts(QKeySequence::Quit);
     quitApplicationAction->setToolTip(tr("Quit application"));
-    quitApplicationAction->setIcon(QIcon(":/icons/exit.svg"));
+    quitApplicationAction->setIcon(QIcon(":/icons/exit.png"));
     quitApplicationAction->setStatusTip(quitApplicationAction->toolTip());
     connect(quitApplicationAction, SIGNAL(triggered()), SLOT(close()));
 
-    fileOpenAction = new QAction(QIcon(":/icons/open.svg"), tr("&Open"), this);
+    fileOpenAction = new QAction(QIcon(":/icons/open.png"), tr("&Open"), this);
     fileOpenAction->setShortcuts(QKeySequence::Open);
     fileOpenAction->setToolTip(tr("Open playlist"));
     fileOpenAction->setStatusTip(quitApplicationAction->toolTip());

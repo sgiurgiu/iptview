@@ -1,25 +1,25 @@
 <RCC>
     <qresource prefix="/">
-        <file>icons/open.svg</file>
-        <file>icons/save.svg</file>
-        <file>icons/folder-open.svg</file>
-        <file>icons/exit.svg</file>
-        <file>icons/arrow-back.svg</file>
-        <file>icons/arrow-forward.svg</file>
-        <file>icons/chevron-back.svg</file>
-        <file>icons/chevron-forward.svg</file>
-        <file>icons/star.svg</file>
-        <file>icons/pause.svg</file>
-        <file>icons/play-skip-back.svg</file>
-        <file>icons/play-skip-forward.svg</file>
-        <file>icons/play.svg</file>
-        <file>icons/stop.svg</file>
-        <file>icons/volume-high.svg</file>
-        <file>icons/volume-low.svg</file>
-        <file>icons/volume-medium.svg</file>
-        <file>icons/volume-mute.svg</file>
-        <file>icons/volume-off.svg</file>
-        <file>icons/text.svg</file>
+        <file>icons/open.png</file>
+        <file>icons/save.png</file>
+        <file>icons/folder-open.png</file>
+        <file>icons/exit.png</file>
+        <file>icons/arrow-back.png</file>
+        <file>icons/arrow-forward.png</file>
+        <file>icons/chevron-back.png</file>
+        <file>icons/chevron-forward.png</file>
+        <file>icons/star.png</file>
+        <file>icons/pause.png</file>
+        <file>icons/play-skip-back.png</file>
+        <file>icons/play-skip-forward.png</file>
+        <file>icons/play.png</file>
+        <file>icons/stop.png</file>
+        <file>icons/volume-high.png</file>
+        <file>icons/volume-low.png</file>
+        <file>icons/volume-medium.png</file>
+        <file>icons/volume-mute.png</file>
+        <file>icons/volume-off.png</file>
+        <file>icons/text.png</file>
         <file>icons/iptview-icon.png</file>
     </qresource>
 </RCC>

@@ -79,7 +79,7 @@ QWidget* MediaWidget::createControlsWidget()
     volumeSlider->setValue(settings.value("player/volume", 100.0).toDouble());
 
     subtitlesChoicesButton = new QToolButton(this);
-    subtitlesChoicesButton->setIcon(QIcon(":/icons/text.svg"));
+    subtitlesChoicesButton->setIcon(QIcon(":/icons/text.png"));
     subtitlesChoicesButton->setPopupMode(QToolButton::MenuButtonPopup);
     subtitlesChoicesButton->setEnabled(false);
     subtitlesChoicesActionGroup = new QActionGroup(this);

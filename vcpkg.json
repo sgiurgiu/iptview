@@ -29,8 +29,6 @@
         "zstd"
       ],
       "default-features":false
-    },
-	"qtimageformats",
-    "qtsvg"
+    }
   ]
 }
