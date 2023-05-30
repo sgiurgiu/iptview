@@ -66,50 +66,67 @@ void ChannelsWidget::itemsSelectionChanged(const QItemSelection &selected, const
 {
     Q_UNUSED(deselected);
     if(selected.isEmpty()) return;
-    auto firstSelected = selected.indexes().front();
-    if(firstSelected.isValid())
+    auto firstSelectedProxyIndex = selected.indexes().front();
+    if(!firstSelectedProxyIndex.isValid())
     {
-        auto uri = firstSelected.data(ChannelsModel::ChannelRoles::UriRole);
-        auto name = firstSelected.data(ChannelsModel::ChannelRoles::NameRole);
-        if(uri.isValid())
-        {
-            emit selectChannel(name.isValid()?name.toString():"", uri.toString());
-        }
+        return;
+    }
+    auto firstSelected = proxyModel->mapToSource(firstSelectedProxyIndex);
+    if(!firstSelected.isValid())
+    {
+        return;
+    }
+
+    auto uri = firstSelected.data(ChannelsModel::ChannelRoles::UriRole);
+    auto name = firstSelected.data(ChannelsModel::ChannelRoles::NameRole);
+    if(uri.isValid())
+    {
+        emit selectChannel(name.isValid()?name.toString():"", uri.toString());
     }
 }
 void ChannelsWidget::onCustomContextMenu(const QPoint &point)
 {
-    QModelIndex index = channels->indexAt(point);
-    if(index.isValid())
+    QModelIndex proxyIndex = channels->indexAt(point);
+    if(!proxyIndex.isValid())
     {
-        auto treeItem = static_cast<AbstractChannelTreeItem*>(index.internalPointer());
-        if(treeItem && treeItem->getType() == ChannelTreeItemType::Channel)
+        return;
+    }
+    auto index = proxyModel->mapToSource(proxyIndex);
+    if(!index.isValid())
+    {
+        return;
+    }
+
+    auto treeItem = static_cast<AbstractChannelTreeItem*>(index.internalPointer());
+    if(treeItem && treeItem->getType() == ChannelTreeItemType::Channel)
+    {
+        contextMenu->clear();
+        auto parentItem = treeItem->getParent();
+        if(parentItem && parentItem->getType() == ChannelTreeItemType::Favourite)
         {
-            contextMenu->clear();
-            auto parentItem = treeItem->getParent();
-            if(parentItem && parentItem->getType() == ChannelTreeItemType::Favourite)
-            {
-                removeFromFavouritesAction->setData(QVariant::fromValue(treeItem));
-                contextMenu->addAction(removeFromFavouritesAction);
-                contextMenu->exec(channels->viewport()->mapToGlobal(point));
-            }
-            else if(parentItem && (parentItem->getType() == ChannelTreeItemType::Group || parentItem->getType() == ChannelTreeItemType::Root))
-            {
-                addToFavouritesAction->setData(QVariant::fromValue(treeItem));
-                contextMenu->addAction(addToFavouritesAction);
-                contextMenu->exec(channels->viewport()->mapToGlobal(point));
-            }
+            removeFromFavouritesAction->setData(QVariant::fromValue(treeItem));
+            contextMenu->addAction(removeFromFavouritesAction);
+            contextMenu->exec(channels->viewport()->mapToGlobal(point));
+        }
+        else if(parentItem && (parentItem->getType() == ChannelTreeItemType::Group || parentItem->getType() == ChannelTreeItemType::Root))
+        {
+            addToFavouritesAction->setData(QVariant::fromValue(treeItem));
+            contextMenu->addAction(addToFavouritesAction);
+            contextMenu->exec(channels->viewport()->mapToGlobal(point));
         }
     }
+
 }
 
 void ChannelsWidget::onAddToFavourites()
 {
     auto treeItem = addToFavouritesAction->data().value<AbstractChannelTreeItem*>();
     model->AddToFavourites(treeItem);
+    proxyModel->invalidate();
 }
 void ChannelsWidget::onRemoveFromFavourites()
 {
     auto treeItem = removeFromFavouritesAction->data().value<AbstractChannelTreeItem*>();
     model->RemoveFromFavourites(treeItem);
+    proxyModel->invalidate();
 }
