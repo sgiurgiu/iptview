@@ -21,5 +21,6 @@
         <file>icons/volume-off.png</file>
         <file>icons/text.png</file>
         <file>icons/iptview-icon.png</file>
+        <file>icons/chatbox-ellipses-outline.png</file>
     </qresource>
 </RCC>

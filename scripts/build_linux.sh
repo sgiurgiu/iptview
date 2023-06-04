@@ -18,10 +18,8 @@ if [[ -z "${CONTAINER_REGISTRY+x}" ]]; then
     exit 1
 fi
 
-if [ -z ${IPTVIEW_VERSION_MAJOR+x} ]; then
-    IPTVIEW_VERSION_MAJOR="1"
-    IPTVIEW_VERSION_MINOR="0"
-    IPTVIEW_VERSION_PATCH="dev"
+if [ -z ${IPTVIEW_VERSION+x} ]; then
+    IPTVIEW_VERSION="1.0.dev"
 fi
 
 if [ -z $1 ]; then
@@ -37,9 +35,7 @@ do
     podman pull $CONTAINER_REGISTRY/qt_apps_$distro:build
     podman run --rm --privileged=true --name iptview_build \
             -v "${root}":/tmp/iptview/:Z \
-            -e IPTVIEW_VERSION_MAJOR="${IPTVIEW_VERSION_MAJOR}" \
-            -e IPTVIEW_VERSION_MINOR="${IPTVIEW_VERSION_MINOR}" \
-            -e IPTVIEW_VERSION_PATCH="${IPTVIEW_VERSION_PATCH}" \
+            -e IPTVIEW_VERSION="${IPTVIEW_VERSION}" \
             $CONTAINER_REGISTRY/qt_apps_$distro:build \
             /tmp/iptview/scripts/build_linux_app.sh $distro
 done

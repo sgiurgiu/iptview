@@ -77,9 +77,10 @@ QWidget* MediaWidget::createControlsWidget()
     connect(volumeSlider,SIGNAL(valueChanged(int)), this, SLOT(volumeChanged(int)));
     QSettings settings;
     volumeSlider->setValue(settings.value("player/volume", 100.0).toDouble());
+    mpvWidget->setProperty("volume", settings.value("player/volume", 100.0).toDouble());
 
     subtitlesChoicesButton = new QToolButton(this);
-    subtitlesChoicesButton->setIcon(QIcon(":/icons/text.png"));
+    subtitlesChoicesButton->setIcon(QIcon(":/icons/chatbox-ellipses-outline.png"));
     subtitlesChoicesButton->setPopupMode(QToolButton::MenuButtonPopup);
     subtitlesChoicesButton->setEnabled(false);
     subtitlesChoicesActionGroup = new QActionGroup(this);
@@ -153,6 +154,7 @@ void MediaWidget::PlayChannel(const QString& name, const QString& uri)
     stopAction->setEnabled(true);
     mpvWidget->setProperty("pause", QVariant{false});
     mpvWidget->setProperty("sid", QVariant{"no"});
+    mpvWidget->setProperty("loop-playlist", QVariant{"inf"});
     mediaTitleLabel->setText(name);
     stopped = false;
     toggleSystemSleep();
