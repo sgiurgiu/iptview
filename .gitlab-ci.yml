@@ -8,6 +8,8 @@ stages:          # List of stages for jobs, and their order of execution
 
 Tagging from pipeline:
   stage: tagging
+  tags:
+    - linux
   script:
     - git --version
     - git remote remove origin
