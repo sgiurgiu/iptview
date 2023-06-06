@@ -8,16 +8,11 @@ stages:          # List of stages for jobs, and their order of execution
 
 Tagging from pipeline:
   stage: tagging
+  timeout: 30m
   tags:
     - linux
   script:
-    - git --version
-    - git remote remove origin
-    - git remote add origin https://${GITLAB_USER_LOGIN}:${ACCESS_TOKEN}@${CI_SERVER_NAME}/${GITLAB_USER_LOGIN}/${CI_PROJECT_PATH}
-    - cur_version=$(git describe --tags)
-    - next_version=$(semver bump patch ${cur_version})
-    - git tag -a ${next_version} -m "Release version ${next_version}" --author ${CI_COMMIT_AUTHOR}
-    - git push origin --tags
+    - scripts/bump_version.sh
   only:
     - master
 
