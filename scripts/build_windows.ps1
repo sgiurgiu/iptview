@@ -14,6 +14,9 @@ function Invoke-CmdScript {
 
 Invoke-CmdScript "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 
+$version = git describe --tags | Out-String
+set-item Env:IPTVIEW_VERSION $version
+
 $buildDir = "E:/sb"
 $packagesDir = ".\packages"
 

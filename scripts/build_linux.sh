@@ -18,6 +18,7 @@ if [[ -z "${CONTAINER_REGISTRY+x}" ]]; then
     exit 1
 fi
 
+IPTVIEW_VERSION=$(git describe --tags)
 if [ -z ${IPTVIEW_VERSION+x} ]; then
     IPTVIEW_VERSION="1.0.dev"
 fi

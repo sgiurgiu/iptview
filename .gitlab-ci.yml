@@ -1,33 +1,28 @@
 
 variables:
   IPTVIEW_VERSION : "1.0.1"
-  CONTAINER_REGISTRY : $CONTAINER_REGISTRY
 
 stages:          # List of stages for jobs, and their order of execution
+  - tagging
   - build
 
-#stages: 
-#  - tagging
-#
-#Tagging from pipeline: 
-#  stage: tagging
-#  script: 
-#    # You can write your pipeline code for build/deploy here
-#    - docker info
-#  after_script:
-#    - apk update && apk add git
-#    - git --version
-#    - git remote remove origin
-#    - git remote add origin https://oauth2:${PERSONAL_ACCESS_TOKEN}@gitlab.com/account-name/project-name
-#    - git config user.email <your-gitlab-email_id>
-#    - git config user.name <your-gitlab-username>
-#    - git tag -a v1.0 -m "Release version 1.0"
-#  only: 
-#    - master
+Tagging from pipeline:
+  stage: tagging
+  script:
+    - git --version
+    - git remote remove origin
+    - git remote add origin https://${GITLAB_USER_LOGIN}:${ACCESS_TOKEN}@${CI_SERVER_NAME}/${GITLAB_USER_LOGIN}/${CI_PROJECT_PATH}
+    - cur_version=$(git describe --tags)
+    - next_version=$(semver bump patch ${cur_version})
+    - git tag -a ${next_version} -m "Release version ${next_version}" --author ${CI_COMMIT_AUTHOR}
+    - git push origin --tags
+  only:
+    - master
 
 
 linux-job:       # This job runs in the build stage, which runs first.
   stage: build
+  timeout: 5h
   tags:
     - linux
   variables:
@@ -45,6 +40,7 @@ linux-job:       # This job runs in the build stage, which runs first.
 
 windows-job:
     stage: build
+    timeout: 5h
     tags:
         - windows
     variables:
