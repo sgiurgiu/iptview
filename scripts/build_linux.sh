@@ -32,11 +32,12 @@ fi
 for distro in "${distros[@]}"
 do
     echo "Running podman to build for distribution ${distro}"
+    container=$CONTAINER_REGISTRY/qt_apps_$distro:build
     # This is a prebuilt container that has installed and compiled the require vcpkg packages
-    podman pull $CONTAINER_REGISTRY/qt_apps_$distro:build
+    podman pull $container
     podman run --rm --privileged=true --name iptview_build \
             -v "${root}":/tmp/iptview/:Z \
             -e IPTVIEW_VERSION="${IPTVIEW_VERSION}" \
-            $CONTAINER_REGISTRY/qt_apps_$distro:build \
+            $container \
             /tmp/iptview/scripts/build_linux_app.sh $distro
 done
