@@ -1,6 +1,6 @@
 param(
     [string]
-    $libMpvDir = "E:\projects\mpv"
+    $libMpvDir = "E:\projects\mpv",
     [string]
     $libMpvIncludeDir = "E:\projects\mpv\include"
 )
