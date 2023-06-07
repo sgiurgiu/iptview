@@ -83,6 +83,9 @@ QWidget* MediaWidget::createControlsWidget()
     subtitlesChoicesButton->setIcon(QIcon(":/icons/chatbox-ellipses-outline.png"));
     subtitlesChoicesButton->setPopupMode(QToolButton::MenuButtonPopup);
     subtitlesChoicesButton->setEnabled(false);
+    subtitlesChoicesButton->setCheckable(true);
+    subtitlesChoicesButton->setChecked(false);
+    connect(subtitlesChoicesButton, SIGNAL(clicked(bool)),this,SLOT(subtitlesToggled(bool)));
     subtitlesChoicesActionGroup = new QActionGroup(this);
     subtitlesMenu = new QMenu(this);
     subtitlesChoicesButton->setMenu(subtitlesMenu);
@@ -286,7 +289,7 @@ void MediaWidget::setupSubtitlesMenu()
         auto action = subtitlesChoicesActionGroup->addAction(sub.title);
         action->setData(sub.id);
         action->setCheckable(true);
-        connect(action, SIGNAL(toggled(bool)), this, SLOT(subtitleChanged(bool)));
+        connect(action, SIGNAL(triggered(bool)), this, SLOT(subtitleChanged(bool)));
     }
     if(!subtitles.empty())
     {
@@ -296,10 +299,22 @@ void MediaWidget::setupSubtitlesMenu()
 
     subtitlesMenu->addActions(subtitlesChoicesActionGroup->actions());
     subtitlesChoicesButton->setEnabled(subtitles.size() > 1);
+    subtitlesChoicesButton->setChecked(false);
 }
 void MediaWidget::setSubtitle(const QString& id)
 {
     mpvWidget->setProperty("sid", id);
+}
+void MediaWidget::subtitlesToggled(bool toggled)
+{
+    // the first action is Off.
+    // and if we're toggled, we select the first subtitle, if it's available
+    auto actions = subtitlesChoicesActionGroup->actions();
+    auto actionIndex = toggled ? 1 : 0;
+    if(actionIndex >= actions.size()) return;
+
+    actions.at(actionIndex)->setChecked(true);
+    setSubtitle(actions.at(actionIndex)->data().toString());
 }
 void MediaWidget::subtitleChanged(bool checked)
 {
@@ -308,6 +323,8 @@ void MediaWidget::subtitleChanged(bool checked)
     if(checkedAction)
     {
         setSubtitle(checkedAction->data().toString());
+        auto index = subtitlesChoicesActionGroup->actions().indexOf(checkedAction);
+        subtitlesChoicesButton->setChecked(index != 0);
     }
 }
 void MediaWidget::toggleSystemSleep()

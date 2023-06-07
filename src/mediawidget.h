@@ -31,6 +31,7 @@ private slots:
     void mediaWheelEvent(QPoint delta);
     void fileLoaded();
     void subtitleChanged(bool);
+    void subtitlesToggled(bool);
 private:
     QWidget* createControlsWidget();
     QIcon getVolumeIcon();
