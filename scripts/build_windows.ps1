@@ -21,7 +21,7 @@ function Invoke-CmdScript {
 
 Invoke-CmdScript "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 
-$version = git describe --tags | Out-String
+$version = git describe --tags
 set-item Env:IPTVIEW_VERSION $version
 
 $buildDir = "E:/sb"
@@ -31,6 +31,7 @@ Remove-Item -LiteralPath $buildDir -Force -Recurse -ErrorAction Ignore
 Remove-Item -LiteralPath $packagesDir -Force -Recurse -ErrorAction Ignore
 New-Item -ItemType Directory -Force -Path $buildDir
 New-Item -ItemType Directory -Force -Path $packagesDir
+echo "Building version $Env:IPTVIEW_VERSION"
 echo "Using lib mpv directory: $libMpvDir"
 echo "Using lib mpv include directory: $libMpvIncludeDir"
 
