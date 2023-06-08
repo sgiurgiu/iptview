@@ -1,2 +1,2 @@
-IPTViewIcon    ICON    iptview-icon.ico
+IDI_ICON1 ICON DISCARDABLE "iptview-icon.ico"
 
