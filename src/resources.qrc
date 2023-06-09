@@ -22,5 +22,6 @@
         <file>icons/text.png</file>
         <file>icons/iptview-icon.png</file>
         <file>icons/chatbox-ellipses-outline.png</file>
+        <file>icons/scan.png</file>
     </qresource>
 </RCC>

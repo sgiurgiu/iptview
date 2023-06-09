@@ -35,12 +35,16 @@ private slots:
     void subtitleChanged(bool);
     void subtitlesToggled(bool);
     void mpvDoubleClicked();
+    void fullScreenActionToggled(bool);
+protected:
+    virtual void keyPressEvent(QKeyEvent *event) override;
 private:
     QWidget* createControlsWidget();
     QIcon getVolumeIcon();
     void setupSubtitlesMenu();
     void setSubtitle(const QString& id);
     void toggleSystemSleep();
+    void toggleFullScreen();
 private:
     struct Subtitle
     {
@@ -55,6 +59,7 @@ private:
     QAction* skipBackAction = nullptr;
     QSlider* volumeSlider = nullptr;
     QAction* volumeAction = nullptr;
+    QAction* fullScreenAction = nullptr;
     QString selectedUri;
     QString selectedName;
     bool stopped = true;
@@ -69,6 +74,7 @@ private:
     QIcon volumeLowIcon = QIcon{":/icons/volume-low.png"};
     QIcon volumeMediumIcon = QIcon{":/icons/volume-medium.png"};
     QIcon volumeHighIcon = QIcon{":/icons/volume-high.png"};
+    QIcon fullScreenIcon = QIcon{":/icons/scan.png"};
     QList<Subtitle> subtitles;
     QToolButton* subtitlesChoicesButton = nullptr;
     QActionGroup* subtitlesChoicesActionGroup = nullptr;

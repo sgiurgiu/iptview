@@ -14,6 +14,7 @@
 #include <QDBusConnection>
 #include <QDBusInterface>
 #include <QDBusReply>
+#include <QKeyEvent>
 
 #include "mpvwidget.h"
 
@@ -51,6 +52,7 @@ QWidget* MediaWidget::createControlsWidget()
     stopAction = new QAction(stopIcon, "", this);
     stopAction->setCheckable(false);
     stopAction->setEnabled(false);
+    stopAction->setToolTip("Stop");
     connect(stopAction, SIGNAL(triggered(bool)), this, SLOT(stopTriggered()));
 
     playPauseAction = new QAction(playIcon, "", this);
@@ -61,17 +63,25 @@ QWidget* MediaWidget::createControlsWidget()
     skipForwardAction = new QAction(playSkipForwardIcon, "", this);
     skipForwardAction->setCheckable(false);
     skipForwardAction->setEnabled(false);
+    skipForwardAction->setToolTip("Next Channel");
     connect(skipForwardAction, SIGNAL(triggered(bool)), this, SLOT(skipForwardTriggered()));
 
     skipBackAction = new QAction(playSkipBackIcon, "", this);
     skipBackAction->setCheckable(false);
     skipBackAction->setEnabled(false);
+    skipBackAction->setToolTip("Previous Channel");
     connect(skipBackAction, SIGNAL(triggered(bool)), this, SLOT(skipBackTriggered()));
 
     volumeAction = new QAction(volumeMediumIcon, "", this);
     volumeAction->setCheckable(true);
     volumeAction->setEnabled(true);
     connect(volumeAction, SIGNAL(toggled(bool)), this, SLOT(volumeToggled(bool)));
+
+    fullScreenAction = new QAction(fullScreenIcon, "", this);
+    fullScreenAction->setCheckable(true);
+    fullScreenAction->setEnabled(false);
+    fullScreenAction->setToolTip("Full Screen");
+    connect(fullScreenAction, SIGNAL(triggered(bool)), this, SLOT(fullScreenActionToggled(bool)));
 
     volumeSlider = new QSlider(Qt::Horizontal, this);
     volumeSlider->setMinimum(0);
@@ -89,6 +99,7 @@ QWidget* MediaWidget::createControlsWidget()
     subtitlesChoicesButton->setEnabled(false);
     subtitlesChoicesButton->setCheckable(true);
     subtitlesChoicesButton->setChecked(false);
+    subtitlesChoicesButton->setToolTip("Subtitles");
     connect(subtitlesChoicesButton, SIGNAL(clicked(bool)),this,SLOT(subtitlesToggled(bool)));
     subtitlesChoicesActionGroup = new QActionGroup(this);
     subtitlesMenu = new QMenu(this);
@@ -102,6 +113,7 @@ QWidget* MediaWidget::createControlsWidget()
     widget->addAction(stopAction);
     widget->addAction(skipForwardAction);
     widget->addWidget(subtitlesChoicesButton);
+    widget->addAction(fullScreenAction);
     widget->addWidget(mediaTitleLabel);
 
     QWidget* empty = new QWidget(this);
@@ -159,6 +171,7 @@ void MediaWidget::PlayChannel(const QString& name, const QString& uri)
     playPauseAction->setIcon(pauseIcon);
     playPauseAction->setToolTip("Pause");
     stopAction->setEnabled(true);
+    fullScreenAction->setEnabled(true);
     mpvWidget->setProperty("pause", QVariant{false});
     mpvWidget->setProperty("sid", QVariant{"no"});
     mpvWidget->setProperty("loop-playlist", QVariant{"inf"});
@@ -398,9 +411,9 @@ void MediaWidget::toggleSystemSleep()
 
 #endif
 }
-
-void MediaWidget::mpvDoubleClicked()
+void MediaWidget::toggleFullScreen()
 {
+    if(stopped) return;
     fullScreen = !fullScreen;
     emit showingFullScreen(fullScreen);
     if(fullScreen)
@@ -416,4 +429,21 @@ void MediaWidget::mpvDoubleClicked()
         controlsWidget->show();
         window()->showNormal();
     }
+    fullScreenAction->setChecked(fullScreen);
+}
+void MediaWidget::mpvDoubleClicked()
+{
+    toggleFullScreen();
+}
+void MediaWidget::keyPressEvent(QKeyEvent *event)
+{
+    if(event->matches(QKeySequence::Cancel) && fullScreen)
+    {
+        toggleFullScreen();
+    }
+    QWidget::keyPressEvent(event);
+}
+void MediaWidget::fullScreenActionToggled(bool)
+{
+    toggleFullScreen();
 }
