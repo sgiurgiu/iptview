@@ -16,6 +16,8 @@ protected:
   void closeEvent(QCloseEvent * event) override;
 private slots:
   void openPlaylist();
+  void fullScreen(bool flag);
+
 private:
   void centerOnScreen();
   void createActions();
@@ -29,7 +31,7 @@ private:
   QAction* fileOpenAction;
   QAction* quitApplicationAction;
   IPTViewMainWidget* mainWidget;
-
+  QMargins contentMargins;
 };
 
 #endif // IPTVIEWMAINWINDOW_H

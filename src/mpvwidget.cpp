@@ -197,3 +197,12 @@ void MpvWidget::wheelEvent (QWheelEvent * event)
     }
     event->accept();
 }
+
+void MpvWidget::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    if(event->button() == Qt::LeftButton)
+    {
+        emit doubleClicked();
+    }
+    QOpenGLWidget::mouseDoubleClickEvent(event);
+}

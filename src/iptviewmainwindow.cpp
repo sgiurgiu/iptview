@@ -60,6 +60,7 @@ void IPTViewMainWindow::addStatusBar()
 void IPTViewMainWindow::addWindowWidgets()
 {
    mainWidget = new IPTViewMainWidget(this);
+   connect(mainWidget, SIGNAL(showingFullScreen(bool)), this, SLOT(fullScreen(bool)));
    setCentralWidget(mainWidget);
 }
 void IPTViewMainWindow::centerOnScreen()
@@ -125,4 +126,21 @@ void IPTViewMainWindow::loadPlaylist(const QString& fileName)
         parserController->deleteLater();
     });
     parserController->ParseList(fileName);
+}
+
+void IPTViewMainWindow::fullScreen(bool flag)
+{
+    if(flag)
+    {
+        contentMargins = this->contentsMargins();
+        setContentsMargins(0,0,0,0);
+        menuBar()->hide();
+        statusBar()->hide();
+    }
+    else
+    {
+        setContentsMargins(contentMargins);
+        menuBar()->show();
+        statusBar()->show();
+    }
 }

@@ -26,9 +26,13 @@ MediaWidget::MediaWidget(QWidget *parent)
     : QWidget{parent}
 {
     QVBoxLayout *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(0);
+
     mpvWidget = new MpvWidget(this);
     connect(mpvWidget,SIGNAL(wheelScrolled(QPoint)), this, SLOT(mediaWheelEvent(QPoint)));
     connect(mpvWidget,SIGNAL(fileLoaded()), this, SLOT(fileLoaded()));
+    connect(mpvWidget, SIGNAL(doubleClicked()),this, SLOT(mpvDoubleClicked()));
     layout->addWidget(mpvWidget, 1);
 
     volumeOsdTimer = new QTimer(this);
@@ -36,7 +40,7 @@ MediaWidget::MediaWidget(QWidget *parent)
     volumeOsdTimer->setInterval(1000);
     connect(volumeOsdTimer, SIGNAL(timeout()), this, SLOT(volumeOsdTimerTimeout()));
 
-    auto controlsWidget = createControlsWidget();
+    controlsWidget = createControlsWidget();
     layout->addWidget(controlsWidget, 0);
 
     setLayout(layout);
@@ -395,3 +399,21 @@ void MediaWidget::toggleSystemSleep()
 #endif
 }
 
+void MediaWidget::mpvDoubleClicked()
+{
+    fullScreen = !fullScreen;
+    emit showingFullScreen(fullScreen);
+    if(fullScreen)
+    {
+        contentMargins = this->contentsMargins();
+        this->setContentsMargins(0,0,0,0);
+        controlsWidget->hide();
+        window()->showFullScreen();
+    }
+    else
+    {
+        this->setContentsMargins(contentMargins);
+        controlsWidget->show();
+        window()->showNormal();
+    }
+}

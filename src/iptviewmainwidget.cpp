@@ -8,7 +8,7 @@ IPTViewMainWidget::IPTViewMainWidget(QWidget *parent): QSplitter{Qt::Horizontal,
     channelsWidget = new ChannelsWidget(this);
 
     mediaWidget = new MediaWidget(this);
-
+    connect(mediaWidget, SIGNAL(showingFullScreen(bool)), this, SLOT(fullScreen(bool)));
     addWidget(channelsWidget);
     addWidget(mediaWidget);
 
@@ -29,4 +29,20 @@ IPTViewMainWidget::IPTViewMainWidget(QWidget *parent): QSplitter{Qt::Horizontal,
 void IPTViewMainWidget::ImportPlaylist(M3UList list)
 {
     channelsWidget->ImportPlaylist(std::move(list));
+}
+
+void IPTViewMainWidget::fullScreen(bool flag)
+{
+    emit showingFullScreen(flag);
+    if(flag)
+    {
+        contentMargins = this->contentsMargins();
+        this->setContentsMargins(0,0,0,0);
+        channelsWidget->hide();
+    }
+    else
+    {
+        channelsWidget->show();
+        this->setContentsMargins(contentMargins);
+    }
 }

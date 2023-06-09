@@ -20,6 +20,8 @@ public:
 public slots:
     void PlayChannel(const QString& name, const QString& uri);
     void SelectChannel(const QString& name, const QString& uri);
+signals:
+    void showingFullScreen(bool);
 private slots:
     void playPauseTriggered();
     void stopTriggered();
@@ -32,6 +34,7 @@ private slots:
     void fileLoaded();
     void subtitleChanged(bool);
     void subtitlesToggled(bool);
+    void mpvDoubleClicked();
 private:
     QWidget* createControlsWidget();
     QIcon getVolumeIcon();
@@ -71,6 +74,9 @@ private:
     QActionGroup* subtitlesChoicesActionGroup = nullptr;
     QMenu* subtitlesMenu = nullptr;
     QLabel* mediaTitleLabel = nullptr;
+    bool fullScreen = false;
+    QWidget* controlsWidget = nullptr;
+    QMargins contentMargins;
 };
 
 #endif // MEDIAWIDGET_H
