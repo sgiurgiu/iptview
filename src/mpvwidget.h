@@ -4,7 +4,7 @@
 #include <QOpenGLWidget>
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
-
+#include <atomic>
 
 class MpvWidget : public QOpenGLWidget
 {
@@ -16,7 +16,9 @@ public:
     void setProperty(const QString& name, const QVariant& value);
     QVariant getProperty(const QString& name) const;
     QSize sizeHint() const override { return QSize(640,480);}
-    void displayTextOverlay(const QString& text);
+    void clearScreen();
+    void stopRendering();
+    void restartRendering();
 signals:
     void durationChanged(int value);
     void positionChanged(int value);
@@ -26,7 +28,6 @@ signals:
 protected:
     void initializeGL() Q_DECL_OVERRIDE;
     void paintGL() Q_DECL_OVERRIDE;
-    void resizeGL(int w, int h) override;
     void wheelEvent (QWheelEvent * event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
 private slots:
@@ -39,8 +40,7 @@ private:
     mpv_handle *mpv;
     mpv_render_context *mpv_gl;
     double volume = 100.0;
-    int newWidth = 0;
-    int newHeight = 0;
+    std::atomic_bool shouldRender = false;
 };
 
 #endif // MPVWIDGET_H

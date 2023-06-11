@@ -5,6 +5,7 @@
 #include <QWheelEvent>
 #include "mpvqthelper.hpp"
 #include <QDebug>
+#include <QOpenGLFunctions>
 
 namespace
 {
@@ -29,19 +30,23 @@ MpvWidget::MpvWidget(QWidget *parent): QOpenGLWidget{parent}
     if (!mpv)
         throw std::runtime_error("could not create mpv context");
 
-    mpv_set_option_string(mpv, "terminal", "yes");
-    mpv_set_option_string(mpv, "msg-level", "all=v");
-    mpv_set_option_string(mpv, "sub-create-cc-track", "yes");
-
+    mpv_set_property_string(mpv, "terminal", "yes");
+    mpv_set_property_string(mpv, "msg-level", "all=v");
+    mpv_set_property_string(mpv, "sub-create-cc-track", "yes");
+    mpv_set_property_string(mpv, "input-default-bindings", "no");
+    mpv_set_property_string(mpv, "config", "no");
+    mpv_set_property_string(mpv, "input-vo-keyboard", "no");
     mpv_observe_property(mpv, 0, "height", MPV_FORMAT_DOUBLE);
     mpv_observe_property(mpv, 0, "width", MPV_FORMAT_DOUBLE);
     mpv_observe_property(mpv, 0, "pause", MPV_FORMAT_FLAG);
+    mpv_observe_property(mpv, 0, "idle-active", MPV_FORMAT_FLAG);
+
 
     if (mpv_initialize(mpv) < 0)
         throw std::runtime_error("could not initialize mpv context");
 
     // Request hw decoding, just for testing.
-   //mpv::qt::set_option_variant(mpv, "hwdec", "auto");
+    //mpv::qt::set_option_variant(mpv, "hwdec", "auto");
 
     mpv_observe_property(mpv, 0, "duration", MPV_FORMAT_DOUBLE);
     mpv_observe_property(mpv, 0, "time-pos", MPV_FORMAT_DOUBLE);
@@ -61,10 +66,6 @@ MpvWidget::~MpvWidget()
         mpv_render_context_free(mpv_gl);
     mpv_terminate_destroy(mpv);
 }
-void MpvWidget::displayTextOverlay(const QString& text)
-{
-    //mpv_command_node(mpv,);
-}
 void MpvWidget::command(const QVariant& params)
 {
     mpv::qt::command(mpv, params);
@@ -78,6 +79,24 @@ void MpvWidget::setProperty(const QString& name, const QVariant& value)
 QVariant MpvWidget::getProperty(const QString &name) const
 {
     return mpv::qt::get_property_variant(mpv, name);
+}
+void MpvWidget::clearScreen()
+{
+    makeCurrent();
+    auto functions = this->context()->functions();
+    functions->glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
+    functions->glClearColor(0.141f, 0.129f, 0.349f, 1.0f);
+    functions->glClear(GL_COLOR_BUFFER_BIT);
+    functions->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    doneCurrent();
+}
+void MpvWidget::stopRendering()
+{
+    shouldRender = false;
+}
+void MpvWidget::restartRendering()
+{
+    shouldRender = true;
 }
 
 void MpvWidget::initializeGL()
@@ -97,6 +116,7 @@ void MpvWidget::initializeGL()
     if (mpv_render_context_create(&mpv_gl, mpv, params) < 0)
         throw std::runtime_error("failed to initialize mpv GL context");
     mpv_render_context_set_update_callback(mpv_gl, MpvWidget::onUpdate, reinterpret_cast<void *>(this));
+    clearScreen();
 }
 
 void MpvWidget::paintGL()
@@ -109,20 +129,17 @@ void MpvWidget::paintGL()
     iheight = static_cast<int>(dheight);
     mpv_opengl_fbo mpfbo{static_cast<int>(defaultFramebufferObject()), iwidth, iheight , GL_RGBA };
     int flip_y{1};
+    int skipRendering{shouldRender ? 0 : 1};
 
     mpv_render_param params[] = {
         {MPV_RENDER_PARAM_OPENGL_FBO, &mpfbo},
         {MPV_RENDER_PARAM_FLIP_Y, &flip_y},
+        {MPV_RENDER_PARAM_SKIP_RENDERING, &skipRendering},
         {MPV_RENDER_PARAM_INVALID, nullptr}
     };
     // See render_gl.h on what OpenGL environment mpv expects, and
     // other API details.
     mpv_render_context_render(mpv_gl, params);
-}
-void MpvWidget::resizeGL(int w, int h)
-{
-    newWidth = (int)((double)w * 1.3);
-    newHeight = (int)((double)h * 1.3);
 }
 void MpvWidget::onMpvEvents()
 {
@@ -152,10 +169,19 @@ void MpvWidget::handleMpvEvent(mpv_event *event)
                 double time = *(double *)prop->data;
                 emit durationChanged(time);
             }
+        } else if (strcmp(prop->name, "idle-active") == 0) {
+            if (prop->format == MPV_FORMAT_FLAG) {
+                int is_idle = *(int*)prop->data;
+                if(is_idle)
+                {
+                    clearScreen();
+                }
+            }
         }
         break;
     }
     case MPV_EVENT_FILE_LOADED:
+        shouldRender = true;
         emit fileLoaded();
         break;
     default: ;

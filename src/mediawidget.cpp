@@ -34,6 +34,7 @@ MediaWidget::MediaWidget(QWidget *parent)
     connect(mpvWidget,SIGNAL(wheelScrolled(QPoint)), this, SLOT(mediaWheelEvent(QPoint)));
     connect(mpvWidget,SIGNAL(fileLoaded()), this, SLOT(fileLoaded()));
     connect(mpvWidget, SIGNAL(doubleClicked()),this, SLOT(mpvDoubleClicked()));
+
     layout->addWidget(mpvWidget, 1);
 
     volumeOsdTimer = new QTimer(this);
@@ -49,6 +50,7 @@ MediaWidget::MediaWidget(QWidget *parent)
 
 QWidget* MediaWidget::createControlsWidget()
 {
+    QSettings settings;
     stopAction = new QAction(stopIcon, "", this);
     stopAction->setCheckable(false);
     stopAction->setEnabled(false);
@@ -58,6 +60,7 @@ QWidget* MediaWidget::createControlsWidget()
     playPauseAction = new QAction(playIcon, "", this);
     playPauseAction->setCheckable(false);
     playPauseAction->setEnabled(false);
+    playPauseAction->setShortcut(QKeySequence{settings.value("player/pause", Qt::Key_Space).toInt()});
     connect(playPauseAction, SIGNAL(triggered(bool)), this, SLOT(playPauseTriggered()));
 
     skipForwardAction = new QAction(playSkipForwardIcon, "", this);
@@ -81,6 +84,7 @@ QWidget* MediaWidget::createControlsWidget()
     fullScreenAction->setCheckable(true);
     fullScreenAction->setEnabled(false);
     fullScreenAction->setToolTip("Full Screen");
+    fullScreenAction->setShortcuts(QList<QKeySequence>() << QKeySequence{settings.value("player/fullscreen", Qt::Key_F).toInt()} << QKeySequence::FullScreen);
     connect(fullScreenAction, SIGNAL(triggered(bool)), this, SLOT(fullScreenActionToggled(bool)));
 
     volumeSlider = new QSlider(Qt::Horizontal, this);
@@ -89,7 +93,6 @@ QWidget* MediaWidget::createControlsWidget()
     volumeSlider->setSingleStep(5);
     volumeSlider->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
     connect(volumeSlider,SIGNAL(valueChanged(int)), this, SLOT(volumeChanged(int)));
-    QSettings settings;
     volumeSlider->setValue(settings.value("player/volume", 100.0).toDouble());
     mpvWidget->setProperty("volume", settings.value("player/volume", 100.0).toDouble());
 
@@ -166,7 +169,11 @@ void MediaWidget::PlayChannel(const QString& name, const QString& uri)
     subtitles.clear();
     selectedUri = uri;
     selectedName = name;
-    mpvWidget->command(QStringList() << "loadfile" << uri);
+    mpvWidget->command(QStringList() << "stop");
+    mpvWidget->stopRendering();
+    mpvWidget->clearScreen();
+    mpvWidget->command(QStringList() << "apply-profile" << "gpu-hq");
+    mpvWidget->command(QStringList() << "loadfile" << selectedUri);
     playPauseAction->setEnabled(true);
     playPauseAction->setIcon(pauseIcon);
     playPauseAction->setToolTip("Pause");
@@ -175,7 +182,7 @@ void MediaWidget::PlayChannel(const QString& name, const QString& uri)
     mpvWidget->setProperty("pause", QVariant{false});
     mpvWidget->setProperty("sid", QVariant{"no"});
     mpvWidget->setProperty("loop-playlist", QVariant{"inf"});
-    mediaTitleLabel->setText(name);
+    mediaTitleLabel->setText(selectedName);
     stopped = false;
     toggleSystemSleep();
 }
@@ -263,6 +270,7 @@ void MediaWidget::mediaWheelEvent(QPoint delta)
 
 void MediaWidget::fileLoaded()
 {
+    mpvWidget->restartRendering();
     subtitles.clear();
     int tracksCount = mpvWidget->getProperty("track-list/count").toInt();
     qDebug() << "track count "<<tracksCount;
@@ -413,6 +421,7 @@ void MediaWidget::toggleSystemSleep()
 }
 void MediaWidget::toggleFullScreen()
 {
+    qDebug() << "MediaWidget::toggleFullScreen:";
     if(stopped) return;
     fullScreen = !fullScreen;
     emit showingFullScreen(fullScreen);
@@ -437,10 +446,32 @@ void MediaWidget::mpvDoubleClicked()
 }
 void MediaWidget::keyPressEvent(QKeyEvent *event)
 {
-    if(event->matches(QKeySequence::Cancel) && fullScreen)
+    qDebug() << "MediaWidget::keyPressEvent:"<<event->key();
+    bool matchesFullScreenAction = false;
+    for(const auto& shortcut : fullScreenAction->shortcuts())
     {
-        toggleFullScreen();
+        matchesFullScreenAction |= (shortcut == (event->key() | event->modifiers()));
     }
+    bool matchesPlayPauseAction = false;
+    for(const auto& shortcut : playPauseAction->shortcuts())
+    {
+        matchesPlayPauseAction |= (shortcut == (event->key() | event->modifiers()));
+    }
+
+    if(fullScreen)
+    {
+        if(event->matches(QKeySequence::Cancel) || matchesFullScreenAction)
+        {
+            toggleFullScreen();
+            event->accept();
+        }
+        else if(matchesPlayPauseAction)
+        {
+            playPauseTriggered();
+            event->accept();
+        }
+    }
+
     QWidget::keyPressEvent(event);
 }
 void MediaWidget::fullScreenActionToggled(bool)
