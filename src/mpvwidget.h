@@ -56,6 +56,8 @@ private:
     QTimer* updateTimeSinceshowingSpinner = nullptr;
     QOpenGLVertexArrayObject	vao;
     QOpenGLBuffer vbo;
+    QByteArray vertexShader;
+    QByteArray fragmentShader;
     QOpenGLShaderProgram * program = nullptr;
     std::chrono::steady_clock::time_point showingSpinnerStartTime;
 };

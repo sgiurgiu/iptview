@@ -23,5 +23,8 @@
         <file>icons/iptview-icon.png</file>
         <file>icons/chatbox-ellipses-outline.png</file>
         <file>icons/scan.png</file>
+        <file>shaders/mpv.vsh</file>
+        <file>shaders/mpvFullScreenCircles.fsh</file>
+        <file>shaders/mpvWaitWheel.fsh</file>
     </qresource>
 </RCC>
