@@ -31,7 +31,7 @@ static void *get_proc_address(void *ctx, const char *name)
     return reinterpret_cast<void *>(glctx->getProcAddress(QByteArray(name)));
 }
 
-static const char *vertexShader1=
+static const char *vertexShader=
         R"(
 #version 330 core
         attribute highp vec4 position;
@@ -41,7 +41,8 @@ static const char *vertexShader1=
         }
         )";
 // stolen and adapted from https://www.shadertoy.com/view/3djGRm
-static const char *fragmentShader1=
+// this is a full screen of circles moving
+static const char *fragmentShader=
         R"(
     #version 330 core
 #ifdef GL_ES
@@ -195,6 +196,50 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         }
         )";
 
+// stolen and adapted from https://www.shadertoy.com/view/Xdc3WX
+// this is a simple loading circle(s)
+static const char *fragmentShader1=
+        R"(
+        #version 330 core
+        #ifdef GL_ES
+        precision highp float;
+        #endif
+                uniform vec2      iResolution;
+                uniform float   iTime;
+        #define PI 3.14159265
+
+        void mainImage( out vec4 fragColor, in vec2 fragCoord )
+        {
+            float time = iTime;
+            float mx = max(iResolution.x, iResolution.y);
+            vec2 scrs = iResolution.xy/mx;
+            vec2 uv = vec2(fragCoord.x, iResolution.y-fragCoord.y)/mx;
+
+            vec3 col = vec3(0.0);
+            float x,y = 0.0;
+            float radius = 0.02;
+            const float dotsnb = 10.0;
+
+            for(float i = 0.0 ; i < dotsnb ; i++){
+                x = 0.1*cos(2.0*PI*i/dotsnb+time*(i+3.0)/3.0);
+                y = 0.1*sin(2.0*PI*i/dotsnb+time*(i+3.0)/3.0);
+
+                col += vec3(smoothstep(radius, radius-0.01, distance(uv, scrs/2.0 + vec2(x,y)) ) * (sin(i/dotsnb+time+2.0*PI/3.0)+1.0)/2.0,
+                            smoothstep(radius, radius-0.01, distance(uv, scrs/2.0 + vec2(x,y)) ) * (sin(i/dotsnb+time+4.0*PI/3.0)+1.0)/2.0,
+                            smoothstep(radius, radius-0.01, distance(uv, scrs/2.0 + vec2(x,y)) ) * (sin(i/dotsnb+time+6.0*PI/3.0)+1.0)/2.0);
+            }
+
+            fragColor = vec4(col,1.0);
+        }
+        void main()
+        {
+            vec4 color = vec4(0.0,0.0,0.0,1.0);
+            mainImage(color, gl_FragCoord.xy);
+            color.w = 1.0;
+            gl_FragColor = color;
+        }
+        )";
+
 }
 MpvWidget::MpvWidget(QWidget *parent): QOpenGLWidget{parent}
 {
@@ -211,8 +256,6 @@ MpvWidget::MpvWidget(QWidget *parent): QOpenGLWidget{parent}
     mpv_observe_property(mpv, 0, "height", MPV_FORMAT_DOUBLE);
     mpv_observe_property(mpv, 0, "width", MPV_FORMAT_DOUBLE);
     mpv_observe_property(mpv, 0, "pause", MPV_FORMAT_FLAG);
-   // mpv_observe_property(mpv, 0, "idle-active", MPV_FORMAT_FLAG);
-
 
     if (mpv_initialize(mpv) < 0)
         throw std::runtime_error("could not initialize mpv context");
@@ -296,7 +339,7 @@ void MpvWidget::initializeGL()
 
 
     program = new QOpenGLShaderProgram(this);
-    program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader1);
+    program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader);
     program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader1);
     program->link();
     program->bind();
@@ -408,15 +451,7 @@ void MpvWidget::handleMpvEvent(mpv_event *event)
             if (prop->format == MPV_FORMAT_DOUBLE) {
                 double time = *(double *)prop->data;
                 emit durationChanged(time);
-            }
-        } else if (strcmp(prop->name, "idle-active") == 0) {
-            if (prop->format == MPV_FORMAT_FLAG) {
-                int is_idle = *(int*)prop->data;
-                if(is_idle)
-                {
-                    clearScreen();
-                }
-            }
+            }        
         }
         break;
     }
