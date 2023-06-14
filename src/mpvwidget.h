@@ -5,8 +5,17 @@
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
 #include <atomic>
+#include <QMatrix4x4>
+#include <QOpenGLFunctions>
+#include <QOpenGLExtraFunctions>
+#include <QOpenGLBuffer>
+#include <QOpenGLVertexArrayObject>
 
-class MpvWidget : public QOpenGLWidget
+class QOpenGLShaderProgram;
+class QTimer;
+class QOpenGLTexture;
+
+class MpvWidget : public QOpenGLWidget, protected QOpenGLFunctions
 {
     Q_OBJECT
 public:
@@ -17,8 +26,8 @@ public:
     QVariant getProperty(const QString& name) const;
     QSize sizeHint() const override { return QSize(640,480);}
     void clearScreen();
-    void stopRendering();
-    void restartRendering();
+    void stopRenderingMedia();
+    void startRenderingMedia();
 signals:
     void durationChanged(int value);
     void positionChanged(int value);
@@ -33,14 +42,22 @@ protected:
 private slots:
     void onMpvEvents();
     void maybeUpdate();
+    void updateTimeSinceShowingSpinner();
 private:
     void handleMpvEvent(mpv_event *event);
     static void onUpdate(void *ctx);
+    void drawSpinner();
 
     mpv_handle *mpv;
     mpv_render_context *mpv_gl;
     double volume = 100.0;
-    std::atomic_bool shouldRender = false;
+    std::atomic_bool shouldRenderMedia = false;
+    QTimer* updateTimer = nullptr;
+    QTimer* updateTimeSinceshowingSpinner = nullptr;
+    QOpenGLVertexArrayObject	vao;
+    QOpenGLBuffer vbo;
+    QOpenGLShaderProgram * program = nullptr;
+    std::chrono::steady_clock::time_point showingSpinnerStartTime;
 };
 
 #endif // MPVWIDGET_H

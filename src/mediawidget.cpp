@@ -170,7 +170,7 @@ void MediaWidget::PlayChannel(const QString& name, const QString& uri)
     selectedUri = uri;
     selectedName = name;
     mpvWidget->command(QStringList() << "stop");
-    mpvWidget->stopRendering();
+    mpvWidget->stopRenderingMedia();
     mpvWidget->clearScreen();
     mpvWidget->command(QStringList() << "apply-profile" << "gpu-hq");
     mpvWidget->command(QStringList() << "loadfile" << selectedUri);
@@ -270,7 +270,7 @@ void MediaWidget::mediaWheelEvent(QPoint delta)
 
 void MediaWidget::fileLoaded()
 {
-    mpvWidget->restartRendering();
+    mpvWidget->startRenderingMedia();
     subtitles.clear();
     int tracksCount = mpvWidget->getProperty("track-list/count").toInt();
     qDebug() << "track count "<<tracksCount;
