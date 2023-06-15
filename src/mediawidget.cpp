@@ -190,7 +190,7 @@ void MediaWidget::PlayChannel(const QString& name, const QString& uri)
     mpvWidget->setProperty("sid", QVariant{"no"});
     mpvWidget->setProperty("loop-playlist", QVariant{"inf"});
     mediaTitleLabel->setStyleSheet("");
-    mediaTitleLabel->setText(selectedName);
+    mediaTitleLabel->setText(QString("Loading %1 ...").arg(selectedName));
 
     stopped = false;
     toggleSystemSleep();
@@ -279,6 +279,7 @@ void MediaWidget::mediaWheelEvent(QPoint delta)
 
 void MediaWidget::fileLoaded()
 {
+    mediaTitleLabel->setText(selectedName);
     fileLoadRetryTimes = 0;
     mpvWidget->startRenderingMedia();
     subtitles.clear();
