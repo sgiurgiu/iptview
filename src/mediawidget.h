@@ -36,6 +36,12 @@ private slots:
     void subtitlesToggled(bool);
     void mpvDoubleClicked();
     void fullScreenActionToggled(bool);
+
+    void fileLoadingError(QString message);
+    void fileUnknownFormatError(QString message);
+    void unsupportedSystemError(QString message);
+    void outputInitializationError(QString message);
+
 protected:
     virtual void keyPressEvent(QKeyEvent *event) override;
 private:
@@ -83,6 +89,7 @@ private:
     bool fullScreen = false;
     QWidget* controlsWidget = nullptr;
     QMargins contentMargins;
+    int fileLoadRetryTimes = 0;
 };
 
 #endif // MEDIAWIDGET_H

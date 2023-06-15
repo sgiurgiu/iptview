@@ -21,6 +21,8 @@
 namespace
 {
     constexpr int VOLUME_OVERLAY_ID = 0;
+    // TODO: make it a preference
+    constexpr int MAX_FILE_LOAD_RETRY_TIMES = 10;
 }
 
 MediaWidget::MediaWidget(QWidget *parent)
@@ -34,6 +36,11 @@ MediaWidget::MediaWidget(QWidget *parent)
     connect(mpvWidget,SIGNAL(wheelScrolled(QPoint)), this, SLOT(mediaWheelEvent(QPoint)));
     connect(mpvWidget,SIGNAL(fileLoaded()), this, SLOT(fileLoaded()));
     connect(mpvWidget, SIGNAL(doubleClicked()),this, SLOT(mpvDoubleClicked()));
+
+    connect(mpvWidget, SIGNAL(fileLoadingError(QString)),this, SLOT(fileLoadingError(QString)));
+    connect(mpvWidget, SIGNAL(fileUnknownFormatError(QString)),this, SLOT(fileUnknownFormatError(QString)));
+    connect(mpvWidget, SIGNAL(unsupportedSystemError(QString)),this, SLOT(unsupportedSystemError(QString)));
+    connect(mpvWidget, SIGNAL(outputInitializationError(QString)),this, SLOT(outputInitializationError(QString)));
 
     layout->addWidget(mpvWidget, 1);
 
@@ -149,6 +156,7 @@ void MediaWidget::playPauseTriggered()
 void MediaWidget::stopTriggered()
 {
     mpvWidget->command(QStringList() << "stop");
+    mpvWidget->stopRenderingMedia();
     stopped = true;
     playPauseAction->setIcon(playIcon);
     playPauseAction->setToolTip("Play");
@@ -171,7 +179,6 @@ void MediaWidget::PlayChannel(const QString& name, const QString& uri)
     selectedName = name;
     mpvWidget->command(QStringList() << "stop");
     mpvWidget->stopRenderingMedia();
-    mpvWidget->clearScreen();
     mpvWidget->command(QStringList() << "apply-profile" << "gpu-hq");
     mpvWidget->command(QStringList() << "loadfile" << selectedUri);
     playPauseAction->setEnabled(true);
@@ -182,7 +189,9 @@ void MediaWidget::PlayChannel(const QString& name, const QString& uri)
     mpvWidget->setProperty("pause", QVariant{false});
     mpvWidget->setProperty("sid", QVariant{"no"});
     mpvWidget->setProperty("loop-playlist", QVariant{"inf"});
+    mediaTitleLabel->setStyleSheet("");
     mediaTitleLabel->setText(selectedName);
+
     stopped = false;
     toggleSystemSleep();
 }
@@ -270,6 +279,7 @@ void MediaWidget::mediaWheelEvent(QPoint delta)
 
 void MediaWidget::fileLoaded()
 {
+    fileLoadRetryTimes = 0;
     mpvWidget->startRenderingMedia();
     subtitles.clear();
     int tracksCount = mpvWidget->getProperty("track-list/count").toInt();
@@ -477,4 +487,39 @@ void MediaWidget::keyPressEvent(QKeyEvent *event)
 void MediaWidget::fullScreenActionToggled(bool)
 {
     toggleFullScreen();
+}
+
+void MediaWidget::fileLoadingError(QString message)
+{
+    QString errorMessage = QString("%1. Retrying (attempt %2 of %3)... ").arg(message).arg(fileLoadRetryTimes+1).arg(MAX_FILE_LOAD_RETRY_TIMES);
+    if(fileLoadRetryTimes >= MAX_FILE_LOAD_RETRY_TIMES)
+    {
+        errorMessage = QString("%1. No more retries ").arg(message);
+    }
+
+    mediaTitleLabel->setText(errorMessage);
+    mediaTitleLabel->setStyleSheet("QLabel { color : red; }");
+
+    if(fileLoadRetryTimes < MAX_FILE_LOAD_RETRY_TIMES)
+    {
+        QTimer::singleShot(2000, this, [this](){
+            PlayChannel(selectedName, selectedUri);
+            ++fileLoadRetryTimes;
+        });
+    }
+}
+void MediaWidget::fileUnknownFormatError(QString message)
+{
+    mediaTitleLabel->setText(message);
+    mediaTitleLabel->setStyleSheet("QLabel { color : red; }");
+}
+void MediaWidget::unsupportedSystemError(QString message)
+{
+    mediaTitleLabel->setText(message);
+    mediaTitleLabel->setStyleSheet("QLabel { color : red; }");
+}
+void MediaWidget::outputInitializationError(QString message)
+{
+    mediaTitleLabel->setText(message);
+    mediaTitleLabel->setStyleSheet("QLabel { color : red; }");
 }

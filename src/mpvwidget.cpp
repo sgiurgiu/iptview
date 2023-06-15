@@ -235,7 +235,7 @@ void MpvWidget::onMpvEvents()
 }
 
 void MpvWidget::handleMpvEvent(mpv_event *event)
-{
+{    
     switch (event->event_id) {
     case MPV_EVENT_PROPERTY_CHANGE:
     {
@@ -253,12 +253,48 @@ void MpvWidget::handleMpvEvent(mpv_event *event)
         }
         break;
     }
+    case MPV_EVENT_END_FILE:
+    {
+        mpv_event_end_file* end_file = static_cast<mpv_event_end_file*>(event->data);
+        if(end_file->error < 0)
+        {
+            notifyOfErrors(end_file->error);
+        }
+    }
+        break;
+    case MPV_EVENT_NONE:
+    case MPV_EVENT_IDLE:
+        break;
     case MPV_EVENT_FILE_LOADED:
         startRenderingMedia();
         emit fileLoaded();
         break;
-    default: ;
+    default:
+        qDebug() << "MpvWidget::handleMpvEvent : "<<event->event_id;
+        break;
         // Ignore uninteresting or unknown events.
+    }
+}
+
+void MpvWidget::notifyOfErrors(int errorCode)
+{
+    if(errorCode >= 0) return;
+    switch(errorCode)
+    {
+    case MPV_ERROR_LOADING_FAILED:
+        emit fileLoadingError(mpv_error_string(errorCode));
+        break;
+    case MPV_ERROR_UNKNOWN_FORMAT:
+        emit fileUnknownFormatError(mpv_error_string(errorCode));
+        break;
+    case MPV_ERROR_UNSUPPORTED:
+        emit unsupportedSystemError(mpv_error_string(errorCode));
+        break;
+    case MPV_ERROR_AO_INIT_FAILED:
+        [[fallthrough]];
+    case MPV_ERROR_VO_INIT_FAILED:
+        emit outputInitializationError(mpv_error_string(errorCode));
+        break;
     }
 }
 

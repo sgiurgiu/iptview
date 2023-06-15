@@ -34,6 +34,10 @@ signals:
     void wheelScrolled(QPoint delta);
     void fileLoaded();
     void doubleClicked();
+    void fileLoadingError(QString message);
+    void fileUnknownFormatError(QString message);
+    void unsupportedSystemError(QString message);
+    void outputInitializationError(QString message);
 protected:
     void initializeGL() Q_DECL_OVERRIDE;
     void paintGL() Q_DECL_OVERRIDE;
@@ -47,6 +51,7 @@ private:
     void handleMpvEvent(mpv_event *event);
     static void onUpdate(void *ctx);
     void drawSpinner();
+    void notifyOfErrors(int errorCode);
 
     mpv_handle *mpv;
     mpv_render_context *mpv_gl;
