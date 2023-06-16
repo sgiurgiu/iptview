@@ -41,6 +41,29 @@ void Database::executeStatement(const char* sql, const char* errMsg) const
     }
 }
 
+std::unique_ptr<ChannelTreeItem> Database::GetChannel(int64_t id) const
+{
+    QSqlQuery query;
+    query.prepare("SELECT NAME,URI,LOGO_URI,LOGO,FAVOURITE FROM CHANNELS WHERE CHANNEL_ID = ?");
+    query.bindValue(0, static_cast<qlonglong>(id));
+
+    if(!query.exec())
+    {
+        throw DatabaseException("Cannot select from CHANNELS " + query.lastError().text());
+    }
+
+    if(query.next())
+    {
+        QString name = query.value(0).toString();
+        QString uri = query.value(1).toString();
+        QString logoUri = query.value(2).toString();
+        QByteArray logo = query.value(3).toByteArray();
+
+        return std::make_unique<ChannelTreeItem>(name,uri,logoUri,logo,nullptr,nullptr);
+    }
+    return std::unique_ptr<ChannelTreeItem>{};
+}
+
 void Database::LoadChannelsAndGroups(RootTreeItem* rootItem) const
 {
     QSqlQuery query;

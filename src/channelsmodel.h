@@ -31,8 +31,9 @@ public:
     QHash<int, QByteArray> roleNames() const override;
     enum ChannelRoles
     {
-           NameRole = Qt::UserRole + 1,
-           UriRole
+        NameRole = Qt::UserRole + 1,
+        UriRole,
+        IdRole
     };
     void AddToFavourites(AbstractChannelTreeItem* item);
     void RemoveFromFavourites(AbstractChannelTreeItem* item);

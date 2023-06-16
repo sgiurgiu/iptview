@@ -54,11 +54,10 @@ void ChannelsWidget::onDoubleClickedTreeItem(const QModelIndex &index)
 {
     if(index.isValid())
     {
-        auto uri = index.data(ChannelsModel::ChannelRoles::UriRole);
-        auto name = index.data(ChannelsModel::ChannelRoles::NameRole);
-        if(uri.isValid())
+        auto id = index.data(ChannelsModel::ChannelRoles::IdRole);
+        if(id.isValid())
         {
-            emit playChannel(name.isValid()?name.toString():"", uri.toString());
+            emit playChannel(id.toLongLong());
         }
     }
 }
@@ -77,11 +76,10 @@ void ChannelsWidget::itemsSelectionChanged(const QItemSelection &selected, const
         return;
     }
 
-    auto uri = firstSelected.data(ChannelsModel::ChannelRoles::UriRole);
-    auto name = firstSelected.data(ChannelsModel::ChannelRoles::NameRole);
-    if(uri.isValid())
+    auto id = firstSelected.data(ChannelsModel::ChannelRoles::IdRole);
+    if(id.isValid())
     {
-        emit selectChannel(name.isValid()?name.toString():"", uri.toString());
+        emit selectChannel(id.toLongLong());
     }
 }
 void ChannelsWidget::onCustomContextMenu(const QPoint &point)

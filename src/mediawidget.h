@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include <QIcon>
+#include <memory>
+
 
 class MpvWidget;
 class QAction;
@@ -11,6 +13,7 @@ class QTimer;
 class QToolButton;
 class QMenu;
 class QLabel;
+class ChannelTreeItem;
 
 class MediaWidget : public QWidget
 {
@@ -18,8 +21,8 @@ class MediaWidget : public QWidget
 public:
     explicit MediaWidget(QWidget *parent = nullptr);
 public slots:
-    void PlayChannel(const QString& name, const QString& uri);
-    void SelectChannel(const QString& name, const QString& uri);
+    void PlayChannel(int64_t);
+    void SelectChannel(int64_t);
 signals:
     void showingFullScreen(bool);
 private slots:
@@ -51,6 +54,7 @@ private:
     void setSubtitle(const QString& id);
     void toggleSystemSleep();
     void toggleFullScreen();
+    void playChannel(std::unique_ptr<ChannelTreeItem> channel);
 private:
     struct Subtitle
     {
@@ -66,8 +70,7 @@ private:
     QSlider* volumeSlider = nullptr;
     QAction* volumeAction = nullptr;
     QAction* fullScreenAction = nullptr;
-    QString selectedUri;
-    QString selectedName;
+    std::unique_ptr<ChannelTreeItem> selectedChannel;
     bool stopped = true;
     QTimer* volumeOsdTimer = nullptr;
     QIcon stopIcon = QIcon{":/icons/stop.png"};

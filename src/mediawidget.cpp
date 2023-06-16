@@ -17,6 +17,9 @@
 #include <QKeyEvent>
 
 #include "mpvwidget.h"
+#include "databaseprovider.h"
+#include "database.h"
+#include "channeltreeitem.h"
 
 namespace
 {
@@ -140,9 +143,9 @@ QWidget* MediaWidget::createControlsWidget()
 }
 void MediaWidget::playPauseTriggered()
 {
-    if(stopped && !selectedUri.isEmpty())
+    if(stopped && selectedChannel)
     {
-        PlayChannel(selectedName, selectedUri);
+        playChannel(std::move(selectedChannel));
         return;
     }
     auto pausedVariant = mpvWidget->getProperty("pause");
@@ -170,17 +173,15 @@ void MediaWidget::skipForwardTriggered()
 {
 
 }
-
-void MediaWidget::PlayChannel(const QString& name, const QString& uri)
+void MediaWidget::playChannel(std::unique_ptr<ChannelTreeItem> channel)
 {
-    if(uri.isEmpty()) return;
+    if(!channel) return;
+    selectedChannel.swap(channel);
     subtitles.clear();
-    selectedUri = uri;
-    selectedName = name;
     mpvWidget->command(QStringList() << "stop");
     mpvWidget->stopRenderingMedia();
     mpvWidget->command(QStringList() << "apply-profile" << "gpu-hq");
-    mpvWidget->command(QStringList() << "loadfile" << selectedUri);
+    mpvWidget->command(QStringList() << "loadfile" << selectedChannel->getUri());
     playPauseAction->setEnabled(true);
     playPauseAction->setIcon(pauseIcon);
     playPauseAction->setToolTip("Pause");
@@ -190,21 +191,25 @@ void MediaWidget::PlayChannel(const QString& name, const QString& uri)
     mpvWidget->setProperty("sid", QVariant{"no"});
     mpvWidget->setProperty("loop-playlist", QVariant{"inf"});
     mediaTitleLabel->setStyleSheet("");
-    mediaTitleLabel->setText(QString("Loading %1 ...").arg(selectedName));
+    mediaTitleLabel->setText(QString("Loading %1 ...").arg(selectedChannel->getName()));
 
     stopped = false;
     toggleSystemSleep();
 }
-void MediaWidget::SelectChannel(const QString& name, const QString& uri)
+void MediaWidget::PlayChannel(int64_t id)
 {
-    if(uri.isEmpty() || !stopped) return;
-
-    selectedUri = uri;
-    selectedName = name;
+    playChannel(DatabaseProvider::GetDatabase()->GetChannel(id));
+}
+void MediaWidget::SelectChannel(int64_t id)
+{
+    if(selectedChannel && !stopped) return;
+    auto channel = DatabaseProvider::GetDatabase()->GetChannel(id);
+    if(!channel) return;
+    selectedChannel.swap(channel);
     playPauseAction->setEnabled(true);
     playPauseAction->setIcon(playIcon);
     playPauseAction->setToolTip("Play");
-    mediaTitleLabel->setText(name);
+    mediaTitleLabel->setText(selectedChannel->getName());
 }
 void MediaWidget::volumeToggled(bool checked)
 {
@@ -248,7 +253,7 @@ void MediaWidget::volumeChanged(int volume)
     volumeAction->setChecked(false);
     QSettings settings;
     settings.setValue("player/volume", vol);
-    if(selectedUri.isEmpty()) return;
+    if(!selectedChannel) return;
 
     QVariantMap map;
     map["name"] = "osd-overlay";
@@ -279,7 +284,7 @@ void MediaWidget::mediaWheelEvent(QPoint delta)
 
 void MediaWidget::fileLoaded()
 {
-    mediaTitleLabel->setText(selectedName);
+    mediaTitleLabel->setText(selectedChannel->getName());
     fileLoadRetryTimes = 0;
     mpvWidget->startRenderingMedia();
     subtitles.clear();
@@ -504,7 +509,7 @@ void MediaWidget::fileLoadingError(QString message)
     if(fileLoadRetryTimes < MAX_FILE_LOAD_RETRY_TIMES)
     {
         QTimer::singleShot(2000, this, [this](){
-            PlayChannel(selectedName, selectedUri);
+            playChannel(std::move(selectedChannel));
             ++fileLoadRetryTimes;
         });
     }

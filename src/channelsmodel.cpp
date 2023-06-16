@@ -79,6 +79,7 @@ QHash<int, QByteArray> ChannelsModel::roleNames() const
     QHash<int, QByteArray> roles = QAbstractItemModel::roleNames();
     roles[ChannelRoles::NameRole] = "name";
     roles[ChannelRoles::UriRole] = "uri";
+    roles[ChannelRoles::IdRole] = "id";
     return roles;
 }
 
@@ -137,15 +138,29 @@ QVariant ChannelsModel::data(const QModelIndex &index, int role) const
             }
             else
             {
-                return QVariant();
+                return QVariant{};
             }
         }
         else
         {
-            return QVariant();
+            return QVariant{};
         }
+    case IdRole:
+        if(item->getType() == ChannelTreeItemType::Channel)
+        {
+            ChannelTreeItem* channel = dynamic_cast<ChannelTreeItem*>(item);
+            if(channel)
+            {
+                return QVariant{(qlonglong)channel->getID()};
+            }
+            else
+            {
+                return QVariant{};
+            }
+        }
+        return QVariant{};
     default:
-        return QVariant();
+        return QVariant{};
     }
 }
 QModelIndex ChannelsModel::index(int row, int column, const QModelIndex &parent) const

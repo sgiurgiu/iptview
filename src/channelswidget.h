@@ -19,8 +19,8 @@ public:
     explicit ChannelsWidget(QWidget *parent = nullptr);
     void ImportPlaylist(M3UList list);
 signals:
-    void playChannel(const QString& name, const QString& uri);
-    void selectChannel(const QString& name, const QString& uri);
+    void playChannel(int64_t id);
+    void selectChannel(int64_t id);
 private slots:
     void onDoubleClickedTreeItem(const QModelIndex &index);
     void onCustomContextMenu(const QPoint &point);
