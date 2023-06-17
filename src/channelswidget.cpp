@@ -191,43 +191,56 @@ void ChannelsWidget::onRemoveFromFavourites()
 void ChannelsWidget::onAddNewChannel()
 {
     auto treeItemVariant = addNewChannelAction->data();
+
+    QDialog* dialog = new QDialog(this);
+    dialog->setModal(true);
+    QLineEdit* nameLineEdit = new QLineEdit(dialog);
+    QLineEdit* urlLineEdit = new QLineEdit(dialog);
+    QLineEdit* iconLineEdit = new QLineEdit(dialog);
+    QFormLayout *formLayout = new QFormLayout(dialog);
+    formLayout->addRow(tr("&Name:"), nameLineEdit);
+    formLayout->addRow(tr("&Url:"), urlLineEdit);
+    formLayout->addRow(tr("&Icon:"), iconLineEdit);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                         | QDialogButtonBox::Cancel, dialog);
+    connect(buttonBox, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+    formLayout->addWidget(buttonBox);
+    dialog->setLayout(formLayout);
+
     TreeItemIndex treeItemIndex;
     if(treeItemVariant.isValid())
     {
         treeItemIndex = treeItemVariant.value<TreeItemIndex>();
-        QDialog* dialog = new QDialog(this);
-        dialog->setModal(true);
-        QLineEdit* nameLineEdit = new QLineEdit(dialog);
-        QLineEdit* urlLineEdit = new QLineEdit(dialog);
-        QLineEdit* iconLineEdit = new QLineEdit(dialog);
-        QFormLayout *formLayout = new QFormLayout(dialog);
-        formLayout->addRow(tr("&Name:"), nameLineEdit);
-        formLayout->addRow(tr("&Url:"), urlLineEdit);
-        formLayout->addRow(tr("&Icon:"), iconLineEdit);
-        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
-                                             | QDialogButtonBox::Cancel, dialog);
-
-        connect(buttonBox, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
-        connect(buttonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
-        formLayout->addWidget(buttonBox);
-        dialog->setLayout(formLayout);
 
         auto index = treeItemIndex.index;
         auto parentItem = treeItemIndex.treeItem;
 
         connect(dialog, &QDialog::finished, this,
                 [dialog, nameLineEdit, urlLineEdit, iconLineEdit, index, parentItem, this](int result){
-            if(result == QDialog::Accepted)
+            if(result == QDialog::DialogCode::Accepted)
             {
                 auto channel = DatabaseProvider::GetDatabase()->AddChannel(nameLineEdit->text(), urlLineEdit->text(), iconLineEdit->text(), parentItem->getID(), model->GetNetworkManager());
                 model->AddChild(channel.release(), index);
             }
             dialog->deleteLater();
         });
-
-        dialog->open();
+    }
+    else
+    {
+        //we're adding to root
+        connect(dialog, &QDialog::finished, this,
+                [dialog, nameLineEdit, urlLineEdit, iconLineEdit, this](int result){
+            if(result == QDialog::DialogCode::Accepted)
+            {
+                auto channel = DatabaseProvider::GetDatabase()->AddChannel(nameLineEdit->text(), urlLineEdit->text(), iconLineEdit->text(), {}, model->GetNetworkManager());
+                model->AddChild(channel.release(), QModelIndex{});
+            }
+            dialog->deleteLater();
+        });
     }
 
+    dialog->open();
 }
 void ChannelsWidget::onRemoveChannel()
 {

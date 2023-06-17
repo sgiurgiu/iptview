@@ -195,7 +195,7 @@ void Database::SetChannelLogo(ChannelTreeItem* channel) const
 std::unique_ptr<ChannelTreeItem> Database::AddChannel(const QString& name,const QString& url,const QString& icon, std::optional<int64_t> parentGroupId, QNetworkAccessManager* networkManager) const
 {
     auto channel = std::make_unique<ChannelTreeItem>(name, url, icon, QByteArray{}, networkManager, nullptr);
-    addChannel(channel.get(), parentGroupId.value());
+    addChannel(channel.get(), parentGroupId);
     return channel;
 }
 void Database::AddChannelAndGroup(ChannelTreeItem* channel) const
