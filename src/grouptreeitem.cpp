@@ -3,15 +3,28 @@
 #include "mediasegment.h"
 #include "roottreeitem.h"
 
+namespace
+{
+    Q_GLOBAL_STATIC(QIcon, defaultGroupIcon);
+}
+
 GroupTreeItem::GroupTreeItem(QString name,QNetworkAccessManager* networkManager, RootTreeItem* parent)
     : AbstractChannelTreeItem(networkManager, parent), name{std::move(name)}
 {
-    icon = QIcon(":/icons/folder-open.png");
+    if(defaultGroupIcon->isNull())
+    {
+        defaultGroupIcon->addFile(":/icons/folder-open.png");
+    }
+    icon = *defaultGroupIcon;
 }
 GroupTreeItem::GroupTreeItem(QString name, QNetworkAccessManager* networkManager, GroupTreeItem* parent)
     : AbstractChannelTreeItem(networkManager, parent), name{std::move(name)}
 {
-    icon = QIcon(":/icons/folder-open.png");
+    if(defaultGroupIcon->isNull())
+    {
+        defaultGroupIcon->addFile(":/icons/folder-open.png");
+    }
+    icon = *defaultGroupIcon;
 }
 
 void GroupTreeItem::loadChannelsIcons()

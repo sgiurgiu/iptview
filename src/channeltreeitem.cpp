@@ -12,18 +12,18 @@
 
 namespace
 {
-    static QIcon defaultChannelIcon;
+    Q_GLOBAL_STATIC(QIcon, defaultChannelIcon);
 }
 
 ChannelTreeItem::ChannelTreeItem(QString name, QString uri, QString logoUri, QByteArray logo, QNetworkAccessManager* networkManager, AbstractChannelTreeItem* parent)
     : AbstractChannelTreeItem(networkManager, parent), name{std::move(name)},
       uri(std::move(uri)), logoUri{std::move(logoUri)}, logo{std::move(logo)}
 {
-    if(defaultChannelIcon.isNull())
+    if(defaultChannelIcon->isNull())
     {
-        defaultChannelIcon = QIcon{":/icons/film-outline.png"};
+        defaultChannelIcon->addFile(":/icons/film-outline.png");
     }
-    icon = defaultChannelIcon;
+    icon = *defaultChannelIcon;
 }
 void ChannelTreeItem::loadIcon()
 {
