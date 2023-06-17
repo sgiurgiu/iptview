@@ -6,11 +6,9 @@ FavouritesTreeItem::FavouritesTreeItem(QNetworkAccessManager* networkManager, Ro
     icon = QIcon(":/icons/star.png");
 }
 
-AbstractChannelTreeItem* FavouritesTreeItem::removeChild(AbstractChannelTreeItem* item)
+AbstractChannelTreeItem* FavouritesTreeItem::removeFavouriteChild(AbstractChannelTreeItem* item)
 {
-    children.erase(std::remove_if(children.begin(), children.end(),[item](auto& child){
-        return item == child.get();
-    }), children.end());
+    removeChild(item);
     if(children.empty())
     {
         return nullptr;

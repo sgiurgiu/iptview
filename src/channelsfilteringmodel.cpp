@@ -11,6 +11,11 @@ ChannelsFilteringModel::ChannelsFilteringModel(QObject *parent)
 
 bool ChannelsFilteringModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
+    auto filter = filterRegularExpression();
+    if(!filter.isValid() || filter.pattern().isEmpty())
+    {
+        return true;
+    }
     QModelIndex sourceIndex = sourceModel()->index(sourceRow, 0, sourceParent);
     AbstractChannelTreeItem* item = static_cast<AbstractChannelTreeItem*>(sourceIndex.internalPointer());
     if(item->getType() != ChannelTreeItemType::Channel)
@@ -28,5 +33,5 @@ bool ChannelsFilteringModel::filterAcceptsRow(int sourceRow, const QModelIndex &
         return false;
     }
 
-    return item->getName().contains(filterRegularExpression());
+    return item->getName().contains(filter);
 }

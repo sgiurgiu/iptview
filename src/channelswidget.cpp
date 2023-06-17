@@ -6,10 +6,28 @@
 #include <QAction>
 #include <QLineEdit>
 #include <QDebug>
+#include <QDialog>
+#include <QMessageBox>
+#include <QInputDialog>
+#include <QFormLayout>
+#include <QDialogButtonBox>
 
 #include "channelsfilteringmodel.h"
 #include "channelsmodel.h"
 #include "abstractchanneltreeitem.h"
+#include "channeltreeitem.h"
+#include "databaseprovider.h"
+#include "database.h"
+#include "grouptreeitem.h"
+
+namespace
+{
+    struct TreeItemIndex
+    {
+        QModelIndex index;
+        AbstractChannelTreeItem* treeItem = nullptr;
+    };
+}
 
 ChannelsWidget::ChannelsWidget(QWidget *parent)
     : QWidget{parent}
@@ -37,10 +55,18 @@ ChannelsWidget::ChannelsWidget(QWidget *parent)
     contextMenu = new QMenu(this);
     addToFavouritesAction = new QAction("Add to Favourites", this);
     removeFromFavouritesAction = new QAction("Remove from Favourites", this);
+    addNewChannelAction = new QAction("Add new channel", this);
+    removeChannelAction = new QAction("Remove channel", this);
+    removeChannelGroupAction = new QAction("Remove group", this);
+    addNewChannelGroupAction = new QAction("Add new group", this);
     channels->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(channels, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onCustomContextMenu(QPoint)));
     connect(addToFavouritesAction, SIGNAL(triggered(bool)), this, SLOT(onAddToFavourites()));
     connect(removeFromFavouritesAction, SIGNAL(triggered(bool)), this, SLOT(onRemoveFromFavourites()));
+    connect(addNewChannelAction, SIGNAL(triggered(bool)), this, SLOT(onAddNewChannel()));
+    connect(removeChannelAction, SIGNAL(triggered(bool)), this, SLOT(onRemoveChannel()));
+    connect(removeChannelGroupAction, SIGNAL(triggered(bool)), this, SLOT(onRemoveChannelGroup()));
+    connect(addNewChannelGroupAction, SIGNAL(triggered(bool)), this, SLOT(onAddNewChannelGroup()));
 }
 void ChannelsWidget::searchTextChanged(const QString& text)
 {
@@ -84,36 +110,70 @@ void ChannelsWidget::itemsSelectionChanged(const QItemSelection &selected, const
 }
 void ChannelsWidget::onCustomContextMenu(const QPoint &point)
 {
-    QModelIndex proxyIndex = channels->indexAt(point);
-    if(!proxyIndex.isValid())
-    {
-        return;
-    }
+    contextMenu->clear();
+    addNewChannelAction->setData(QVariant{});
+    addNewChannelGroupAction->setData(QVariant{});
+    QModelIndex proxyIndex = channels->indexAt(point);    
     auto index = proxyModel->mapToSource(proxyIndex);
     if(!index.isValid())
     {
+        contextMenu->addAction(addNewChannelAction);
+        contextMenu->addAction(addNewChannelGroupAction);
+        contextMenu->exec(channels->viewport()->mapToGlobal(point));
         return;
     }
 
     auto treeItem = static_cast<AbstractChannelTreeItem*>(index.internalPointer());
-    if(treeItem && treeItem->getType() == ChannelTreeItemType::Channel)
+    if(!treeItem) return;
+
+    if(treeItem->getType() == ChannelTreeItemType::Channel)
     {
-        contextMenu->clear();
         auto parentItem = treeItem->getParent();
         if(parentItem && parentItem->getType() == ChannelTreeItemType::Favourite)
         {
             removeFromFavouritesAction->setData(QVariant::fromValue(treeItem));
+            contextMenu->addSeparator();
             contextMenu->addAction(removeFromFavouritesAction);
             contextMenu->exec(channels->viewport()->mapToGlobal(point));
         }
         else if(parentItem && (parentItem->getType() == ChannelTreeItemType::Group || parentItem->getType() == ChannelTreeItemType::Root))
         {
+            TreeItemIndex parentTreeItemIndex;
+            parentTreeItemIndex.index = index.parent();
+            parentTreeItemIndex.treeItem = parentItem;
+
+            TreeItemIndex treeItemIndex;
+            treeItemIndex.index = index;
+            treeItemIndex.treeItem = treeItem;
+
+            addNewChannelAction->setData(QVariant::fromValue(parentTreeItemIndex));
+            addNewChannelGroupAction->setData(QVariant::fromValue(parentTreeItemIndex));
+
+            removeChannelAction->setData(QVariant::fromValue(std::move(treeItemIndex)));
             addToFavouritesAction->setData(QVariant::fromValue(treeItem));
+
             contextMenu->addAction(addToFavouritesAction);
+            contextMenu->addSeparator();
+            contextMenu->addAction(addNewChannelAction);
+            contextMenu->addAction(addNewChannelGroupAction);
+            contextMenu->addAction(removeChannelAction);
             contextMenu->exec(channels->viewport()->mapToGlobal(point));
         }
     }
+    else if(treeItem->getType() == ChannelTreeItemType::Group)
+    {
+        TreeItemIndex treeItemIndex;
+        treeItemIndex.index = index;
+        treeItemIndex.treeItem = treeItem;
 
+        removeChannelGroupAction->setData(QVariant::fromValue(treeItemIndex));
+        addNewChannelAction->setData(QVariant::fromValue(treeItemIndex));
+        addNewChannelGroupAction->setData(QVariant::fromValue(treeItemIndex));
+        contextMenu->addAction(addNewChannelAction);
+        contextMenu->addAction(addNewChannelGroupAction);
+        contextMenu->addAction(removeChannelGroupAction);
+        contextMenu->exec(channels->viewport()->mapToGlobal(point));
+    }
 }
 
 void ChannelsWidget::onAddToFavourites()
@@ -127,4 +187,91 @@ void ChannelsWidget::onRemoveFromFavourites()
     auto treeItem = removeFromFavouritesAction->data().value<AbstractChannelTreeItem*>();
     model->RemoveFromFavourites(treeItem);
     proxyModel->invalidate();
+}
+void ChannelsWidget::onAddNewChannel()
+{
+    auto treeItemVariant = addNewChannelAction->data();
+    TreeItemIndex treeItemIndex;
+    if(treeItemVariant.isValid())
+    {
+        treeItemIndex = treeItemVariant.value<TreeItemIndex>();
+        QDialog* dialog = new QDialog(this);
+        dialog->setModal(true);
+        QLineEdit* nameLineEdit = new QLineEdit(dialog);
+        QLineEdit* urlLineEdit = new QLineEdit(dialog);
+        QLineEdit* iconLineEdit = new QLineEdit(dialog);
+        QFormLayout *formLayout = new QFormLayout(dialog);
+        formLayout->addRow(tr("&Name:"), nameLineEdit);
+        formLayout->addRow(tr("&Url:"), urlLineEdit);
+        formLayout->addRow(tr("&Icon:"), iconLineEdit);
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                             | QDialogButtonBox::Cancel, dialog);
+
+        connect(buttonBox, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
+        connect(buttonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+        formLayout->addWidget(buttonBox);
+        dialog->setLayout(formLayout);
+
+        auto index = treeItemIndex.index;
+        auto parentItem = treeItemIndex.treeItem;
+
+        connect(dialog, &QDialog::finished, this,
+                [dialog, nameLineEdit, urlLineEdit, iconLineEdit, index, parentItem, this](int result){
+            if(result == QDialog::Accepted)
+            {
+                auto channel = DatabaseProvider::GetDatabase()->AddChannel(nameLineEdit->text(), urlLineEdit->text(), iconLineEdit->text(), parentItem->getID(), model->GetNetworkManager());
+                model->AddChild(channel.release(), index);
+            }
+            dialog->deleteLater();
+        });
+
+        dialog->open();
+    }
+
+}
+void ChannelsWidget::onRemoveChannel()
+{
+    auto treeItemIndex = removeChannelAction->data().value<TreeItemIndex>();
+    if(treeItemIndex.treeItem != nullptr && treeItemIndex.index.isValid())
+    {
+        auto selectedButton = QMessageBox::question(this, "Confirm",QString("Are you sure you want to delete channel %1?").arg(treeItemIndex.treeItem->getName()));
+        if(selectedButton == QMessageBox::StandardButton::Yes)
+        {
+            DatabaseProvider::GetDatabase()->RemoveChannel(treeItemIndex.treeItem->getID());
+            model->RemoveChild(treeItemIndex.treeItem, treeItemIndex.index);
+        }
+    }
+}
+void ChannelsWidget::onRemoveChannelGroup()
+{
+    auto treeItemIndex = removeChannelGroupAction->data().value<TreeItemIndex>();
+    if(treeItemIndex.treeItem != nullptr && treeItemIndex.index.isValid())
+    {
+        auto selectedButton = QMessageBox::question(this, "Confirm",QString("Are you sure you want to delete channel group %1 and all its channels?").arg(treeItemIndex.treeItem->getName()));
+        if(selectedButton == QMessageBox::StandardButton::Yes)
+        {
+            DatabaseProvider::GetDatabase()->RemoveGroup(treeItemIndex.treeItem->getID());
+            model->RemoveChild(treeItemIndex.treeItem, treeItemIndex.index);
+        }
+    }
+}
+void ChannelsWidget::onAddNewChannelGroup()
+{
+    auto treeItemVariant = addNewChannelGroupAction->data();
+    bool ok;
+    QString text = QInputDialog::getText(this, tr("Add new group"),
+                                         tr("Group name:"), QLineEdit::Normal,
+                                         "", &ok);
+    std::optional<int64_t> parentGroupId;
+    TreeItemIndex treeItemIndex;
+    if(treeItemVariant.isValid())
+    {
+        treeItemIndex = treeItemVariant.value<TreeItemIndex>();
+        parentGroupId.emplace(treeItemIndex.treeItem->getID());
+    }
+    if(ok && !text.isEmpty())
+    {
+        auto group = DatabaseProvider::GetDatabase()->AddGroup(text, parentGroupId);
+        model->AddChild(group.release(), treeItemIndex.index);
+    }
 }

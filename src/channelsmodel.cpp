@@ -2,6 +2,7 @@
 #include "abstractchanneltreeitem.h"
 #include "roottreeitem.h"
 #include "channeltreeitem.h"
+#include "grouptreeitem.h"
 
 #include "databaseprovider.h"
 #include "database.h"
@@ -23,6 +24,7 @@ ChannelsModel::~ChannelsModel()
     if(loadingIconsThread)
     {
         loadingIconsThread->wait();
+        delete loadingIconsThread;
     }
 }
 void ChannelsModel::loadChannels()
@@ -105,6 +107,11 @@ int ChannelsModel::rowCount(const QModelIndex &parent) const
         parentItem = rootItem.get();
     else
         parentItem = static_cast<AbstractChannelTreeItem*>(parent.internalPointer());
+
+    if(parentItem->getID() == 2)
+    {
+        int a =1 ;
+    }
 
     return parentItem->childCount();
 }
@@ -230,4 +237,58 @@ void ChannelsModel::aquiredIcon(AbstractChannelTreeItem* item)
 
     auto index = indexFromItem(item);
     emit dataChanged(index,index);
+}
+void ChannelsModel::AddChild(AbstractChannelTreeItem* child, const QModelIndex &parent)
+{    
+    AbstractChannelTreeItem *parentItem = nullptr;
+    if(!parent.isValid())
+    {
+        parentItem = rootItem.get();
+    }
+    else
+    {
+        parentItem = static_cast<AbstractChannelTreeItem*>(parent.internalPointer());
+    }
+    beginInsertRows(parent,parentItem->childCount(),parentItem->childCount());
+    auto parentType = parentItem->getType();
+    auto childType = child->getType();
+    switch(parentType)
+    {
+    case ChannelTreeItemType::Group:
+        if(childType == ChannelTreeItemType::Channel)
+        {
+            (static_cast<GroupTreeItem*>(parentItem))->addChannel(std::unique_ptr<ChannelTreeItem>(static_cast<ChannelTreeItem*>(child)));
+        }
+        if(childType == ChannelTreeItemType::Group)
+        {
+            (static_cast<GroupTreeItem*>(parentItem))->addGroup(std::unique_ptr<GroupTreeItem>(static_cast<GroupTreeItem*>(child)));
+        }
+    break;
+    case ChannelTreeItemType::Root:
+        if(childType == ChannelTreeItemType::Channel)
+        {
+            rootItem->addChannel(std::unique_ptr<ChannelTreeItem>(static_cast<ChannelTreeItem*>(child)));
+        }
+        if(childType == ChannelTreeItemType::Group)
+        {
+            rootItem->addGroup(std::unique_ptr<GroupTreeItem>(static_cast<GroupTreeItem*>(child)));
+        }
+        break;
+    default:
+        break;
+    }
+
+    endInsertRows();
+}
+void ChannelsModel::RemoveChild(AbstractChannelTreeItem* child, const QModelIndex &index)
+{
+    auto parent = child->getParent();
+    if(parent == nullptr) return;
+    beginRemoveRows(index.parent(), index.row(),index.row());
+    parent->removeChild(child);
+    endRemoveRows();
+}
+QNetworkAccessManager* ChannelsModel::GetNetworkManager() const
+{
+    return networkManager;
 }

@@ -83,6 +83,8 @@ ChannelTreeItem* GroupTreeItem::addMediaSegment(const MediaSegment& segment)
 }
 void GroupTreeItem::addGroup(std::unique_ptr<GroupTreeItem> group)
 {
+    if(groupsIdMap.contains(group->getID())) return;
+
     if(group->getID() >= 0)
     {
         groupsIdMap.insert(group->getID(), group.get());

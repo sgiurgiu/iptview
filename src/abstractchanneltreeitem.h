@@ -29,6 +29,7 @@ public:
     virtual QString getName() const = 0;
     virtual QIcon getIcon() const;
     virtual void appendChild(std::unique_ptr<AbstractChannelTreeItem> child);
+    virtual void removeChild(AbstractChannelTreeItem* child);
     virtual int childCount() const;
     virtual int row() const;
     virtual AbstractChannelTreeItem* child(int index) const;

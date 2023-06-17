@@ -11,6 +11,7 @@
 class QNetworkAccessManager;
 class AbstractChannelTreeItem;
 class RootTreeItem;
+class GroupTreeItem;
 class QThread;
 
 class ChannelsModel : public QAbstractItemModel
@@ -20,6 +21,8 @@ public:
     explicit ChannelsModel(QObject *parent = nullptr);
     ~ChannelsModel();
     void AddList(M3UList list);
+    void AddChild(AbstractChannelTreeItem* child, const QModelIndex &parent);
+    void RemoveChild(AbstractChannelTreeItem* child, const QModelIndex &index);
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     virtual int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -37,6 +40,7 @@ public:
     };
     void AddToFavourites(AbstractChannelTreeItem* item);
     void RemoveFromFavourites(AbstractChannelTreeItem* item);
+    QNetworkAccessManager* GetNetworkManager() const;
 private slots:
     void aquiredIcon(AbstractChannelTreeItem*);
 private:

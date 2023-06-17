@@ -28,12 +28,22 @@ private slots:
     void onRemoveFromFavourites();
     void itemsSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void searchTextChanged(const QString& text);
+    void onAddNewChannel();
+    void onRemoveChannel();
+    void onRemoveChannelGroup();
+    void onAddNewChannelGroup();
+private:
+
 private:
     QTreeView* channels;
     ChannelsModel* model;
     QMenu* contextMenu;
     QAction* addToFavouritesAction;
     QAction* removeFromFavouritesAction;
+    QAction* addNewChannelAction;
+    QAction* addNewChannelGroupAction;
+    QAction* removeChannelAction;
+    QAction* removeChannelGroupAction;
     QLineEdit* searchField;
     ChannelsFilteringModel* proxyModel;
 };

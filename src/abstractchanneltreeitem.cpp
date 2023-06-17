@@ -1,7 +1,5 @@
 #include "abstractchanneltreeitem.h"
 
-
-
 AbstractChannelTreeItem::AbstractChannelTreeItem(QNetworkAccessManager* networkManager, AbstractChannelTreeItem* parent):
     QObject{parent},
     parent{parent},
@@ -11,6 +9,8 @@ AbstractChannelTreeItem::AbstractChannelTreeItem(QNetworkAccessManager* networkM
 
 void AbstractChannelTreeItem::appendChild(std::unique_ptr<AbstractChannelTreeItem> child)
 {
+    child->setParent(this);
+    child->parent = this;
     children.push_back(std::move(child));
 }
 int AbstractChannelTreeItem::childCount() const
@@ -31,6 +31,11 @@ int AbstractChannelTreeItem::row() const
         return -1;
     }
     return -1;
+}
+void AbstractChannelTreeItem::removeChild(AbstractChannelTreeItem* child)
+{
+    child->setCancelOgoingOperations(true);
+    std::erase_if(children, [child](const auto& c){return c.get() == child;});
 }
 AbstractChannelTreeItem* AbstractChannelTreeItem::child(int index) const
 {

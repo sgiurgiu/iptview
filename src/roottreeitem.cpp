@@ -66,6 +66,8 @@ void RootTreeItem::updateMaps(ChannelTreeItem* channel)
 }
 void RootTreeItem::addGroup(std::unique_ptr<GroupTreeItem> group)
 {
+    if(groupsIdMap.contains(group->getID())) return;
+
     groupsMap.insert(group->getName(), group.get());
     if(group->getID() >= 0)
     {
@@ -134,6 +136,6 @@ std::pair<AbstractChannelTreeItem*,AbstractChannelTreeItem*> RootTreeItem::addTo
 }
 std::pair<AbstractChannelTreeItem*,AbstractChannelTreeItem*> RootTreeItem::removeFromFavourites(AbstractChannelTreeItem* item)
 {
-    auto lastChild = favourites->removeChild(item);
+    auto lastChild = favourites->removeFavouriteChild(item);
     return std::make_pair(favourites,lastChild);
 }

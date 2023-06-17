@@ -16,7 +16,7 @@ public:
     }
 
     //returns the last child or nullptr if none
-    AbstractChannelTreeItem* removeChild(AbstractChannelTreeItem* item);
+    AbstractChannelTreeItem* removeFavouriteChild(AbstractChannelTreeItem* item);
 };
 
 #endif // FAVOURITESTREEITEM_H
