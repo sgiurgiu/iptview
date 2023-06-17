@@ -39,6 +39,7 @@ private:
     QString uri;
     QString logoUri;
     QByteArray logo;
+    bool defaultIcon = true;
 };
 
 #endif // CHANNELTREEITEM_H

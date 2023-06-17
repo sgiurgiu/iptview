@@ -10,19 +10,30 @@
 
 #include "mediasegment.h"
 
+namespace
+{
+    static QIcon defaultChannelIcon;
+}
+
 ChannelTreeItem::ChannelTreeItem(QString name, QString uri, QString logoUri, QByteArray logo, QNetworkAccessManager* networkManager, AbstractChannelTreeItem* parent)
     : AbstractChannelTreeItem(networkManager, parent), name{std::move(name)},
       uri(std::move(uri)), logoUri{std::move(logoUri)}, logo{std::move(logo)}
 {
+    if(defaultChannelIcon.isNull())
+    {
+        defaultChannelIcon = QIcon{":/icons/film-outline.png"};
+    }
+    icon = defaultChannelIcon;
 }
 void ChannelTreeItem::loadIcon()
 {
-    if(!this->logo.isEmpty() && icon.isNull() && !cancelOngoingOperations)
+    if(!this->logo.isEmpty() && (icon.isNull() || defaultIcon) && !cancelOngoingOperations)
     {
         QImage image = QImage::fromData(this->logo);
         {
             std::unique_lock lock(iconMutex);
             icon = QIcon{QPixmap::fromImage(image)};
+            defaultIcon = false;
         }
         emit aquiredIcon(this);
     }

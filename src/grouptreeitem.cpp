@@ -6,10 +6,12 @@
 GroupTreeItem::GroupTreeItem(QString name,QNetworkAccessManager* networkManager, RootTreeItem* parent)
     : AbstractChannelTreeItem(networkManager, parent), name{std::move(name)}
 {
+    icon = QIcon(":/icons/folder-open.png");
 }
 GroupTreeItem::GroupTreeItem(QString name, QNetworkAccessManager* networkManager, GroupTreeItem* parent)
     : AbstractChannelTreeItem(networkManager, parent), name{std::move(name)}
 {
+    icon = QIcon(":/icons/folder-open.png");
 }
 
 void GroupTreeItem::loadChannelsIcons()
