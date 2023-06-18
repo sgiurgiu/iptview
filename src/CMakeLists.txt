@@ -39,6 +39,7 @@ target_include_directories(${LIBRARY_NAME} PUBLIC ${IPTVIEW_LIB_INCLUDES})
 
 
 foreach(TARGET_ITEM IN ITEMS ${EXECUTABLE_NAME} ${LIBRARY_NAME})
+    target_compile_definitions(${TARGET_ITEM} PRIVATE "$<$<CONFIG:Debug>:IPTVIEW_DEBUG>")
     set_property(TARGET ${TARGET_ITEM} PROPERTY  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     target_compile_definitions(${TARGET_ITEM} PRIVATE "$<$<C_COMPILER_ID:MSVC>:_WIN32_WINNT=0x0601>")
     target_compile_definitions(${TARGET_ITEM} PRIVATE "$<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>")

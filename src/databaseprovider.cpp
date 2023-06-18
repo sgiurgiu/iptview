@@ -46,7 +46,12 @@ Database const* DatabaseProvider::GetDatabase()
 
         std::filesystem::path  configFolder = homePath / relativeConfigFolder;
         std::filesystem::create_directories(configFolder);
-        std::filesystem::path path = configFolder / "iptview.db";
+#ifdef IPTVIEW_DEBUG
+        std::string dbname{"iptview_debug.db"};
+#else
+        std::string dbname{"iptview.db"};
+#endif
+        std::filesystem::path path = configFolder / dbname;
         database = std::make_unique<Database>(Database::ConstructorKey{}, path);
     }
     return database.get();
