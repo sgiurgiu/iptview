@@ -1,17 +1,17 @@
 #include "abstractchanneltreeitem.h"
+#include <mutex>
 
-AbstractChannelTreeItem::AbstractChannelTreeItem(QNetworkAccessManager* networkManager, AbstractChannelTreeItem* parent):
+AbstractChannelTreeItem::AbstractChannelTreeItem(AbstractChannelTreeItem* parent):
     QObject{parent},
-    parent{parent},
-    networkManager{networkManager}
+    parent{parent}
 {
 }
 
-void AbstractChannelTreeItem::appendChild(std::unique_ptr<AbstractChannelTreeItem> child)
+void AbstractChannelTreeItem::appendChild(AbstractChannelTreeItem* child)
 {
     child->setParent(this);
     child->parent = this;
-    children.push_back(std::move(child));
+    children.push_back(child);
 }
 int AbstractChannelTreeItem::childCount() const
 {
@@ -23,7 +23,7 @@ int AbstractChannelTreeItem::row() const
     {
         for(size_t i=0; i<parent->children.size(); i++)
         {
-            if(parent->children.at(i).get() == this)
+            if(parent->children.at(i) == this)
             {
                 return i;
             }
@@ -34,17 +34,21 @@ int AbstractChannelTreeItem::row() const
 }
 void AbstractChannelTreeItem::removeChild(AbstractChannelTreeItem* child)
 {
-    child->setCancelOgoingOperations(true);
-    std::erase_if(children, [child](const auto& c){return c.get() == child;});
+    std::erase_if(children, [child](const auto& c){return c == child;});
 }
 AbstractChannelTreeItem* AbstractChannelTreeItem::child(int index) const
 {
     if(index < 0 || index >= static_cast<int>(children.size())) return nullptr;
-    return children.at(index).get();
+    return children.at(index);
 }
 AbstractChannelTreeItem* AbstractChannelTreeItem::getParent() const
 {
     return parent;
+}
+void AbstractChannelTreeItem::setIcon(QIcon icon)
+{
+    std::unique_lock lock(iconMutex);
+    this->icon = std::move(icon);
 }
 QIcon AbstractChannelTreeItem::getIcon() const
 {
@@ -58,17 +62,5 @@ int64_t AbstractChannelTreeItem::getID() const
 void AbstractChannelTreeItem::setID(int64_t id)
 {
     this->id = id;
-}
-QNetworkAccessManager* AbstractChannelTreeItem::getNetworkManager() const
-{
-    return networkManager;
-}
-void AbstractChannelTreeItem::setCancelOgoingOperations(bool flag)
-{
-    cancelOngoingOperations = flag;
-    for(auto&& child : children)
-    {
-        child->setCancelOgoingOperations(flag);
-    }
 }
 

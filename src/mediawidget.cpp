@@ -173,10 +173,10 @@ void MediaWidget::skipForwardTriggered()
 {
 
 }
-void MediaWidget::playChannel(std::unique_ptr<ChannelTreeItem> channel)
+void MediaWidget::playChannel(ChannelTreeItem* channel)
 {
     if(!channel) return;
-    selectedChannel.swap(channel);
+    selectedChannel = channel;
     subtitles.clear();
     mpvWidget->command(QStringList() << "stop");
     mpvWidget->stopRenderingMedia();
@@ -205,7 +205,7 @@ void MediaWidget::SelectChannel(int64_t id)
     if(selectedChannel && !stopped) return;
     auto channel = DatabaseProvider::GetDatabase()->GetChannel(id);
     if(!channel) return;
-    selectedChannel.swap(channel);
+    selectedChannel = channel;
     playPauseAction->setEnabled(true);
     playPauseAction->setIcon(playIcon);
     playPauseAction->setToolTip("Play");

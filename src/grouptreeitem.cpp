@@ -8,8 +8,8 @@ namespace
     Q_GLOBAL_STATIC(QIcon, defaultGroupIcon);
 }
 
-GroupTreeItem::GroupTreeItem(QString name,QNetworkAccessManager* networkManager, RootTreeItem* parent)
-    : AbstractChannelTreeItem(networkManager, parent), name{std::move(name)}
+GroupTreeItem::GroupTreeItem(QString name,RootTreeItem* parent)
+    : AbstractChannelTreeItem(parent), name{std::move(name)}
 {
     if(defaultGroupIcon->isNull())
     {
@@ -17,8 +17,8 @@ GroupTreeItem::GroupTreeItem(QString name,QNetworkAccessManager* networkManager,
     }
     icon = *defaultGroupIcon;
 }
-GroupTreeItem::GroupTreeItem(QString name, QNetworkAccessManager* networkManager, GroupTreeItem* parent)
-    : AbstractChannelTreeItem(networkManager, parent), name{std::move(name)}
+GroupTreeItem::GroupTreeItem(QString name, GroupTreeItem* parent)
+    : AbstractChannelTreeItem(parent), name{std::move(name)}
 {
     if(defaultGroupIcon->isNull())
     {
@@ -26,8 +26,16 @@ GroupTreeItem::GroupTreeItem(QString name, QNetworkAccessManager* networkManager
     }
     icon = *defaultGroupIcon;
 }
-
-void GroupTreeItem::loadChannelsIcons()
+GroupTreeItem::GroupTreeItem(QString name)
+    : AbstractChannelTreeItem(nullptr), name{std::move(name)}
+{
+    if(defaultGroupIcon->isNull())
+    {
+        defaultGroupIcon->addFile(":/icons/folder-open.png");
+    }
+    icon = *defaultGroupIcon;
+}
+/*void GroupTreeItem::loadChannelsIcons()
 {
     if(cancelOngoingOperations) return;
 
@@ -46,7 +54,7 @@ void GroupTreeItem::loadChannelsIcons()
             group->loadChannelsIcons();
         }
     }
-}
+}*/
 GroupTreeItem* GroupTreeItem::getGroup(int64_t id) const
 {
     auto it = groupsIdMap.find(id);
@@ -89,31 +97,26 @@ ChannelTreeItem* GroupTreeItem::getChannel(int64_t id) const
 }
 ChannelTreeItem* GroupTreeItem::addMediaSegment(const MediaSegment& segment)
 {
-    auto channel = std::make_unique<ChannelTreeItem>(segment, networkManager, this);
-    connect(channel.get(), SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)));
-    channel->loadLogo();
-    auto channelPtr = channel.get();
-    appendChild(std::move(channel));
-    return channelPtr;
+    ChannelTreeItem* channel = new ChannelTreeItem(segment, this);
+    //channel->loadLogo();    
+    appendChild(channel);
+    return channel;
 }
-void GroupTreeItem::addGroup(std::unique_ptr<GroupTreeItem> group)
+void GroupTreeItem::addGroup(GroupTreeItem* group)
 {
     if(groupsIdMap.contains(group->getID())) return;
 
     if(group->getID() >= 0)
     {
-        groupsIdMap.insert(group->getID(), group.get());
+        groupsIdMap.insert(group->getID(), group);
     }
-    connect(group.get(), SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)));
-    appendChild(std::move(group));
+    appendChild(group);
 }
-void GroupTreeItem::addChannel(std::unique_ptr<ChannelTreeItem> channel)
+void GroupTreeItem::addChannel(ChannelTreeItem* channel)
 {
     if(channel->getID() >= 0)
     {
-        channelsIdMap.insert(channel->getID(), channel.get());
+        channelsIdMap.insert(channel->getID(), channel);
     }
-    connect(channel.get(), SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)));
-    channel->loadLogo();
-    appendChild(std::move(channel));
+    appendChild(channel);
 }

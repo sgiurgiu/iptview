@@ -12,7 +12,7 @@ class RootTreeItem : public AbstractChannelTreeItem
 {
     Q_OBJECT
 public:
-    RootTreeItem(QNetworkAccessManager* networkManager);
+    RootTreeItem();
     virtual ChannelTreeItemType getType() const override
     {
         return ChannelTreeItemType::Root;
@@ -21,13 +21,16 @@ public:
     {
         return "";
     }
+    FavouritesTreeItem* getFavourites() const
+    {
+        return favourites;
+    }
     ChannelTreeItem* addMediaSegment(const MediaSegment& segment);
-    void addChannel(std::unique_ptr<ChannelTreeItem> channel);
+    void addChannel(ChannelTreeItem* channel);
     void updateMaps(ChannelTreeItem* channel);
-    void addGroup(std::unique_ptr<GroupTreeItem> group);
+    void addGroup(GroupTreeItem* group);
     GroupTreeItem* getGroup(int64_t id) const;
-    void loadChannelsIcons();
-    void addToFavourites(std::unique_ptr<ChannelTreeItem> channel);
+    void addToFavourites(ChannelTreeItem* channel);
     std::pair<AbstractChannelTreeItem*,AbstractChannelTreeItem*> addToFavourites(AbstractChannelTreeItem* item);
     std::pair<AbstractChannelTreeItem*,AbstractChannelTreeItem*> removeFromFavourites(AbstractChannelTreeItem* item);
 private:

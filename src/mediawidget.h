@@ -54,7 +54,7 @@ private:
     void setSubtitle(const QString& id);
     void toggleSystemSleep();
     void toggleFullScreen();
-    void playChannel(std::unique_ptr<ChannelTreeItem> channel);
+    void playChannel(ChannelTreeItem* channel);
 private:
     struct Subtitle
     {
@@ -70,7 +70,7 @@ private:
     QSlider* volumeSlider = nullptr;
     QAction* volumeAction = nullptr;
     QAction* fullScreenAction = nullptr;
-    std::unique_ptr<ChannelTreeItem> selectedChannel;
+    ChannelTreeItem* selectedChannel = nullptr;
     bool stopped = true;
     QTimer* volumeOsdTimer = nullptr;
     QIcon stopIcon = QIcon{":/icons/stop.png"};

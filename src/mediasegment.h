@@ -5,6 +5,9 @@
 #include <QString>
 #include <QMap>
 #include <optional>
+#include <QSharedDataPointer>
+
+class MediaSegmentData;
 
 class MediaSegment
 {
@@ -12,6 +15,10 @@ public:
     MediaSegment();
     MediaSegment(QString uri, QString title, float duration);
     MediaSegment(QString uri, QString title, float duration, QMap<QString, QString> attributes);
+
+    MediaSegment(const MediaSegment &other);
+    MediaSegment& operator=(const MediaSegment& other);
+    ~MediaSegment();
 
     QString GetUri() const;
     void SetUri(QString uri);
@@ -28,12 +35,9 @@ public:
     void DeleteAllAttributes();
     bool operator==(const MediaSegment&) const;
 private:
-    QString uri;
-    QString title;
-    float duration = 0.0f;
-    QMap<QString, QString> attributes;
+    QSharedDataPointer<MediaSegmentData> d;
 };
 
-Q_DECLARE_METATYPE(MediaSegment)
+Q_DECLARE_TYPEINFO(MediaSegment, Q_MOVABLE_TYPE);
 
 #endif // MEDIASEGMENT_H

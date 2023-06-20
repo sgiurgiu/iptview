@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "m3ulist.h"
+#include <atomic>
 
 class QTreeView;
 class ChannelsModel;
@@ -18,9 +19,13 @@ class ChannelsWidget : public QWidget
 public:
     explicit ChannelsWidget(QWidget *parent = nullptr);
     void ImportPlaylist(M3UList list);
+    void CancelImportChannels();
 signals:
     void playChannel(int64_t id);
     void selectChannel(int64_t id);
+    void updateImportedChannelIndex(qint64);
+    void channelsImported();
+
 private slots:
     void onDoubleClickedTreeItem(const QModelIndex &index);
     void onCustomContextMenu(const QPoint &point);

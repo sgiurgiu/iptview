@@ -3,113 +3,110 @@
 #include <QTextStream>
 #include <limits>
 #include <QFile>
+#include <QSharedData>
+
+class M3UListData : public QSharedData
+{
+public:
+    M3UListData()
+    {}
+    M3UListData(const M3UListData &other)
+        : QSharedData(other), segments(other.segments), totalTime(other.totalTime), attributes(other.attributes)
+    {}
+    M3UListData& operator=(const M3UListData& other) = delete;
+    ~M3UListData()
+    {}
+
+    QList<MediaSegment> segments;
+    float totalTime = 0.0f;
+    QMap<QString,QString> attributes;
+};
 
 M3UList::M3UList()
 {
+    d = new M3UListData;
 }
-M3UList::M3UList(QList<MediaSegment> segments):segments{std::move(segments)}
+M3UList::M3UList(QList<MediaSegment> segments)
 {
+    d = new M3UListData;
+    d->segments = std::move(segments);
+
     QMutexLocker locker(&listMutex);
-    for(const auto& segment : this->segments)
+    for(const auto& segment : d->segments)
     {
         for(const auto& attribute : segment.GetAttributeNames())
         {
-            attributes.insert(attribute, attribute);
+            d->attributes.insert(attribute, attribute);
         }
         if(segment.GetDuration() > 0.0f)
         {
-            totalTime += segment.GetDuration();
+            d->totalTime += segment.GetDuration();
         }
     }
 }
-M3UList::M3UList(const M3UList& other) :
-    segments{other.segments},
-    totalTime{other.totalTime},
-    attributes{other.attributes}
+M3UList::~M3UList()
+{}
+M3UList::M3UList(const M3UList& other) : d(other.d)
 {
 }
 M3UList& M3UList::operator=(const M3UList& other)
 {
-    if (this != &other)
-    {
-        segments = other.segments;
-        totalTime = other.totalTime;
-        attributes = other.attributes;
-    }
+    this->d = other.d;
     return *this;
 }
-M3UList::M3UList(M3UList&& other) noexcept :
-    segments{std::move(other.segments)},
-    totalTime{other.totalTime},
-    attributes{std::move(other.attributes)}
-{
-    other.totalTime = 0.f;
-}
-M3UList& M3UList::operator=(M3UList&& other) noexcept
-{
-    if (this != &other)
-    {
-        segments = std::move(other.segments);
-        totalTime = other.totalTime;
-        attributes = std::move(other.attributes);
-        other.totalTime = 0.f;
-    }
-    return *this;
-}
-
 bool M3UList::operator==(const M3UList& other) const
 {    
-    return std::abs(this->totalTime - other.totalTime) < std::numeric_limits<float>::epsilon() &&
-        this->attributes == other.attributes && this->segments == other.segments;
+    return std::abs(d->totalTime - other.d->totalTime) < std::numeric_limits<float>::epsilon() &&
+        d->attributes == other.d->attributes && d->segments == other.d->segments;
 }
 
 void M3UList::AddSegment(MediaSegment segment)
 {
     for(const auto& attribute : segment.GetAttributeNames())
     {
-        attributes.insert(attribute, attribute);
+        d->attributes.insert(attribute, attribute);
     }
     if(segment.GetDuration() > 0.0f)
     {
-        totalTime += segment.GetDuration();
+        d->totalTime += segment.GetDuration();
     }
-    segments.append(std::move(segment));
+    d->segments.append(std::move(segment));
 }
 qsizetype M3UList::GetSegmentsCount() const
 {
-    return segments.size();
+    return d->segments.size();
 }
 const MediaSegment& M3UList::GetSegmentAt(qsizetype index) const
 {
-    return segments.at(index);
+    return d->segments.at(index);
 }
 void M3UList::DeleteSegmentAt(qsizetype index)
 {
-    auto it = std::next(segments.begin(), index);
+    auto it = std::next(d->segments.begin(), index);
     if(it->GetDuration() > 0.0f)
     {
-        totalTime -= it->GetDuration();
+        d->totalTime -= it->GetDuration();
     }
-    segments.erase(it);
+    d->segments.erase(it);
 }
 void M3UList::DeleteAllSegments()
 {
-    segments.clear();
-    attributes.clear();
-    totalTime = 0.0f;
+    d->segments.clear();
+    d->attributes.clear();
+    d->totalTime = 0.0f;
 }
 const QMap<QString,QString>& M3UList::GetAttributes() const
 {
-    return attributes;
+    return d->attributes;
 }
 float M3UList::GetTotalTime() const
 {
-    return totalTime;
+    return d->totalTime;
 }
 float M3UList::GetTotalTimeSafe() const
 {
     QMutexLocker locker(&listMutex);
-    return totalTime;
+    return d->totalTime;
 }
 void M3UList::AddSegmentsSafe(const QList<MediaSegment>& segments)
 {
@@ -118,11 +115,11 @@ void M3UList::AddSegmentsSafe(const QList<MediaSegment>& segments)
     {
         for(const auto& attribute : segment.GetAttributeNames())
         {
-            attributes.insert(attribute, attribute);
+            d->attributes.insert(attribute, attribute);
         }
         if(segment.GetDuration() > 0.0f)
         {
-            totalTime += segment.GetDuration();
+            d->totalTime += segment.GetDuration();
         }
         AddSegment(segment);
     }
@@ -166,7 +163,7 @@ void M3UList::SaveToFile(const QString& fileName) const
     {
         QTextStream outStream(&file);
         outStream << "#EXTM3U\r\n";
-        for(const auto& segment : segments)
+        for(const auto& segment : d->segments)
         {
             outStream << "#EXTINF:";
             outStream << segment.GetDuration();

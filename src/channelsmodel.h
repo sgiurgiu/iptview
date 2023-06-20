@@ -2,17 +2,18 @@
 #define CHANNELSMODEL_H
 
 #include <QAbstractItemModel>
-
 #include <QHash>
+#include <QThread>
 
 #include <memory>
 #include "m3ulist.h"
+#include "channeltreeitem.h"
 
-class QNetworkAccessManager;
 class AbstractChannelTreeItem;
 class RootTreeItem;
 class GroupTreeItem;
-class QThread;
+class LoadingChannelsThread;
+class LoadingChannelIconsWorker;
 
 class ChannelsModel : public QAbstractItemModel
 {
@@ -40,16 +41,28 @@ public:
     };
     void AddToFavourites(AbstractChannelTreeItem* item);
     void RemoveFromFavourites(AbstractChannelTreeItem* item);
-    QNetworkAccessManager* GetNetworkManager() const;
+    void CancelImportChannels();
+signals:
+    void groupLoaded(GroupTreeItem* group);
+    void loadChannelIcon(ChannelTreeItem* channel);
+    void updateImportedChannelIndex(qint64);
+    void channelsImported();
+
 private slots:
-    void aquiredIcon(AbstractChannelTreeItem*);
+    void onGroupLoaded(GroupTreeItem* group);
+    void onGroupsCount(int count);
+    void onFavouriteChannels(std::vector<ChannelTreeItem*>);
+    void onChannelIconReady(ChannelTreeItem* channel);
 private:
     QModelIndex indexFromItem(AbstractChannelTreeItem* item);
     void loadChannels();
+    void loadGroupChannelsIcons(GroupTreeItem* group);
 private:
-    QNetworkAccessManager* networkManager;
     std::unique_ptr<RootTreeItem> rootItem;
-    QThread* loadingIconsThread = nullptr;
+    LoadingChannelsThread* loadingChannelsThread = nullptr;
+    QThread loadingChannelIconsThread;
+    LoadingChannelIconsWorker* channelIconsWorker = nullptr;
+    std::atomic_bool cancelImportingChannels = false;
 };
 
 #endif // CHANNELSMODEL_H

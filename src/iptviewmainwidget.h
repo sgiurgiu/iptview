@@ -13,9 +13,14 @@ class IPTViewMainWidget : public QSplitter
     Q_OBJECT
 public:
     IPTViewMainWidget(QWidget *parent = nullptr);
+
+public slots:
     void ImportPlaylist(M3UList list);
+    void CancelImportChannels();
 signals:
     void showingFullScreen(bool);
+    void updateImportedChannelIndex(qint64);
+    void channelsImported();
 private slots:
     void fullScreen(bool flag);
 private:

@@ -27,6 +27,8 @@ set(IPTVIEWLIB_SRCS
     roottreeitem.h roottreeitem.cpp
     favouritestreeitem.h favouritestreeitem.cpp
     channelsfilteringmodel.h channelsfilteringmodel.cpp
+    loadingchannelsthread.h loadingchannelsthread.cpp
+    loadingchanneliconsworker.h loadingchanneliconsworker.cpp
     )
 
 add_library(${LIBRARY_NAME} STATIC ${IPTVIEWLIB_SRCS} )

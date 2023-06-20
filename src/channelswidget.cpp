@@ -67,6 +67,10 @@ ChannelsWidget::ChannelsWidget(QWidget *parent)
     connect(removeChannelAction, SIGNAL(triggered(bool)), this, SLOT(onRemoveChannel()));
     connect(removeChannelGroupAction, SIGNAL(triggered(bool)), this, SLOT(onRemoveChannelGroup()));
     connect(addNewChannelGroupAction, SIGNAL(triggered(bool)), this, SLOT(onAddNewChannelGroup()));
+
+    connect(model, SIGNAL(updateImportedChannelIndex(qint64)),this, SIGNAL(updateImportedChannelIndex(qint64)));
+    connect(model, SIGNAL(channelsImported()),this, SIGNAL(channelsImported()));
+
 }
 void ChannelsWidget::searchTextChanged(const QString& text)
 {
@@ -220,8 +224,8 @@ void ChannelsWidget::onAddNewChannel()
                 [dialog, nameLineEdit, urlLineEdit, iconLineEdit, index, parentItem, this](int result){
             if(result == QDialog::DialogCode::Accepted)
             {
-                auto channel = DatabaseProvider::GetDatabase()->AddChannel(nameLineEdit->text(), urlLineEdit->text(), iconLineEdit->text(), parentItem->getID(), model->GetNetworkManager());
-                model->AddChild(channel.release(), index);
+                auto channel = DatabaseProvider::GetDatabase()->AddChannel(nameLineEdit->text(), urlLineEdit->text(), iconLineEdit->text(), parentItem->getID());
+                model->AddChild(channel, index);
             }
             dialog->deleteLater();
         });
@@ -233,8 +237,8 @@ void ChannelsWidget::onAddNewChannel()
                 [dialog, nameLineEdit, urlLineEdit, iconLineEdit, this](int result){
             if(result == QDialog::DialogCode::Accepted)
             {
-                auto channel = DatabaseProvider::GetDatabase()->AddChannel(nameLineEdit->text(), urlLineEdit->text(), iconLineEdit->text(), {}, model->GetNetworkManager());
-                model->AddChild(channel.release(), QModelIndex{});
+                auto channel = DatabaseProvider::GetDatabase()->AddChannel(nameLineEdit->text(), urlLineEdit->text(), iconLineEdit->text(), {});
+                model->AddChild(channel, QModelIndex{});
             }
             dialog->deleteLater();
         });
@@ -285,6 +289,11 @@ void ChannelsWidget::onAddNewChannelGroup()
     if(ok && !text.isEmpty())
     {
         auto group = DatabaseProvider::GetDatabase()->AddGroup(text, parentGroupId);
-        model->AddChild(group.release(), treeItemIndex.index);
+        model->AddChild(group, treeItemIndex.index);
     }
+}
+
+void ChannelsWidget::CancelImportChannels()
+{
+    model->CancelImportChannels();
 }

@@ -26,6 +26,7 @@ IPTViewMainWindow::IPTViewMainWindow(QWidget *parent)
     createMenus();
     addStatusBar();
     addWindowWidgets();
+    connect(this, &IPTViewMainWindow::importPlaylist, this, &IPTViewMainWindow::onImportPlaylist, Qt::QueuedConnection);
 }
 void IPTViewMainWindow::createActions()
 {
@@ -97,7 +98,26 @@ void IPTViewMainWindow::openPlaylist()
         QMessageBox::critical(this,tr("Error loading file"),tr("File does not exist"));
     }
 }
+void IPTViewMainWindow::onImportPlaylist(M3UList list)
+{
+    QProgressDialog* progress = new QProgressDialog(this);
+    progress->setWindowModality(Qt::WindowModal);
+    progress->setLabelText("Saving channels ...");
+    progress->setMinimum(0);
+    progress->setAutoClose(true);
+    progress->setMaximum(list.GetSegmentsCount());
 
+    connect(mainWidget, &IPTViewMainWidget::updateImportedChannelIndex, this, [progress](qint64 index) {
+        progress->setValue(index);
+    });
+    connect(progress, &QProgressDialog::canceled, mainWidget,&IPTViewMainWidget::CancelImportChannels);
+
+    connect(mainWidget, &IPTViewMainWidget::channelsImported, this, [progress]() {
+        progress->reset();
+        progress->deleteLater();
+    });
+    mainWidget->ImportPlaylist(std::move(list));
+}
 void IPTViewMainWindow::loadPlaylist(const QString& fileName)
 {
     M3UParserController* parserController = new M3UParserController(this);
@@ -114,7 +134,8 @@ void IPTViewMainWindow::loadPlaylist(const QString& fileName)
     });
     connect(progress, &QProgressDialog::canceled, parserController,&M3UParserController::cancel);
     connect(parserController, &M3UParserController::listReady, this, [this, progress, parserController](M3UList list) {
-        mainWidget->ImportPlaylist(std::move(list));
+        emit importPlaylist(list);
+
         progress->reset();
         progress->deleteLater();
         parserController->deleteLater();

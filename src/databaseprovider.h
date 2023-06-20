@@ -8,9 +8,7 @@ class Database;
 class DatabaseProvider
 {
 public:
-    static Database const* GetDatabase();
-private:
-    static std::unique_ptr<Database> database;
+    static std::unique_ptr<Database> GetDatabase();
 };
 
 #endif // DATABASEPROVIDER_H

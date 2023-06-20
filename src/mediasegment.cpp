@@ -1,72 +1,106 @@
 #include "mediasegment.h"
+#include <QSharedData>
 
 #include <limits>
 
+// https://doc.qt.io/qt-6/qshareddatapointer.html
+
+class MediaSegmentData : public QSharedData
+{
+public:
+    MediaSegmentData()
+    {}
+    MediaSegmentData(const MediaSegmentData &other)
+        : QSharedData(other), uri(other.uri), title(other.title), duration(other.duration), attributes(other.attributes)
+    {}
+    MediaSegmentData& operator=(const MediaSegmentData& other) = delete;
+    ~MediaSegmentData()
+    {}
+
+    QString uri;
+    QString title;
+    float duration = 0.0f;
+    QMap<QString, QString> attributes;
+};
+
 MediaSegment::MediaSegment()
 {
+    d = new MediaSegmentData;
 }
 MediaSegment::MediaSegment(QString uri, QString title, float duration)
-    : uri{std::move(uri)},
-      title{std::move(title)},
-      duration{duration}
 {
+    d = new MediaSegmentData;
+    SetUri(std::move(uri));
+    SetTitle(std::move(title));
+    SetDuration(std::move(duration));
 }
 MediaSegment::MediaSegment(QString uri, QString title, float duration, QMap<QString, QString> attributes)
-    : uri{std::move(uri)},
-      title{std::move(title)},
-      duration{duration},
-      attributes{std::move(attributes)}
 {
+    d = new MediaSegmentData;
+    SetUri(std::move(uri));
+    SetTitle(std::move(title));
+    SetDuration(std::move(duration));
+    d->attributes = std::move(attributes);
+}
+MediaSegment::~MediaSegment()
+{}
+MediaSegment::MediaSegment(const MediaSegment &other) : d(other.d)
+{
+}
+MediaSegment& MediaSegment::operator=(const MediaSegment& other)
+{
+    this->d = other.d;
+    return *this;
 }
 bool MediaSegment::operator==(const MediaSegment& other) const
 {
-    return std::abs(this->duration - other.duration) < std::numeric_limits<float>::epsilon() &&
-        this->uri == other.uri && this->title == other.title && this->attributes == other.attributes;
+    return std::abs(d->duration - other.GetDuration()) < std::numeric_limits<float>::epsilon() &&
+        d->uri == other.GetUri() && d->title == other.GetTitle() && d->attributes == other.d->attributes;
 }
 QString MediaSegment::GetUri() const
 {
-    return uri;
+    return d->uri;
 }
 void MediaSegment::SetUri(QString uri)
 {
-    this->uri = std::move(uri);
+    d->uri = std::move(uri);
 }
 
 QString MediaSegment::GetTitle() const
 {
-    return title;
+    return d->title;
 }
 void MediaSegment::SetTitle(QString title)
 {
-    this->title = std::move(title);
+    d->title = std::move(title);
 }
 
 float MediaSegment::GetDuration() const
 {
-    return duration;
+    return d->duration;
 }
 void MediaSegment::SetDuration(float duration)
 {
-    this->duration = duration;
+    d->duration = duration;
 }
 
 void MediaSegment::AddAttribute(QString name, QString value)
 {
-    attributes.insert(std::move(name), std::move(value));
+    d->attributes.insert(std::move(name), std::move(value));
 }
 QList<QString> MediaSegment::GetAttributeNames() const
 {
-    return attributes.keys();
+    return d->attributes.keys();
 }
 std::optional<QString> MediaSegment::GetAttributeValue(const QString& name) const
 {
-    if(attributes.contains(name))
+    if(d->attributes.contains(name))
     {
-        return attributes[name];
+        return d->attributes[name];
     }
     return std::nullopt;
 }
 void MediaSegment::DeleteAllAttributes()
 {
-    attributes.clear();
+    d->attributes.clear();
 }

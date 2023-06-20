@@ -24,6 +24,8 @@ IPTViewMainWidget::IPTViewMainWidget(QWidget *parent): QSplitter{Qt::Horizontal,
 
     connect(channelsWidget, SIGNAL(playChannel(int64_t)), mediaWidget, SLOT(PlayChannel(int64_t)));
     connect(channelsWidget, SIGNAL(selectChannel(int64_t)), mediaWidget, SLOT(SelectChannel(int64_t)));
+    connect(channelsWidget, SIGNAL(updateImportedChannelIndex(qint64)),this, SIGNAL(updateImportedChannelIndex(qint64)));
+    connect(channelsWidget, SIGNAL(channelsImported()),this, SIGNAL(channelsImported()));
 }
 
 void IPTViewMainWidget::ImportPlaylist(M3UList list)
@@ -45,4 +47,8 @@ void IPTViewMainWidget::fullScreen(bool flag)
         channelsWidget->show();
         this->setContentsMargins(contentMargins);
     }
+}
+void IPTViewMainWidget::CancelImportChannels()
+{
+    channelsWidget->CancelImportChannels();
 }

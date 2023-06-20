@@ -9,7 +9,7 @@ class FavouritesTreeItem : public GroupTreeItem
 {
     Q_OBJECT
 public:
-    FavouritesTreeItem(QNetworkAccessManager* networkManager, RootTreeItem* parent);
+    FavouritesTreeItem(RootTreeItem* parent);
     virtual ChannelTreeItemType getType() const override
     {
         return ChannelTreeItemType::Favourite;

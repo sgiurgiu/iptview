@@ -1,7 +1,7 @@
 #include "favouritestreeitem.h"
 
 
-FavouritesTreeItem::FavouritesTreeItem(QNetworkAccessManager* networkManager, RootTreeItem* parent) : GroupTreeItem{"Favourites", networkManager, parent}
+FavouritesTreeItem::FavouritesTreeItem(RootTreeItem* parent) : GroupTreeItem{"Favourites", parent}
 {
     icon = QIcon(":/icons/star.png");
 }
@@ -13,5 +13,5 @@ AbstractChannelTreeItem* FavouritesTreeItem::removeFavouriteChild(AbstractChanne
     {
         return nullptr;
     }
-    return children.back().get();
+    return children.back();
 }

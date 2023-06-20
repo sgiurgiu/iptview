@@ -5,12 +5,11 @@
 #include "mediasegment.h"
 #include "favouritestreeitem.h"
 
-RootTreeItem::RootTreeItem(QNetworkAccessManager* networkManager) : AbstractChannelTreeItem(networkManager, nullptr)
+RootTreeItem::RootTreeItem() : AbstractChannelTreeItem(nullptr)
 {
-    auto favourites = std::make_unique<FavouritesTreeItem>(networkManager, this);
-    this->favourites = favourites.get();
-    connect(favourites.get(), SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)));
-    appendChild(std::move(favourites));
+    favourites = new FavouritesTreeItem(this);
+    connect(favourites, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)));
+    appendChild(favourites);
 }
 
 ChannelTreeItem* RootTreeItem::addMediaSegment(const MediaSegment& segment)
@@ -25,29 +24,23 @@ ChannelTreeItem* RootTreeItem::addMediaSegment(const MediaSegment& segment)
         }
         else
         {
-            auto group = std::make_unique<GroupTreeItem>(groupTitle.value(),networkManager, this);
+            GroupTreeItem* group = new GroupTreeItem(groupTitle.value(),this);
             auto channelPtr = group->addMediaSegment(segment);
-            groupsMap.insert(groupTitle.value(), group.get());
-            connect(group.get(), SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)));
-            appendChild(std::move(group));
+            groupsMap.insert(groupTitle.value(), group);
+            appendChild(group);
             return channelPtr;
         }
     }
     else
     {
-        auto channel = std::make_unique<ChannelTreeItem>(segment, networkManager, this);
-        connect(channel.get(), SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)));
-        channel->loadLogo();
-        auto channelPtr = channel.get();
-        appendChild(std::move(channel));
-        return channelPtr;
+        ChannelTreeItem* channel = new ChannelTreeItem(segment, this);
+        appendChild(channel);
+        return channel;
     }
 }
-void RootTreeItem::addChannel(std::unique_ptr<ChannelTreeItem> channel)
+void RootTreeItem::addChannel(ChannelTreeItem* channel)
 {
-    connect(channel.get(), SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)));
-    channel->loadLogo();
-    appendChild(std::move(channel));
+    appendChild(channel);
 }
 void RootTreeItem::updateMaps(ChannelTreeItem* channel)
 {
@@ -64,19 +57,18 @@ void RootTreeItem::updateMaps(ChannelTreeItem* channel)
         groupsIdMap.insert(group->getID(), group);
     }
 }
-void RootTreeItem::addGroup(std::unique_ptr<GroupTreeItem> group)
+void RootTreeItem::addGroup(GroupTreeItem* group)
 {
     if(groupsIdMap.contains(group->getID())) return;
 
-    groupsMap.insert(group->getName(), group.get());
+    groupsMap.insert(group->getName(), group);
     if(group->getID() >= 0)
     {
-        groupsIdMap.insert(group->getID(), group.get());
+        groupsIdMap.insert(group->getID(), group);
     }
-    connect(group.get(), SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)));
-    appendChild(std::move(group));
+    appendChild(group);
 }
-void RootTreeItem::loadChannelsIcons()
+/*void RootTreeItem::loadChannelsIcons()
 {
     for(auto&& child : children)
     {
@@ -93,7 +85,7 @@ void RootTreeItem::loadChannelsIcons()
             group->loadChannelsIcons();
         }
     }
-}
+}*/
 GroupTreeItem* RootTreeItem::getGroup(int64_t id) const
 {
     auto it = groupsIdMap.find(id);
@@ -115,24 +107,23 @@ GroupTreeItem* RootTreeItem::getGroup(int64_t id) const
     return nullptr;
 }
 
-void RootTreeItem::addToFavourites(std::unique_ptr<ChannelTreeItem> channel)
+void RootTreeItem::addToFavourites(ChannelTreeItem* channel)
 {
-    favourites->addChannel(std::move(channel));
+    favourites->addChannel(channel);
 }
 
 std::pair<AbstractChannelTreeItem*,AbstractChannelTreeItem*> RootTreeItem::addToFavourites(AbstractChannelTreeItem* item)
 {
     if(item == nullptr) return std::make_pair(nullptr,nullptr);
 
-    ChannelTreeItem* newChildPtr = nullptr;
+    ChannelTreeItem* newChild = nullptr;
     if(item->getType() == ChannelTreeItemType::Channel)
     {
         ChannelTreeItem* channelPtr = dynamic_cast<ChannelTreeItem*>(item);
-        auto newChild = channelPtr->clone(favourites);
-        newChildPtr = newChild.get();
-        favourites->addChannel(std::move(newChild));
+        newChild = channelPtr->clone(favourites);
+        favourites->addChannel(newChild);
     }
-    return std::make_pair(favourites,newChildPtr);
+    return std::make_pair(favourites,newChild);
 }
 std::pair<AbstractChannelTreeItem*,AbstractChannelTreeItem*> RootTreeItem::removeFromFavourites(AbstractChannelTreeItem* item)
 {

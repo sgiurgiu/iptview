@@ -2,6 +2,7 @@
 #define IPTVIEWMAINWINDOW_H
 
 #include <QMainWindow>
+#include "m3ulist.h"
 
 class IPTViewMainWidget;
 
@@ -12,12 +13,13 @@ public:
     explicit IPTViewMainWindow(QWidget *parent = nullptr);
 
 signals:
+    void importPlaylist(M3UList);
 protected:
   void closeEvent(QCloseEvent * event) override;
 private slots:
   void openPlaylist();
   void fullScreen(bool flag);
-
+  void onImportPlaylist(M3UList list);
 private:
   void centerOnScreen();
   void createActions();

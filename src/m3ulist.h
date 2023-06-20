@@ -6,6 +6,9 @@
 #include <QList>
 #include <QMap>
 #include <QMutex>
+#include <QSharedDataPointer>
+
+class M3UListData;
 
 class M3UList
 {
@@ -15,8 +18,7 @@ public:
     // NOT thread safe
     M3UList(const M3UList& other);
     M3UList& operator=(const M3UList& other);
-    M3UList(M3UList&& other) noexcept;
-    M3UList& operator=(M3UList&& other) noexcept;
+    ~M3UList();
 
     void AddSegment(MediaSegment segment);
     qsizetype GetSegmentsCount() const;
@@ -39,10 +41,10 @@ public:
 
     void SaveToFile(const QString& fileName) const;
 private:
-    QList<MediaSegment> segments;
-    float totalTime = 0.0f;
-    QMap<QString,QString> attributes;
+    QSharedDataPointer<M3UListData> d;
     mutable QMutex listMutex;
 };
+
+Q_DECLARE_TYPEINFO(M3UList, Q_MOVABLE_TYPE);
 
 #endif // M3ULIST_H

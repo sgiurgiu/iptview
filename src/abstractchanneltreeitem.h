@@ -23,12 +23,13 @@ class AbstractChannelTreeItem : public QObject
 {
     Q_OBJECT
 public:
-    explicit AbstractChannelTreeItem(QNetworkAccessManager* networkManager, AbstractChannelTreeItem* parent = nullptr);
+    explicit AbstractChannelTreeItem(AbstractChannelTreeItem* parent = nullptr);
     virtual ~AbstractChannelTreeItem() = default;
     virtual ChannelTreeItemType getType() const = 0;
     virtual QString getName() const = 0;
     virtual QIcon getIcon() const;
-    virtual void appendChild(std::unique_ptr<AbstractChannelTreeItem> child);
+    virtual void setIcon(QIcon icon);
+    virtual void appendChild(AbstractChannelTreeItem* child);
     virtual void removeChild(AbstractChannelTreeItem* child);
     virtual int childCount() const;
     virtual int row() const;
@@ -36,18 +37,14 @@ public:
     virtual AbstractChannelTreeItem* getParent() const;
     int64_t getID() const;
     void setID(int64_t id);
-    QNetworkAccessManager* getNetworkManager() const;
-    virtual void setCancelOgoingOperations(bool flag);
 signals:
     void aquiredIcon(AbstractChannelTreeItem*);
 protected:
     int64_t id = -1;
-    std::vector<std::unique_ptr<AbstractChannelTreeItem>> children;
+    std::vector<AbstractChannelTreeItem*> children;
     AbstractChannelTreeItem* parent = nullptr;
     QIcon icon;
-    QNetworkAccessManager* networkManager;
     mutable std::shared_mutex iconMutex;
-    std::atomic_bool cancelOngoingOperations = {false};
 };
 
 #endif // ABSTRACTCHANNELTREEITEM_H

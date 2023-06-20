@@ -9,8 +9,9 @@ class ChannelTreeItem : public AbstractChannelTreeItem
 {
     Q_OBJECT
 public:
-    explicit ChannelTreeItem(const MediaSegment& segment, QNetworkAccessManager* networkManager, AbstractChannelTreeItem* parent);
-    explicit ChannelTreeItem(QString name, QString uri, QString logoUri, QByteArray logo, QNetworkAccessManager* networkManager, AbstractChannelTreeItem* parent);
+    explicit ChannelTreeItem(const MediaSegment& segment, AbstractChannelTreeItem* parent);
+    explicit ChannelTreeItem(QString name, QString uri, QString logoUri, QByteArray logo, AbstractChannelTreeItem* parent);
+
     virtual ChannelTreeItemType getType() const override
     {
         return ChannelTreeItemType::Channel;
@@ -31,15 +32,27 @@ public:
     {
         return logo;
     }
-    void loadLogo();
-    void loadIcon();
-    std::unique_ptr<ChannelTreeItem> clone(AbstractChannelTreeItem* parent) const;
+    void setLogo(const QByteArray& logo )
+    {
+        this->logo=logo;
+    }
+    bool isFavourite() const
+    {
+        return favourite;
+    }
+    void setFavourite(bool flag)
+    {
+        favourite = flag;
+    }
+
+    ChannelTreeItem* clone(AbstractChannelTreeItem* parent) const;
 private:
     QString name;
     QString uri;
     QString logoUri;
     QByteArray logo;
     bool defaultIcon = true;
+    bool favourite = false;
 };
 
 #endif // CHANNELTREEITEM_H
