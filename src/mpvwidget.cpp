@@ -80,7 +80,9 @@ MpvWidget::~MpvWidget()
 {
     makeCurrent();
     if (mpv_gl)
+    {
         mpv_render_context_free(mpv_gl);
+    }
     mpv_terminate_destroy(mpv);
 }
 void MpvWidget::command(const QVariant& params)
