@@ -9,6 +9,9 @@ A media player aimed at facilitating watching IPTV streams.
 Grab the m3u from your IPTV service provider, load it in the application and start watching TV.
 While the m3u can contain any kind of files, and therefore the player can play any media files from it (local or remote), the media player provides features suitable for managing the streams and playlists provided by IPTV service providers. For other kind of media, other players (for example VLC) are probably better suited (and have more features).
 
+## Free IPTV Channels
+The https://github.com/Free-TV/IPTV repository maintains a list of free TV channels
+
 ## Screenshot
 
 ![Screenshot](images/Screenshot_20230620_200811.png?raw=true)
