@@ -18,7 +18,7 @@ While the m3u can contain any kind of files, and therefore the player can play a
 ### Prerequisites
 - Git
 - A C++20 capable compiler (does not need to be fully compliant)
-- Cmake 3.18+
+- Cmake 3.20+
 - VcPkg
 - LibMPV
 
