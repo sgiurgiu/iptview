@@ -67,7 +67,7 @@ M3UList M3UParser::ParseStream(QTextStream &input)
         {
             throw M3UParserException("Cannot parse m3u, stream is empty");
         }
-        if(headerLine != "#EXTM3U")
+        if(!headerLine.startsWith("#EXTM3U"))
         {
             throw M3UParserException("Stream not an M3U file");
         }
