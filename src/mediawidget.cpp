@@ -198,6 +198,7 @@ void MediaWidget::playChannel(ChannelTreeItem* channel)
 }
 void MediaWidget::PlayChannel(int64_t id)
 {
+    fileLoadRetryTimes = 0;
     playChannel(DatabaseProvider::GetDatabase()->GetChannel(id));
 }
 void MediaWidget::SelectChannel(int64_t id)
