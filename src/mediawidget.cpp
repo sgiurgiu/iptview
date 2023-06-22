@@ -88,6 +88,7 @@ QWidget* MediaWidget::createControlsWidget()
     volumeAction = new QAction(volumeMediumIcon, "", this);
     volumeAction->setCheckable(true);
     volumeAction->setEnabled(true);
+    volumeAction->setShortcut(QKeySequence{settings.value("player/mute", Qt::Key_M).toInt()});
     connect(volumeAction, SIGNAL(toggled(bool)), this, SLOT(volumeToggled(bool)));
 
     fullScreenAction = new QAction(fullScreenIcon, "", this);
