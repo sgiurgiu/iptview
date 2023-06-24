@@ -428,7 +428,7 @@ void MediaWidget::toggleSystemSleep()
     EXECUTION_STATE result;
 
     if(!stopped)
-        result = SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
+        result = SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
     else
         result = SetThreadExecutionState(ES_CONTINUOUS);
 
