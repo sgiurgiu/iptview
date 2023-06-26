@@ -439,12 +439,12 @@ void MediaWidget::toggleSystemSleep()
 }
 void MediaWidget::toggleFullScreen()
 {
-    qDebug() << "MediaWidget::toggleFullScreen:";
     if(stopped) return;
     fullScreen = !fullScreen;
     emit showingFullScreen(fullScreen);
     if(fullScreen)
     {
+        mpvWidget->setCursor(Qt::BlankCursor);
         contentMargins = this->contentsMargins();
         this->setContentsMargins(0,0,0,0);
         controlsWidget->hide();
@@ -452,6 +452,7 @@ void MediaWidget::toggleFullScreen()
     }
     else
     {
+        mpvWidget->setCursor(Qt::ArrowCursor);
         this->setContentsMargins(contentMargins);
         controlsWidget->show();
         window()->showNormal();
