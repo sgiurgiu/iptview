@@ -7,6 +7,7 @@
 #include <QPixmap>
 #include <QString>
 #include <mutex>
+#include <QtConcurrent>
 
 #include "mediasegment.h"
 
@@ -15,6 +16,12 @@ namespace
     Q_GLOBAL_STATIC(QIcon, defaultChannelIcon);
 }
 
+ChannelTreeItem::ChannelTreeItem(QString name, QString uri, QString logoUri, QByteArray logo, QIcon icon, AbstractChannelTreeItem* parent)
+    : AbstractChannelTreeItem(parent), name{std::move(name)},
+      uri(std::move(uri)), logoUri{std::move(logoUri)}, logo{std::move(logo)}
+{
+    setIcon(std::move(icon));
+}
 ChannelTreeItem::ChannelTreeItem(QString name, QString uri, QString logoUri, QByteArray logo, AbstractChannelTreeItem* parent)
     : AbstractChannelTreeItem(parent), name{std::move(name)},
       uri(std::move(uri)), logoUri{std::move(logoUri)}, logo{std::move(logo)}
@@ -25,9 +32,14 @@ ChannelTreeItem::ChannelTreeItem(QString name, QString uri, QString logoUri, QBy
     }
     if(!this->logo.isEmpty())
     {
-        QImage image = QImage::fromData(this->logo);
-        setIcon(QIcon{QPixmap::fromImage(image)});
-        defaultIcon = false;
+        iconFutureLoader = QtConcurrent::run([logo = this->logo](){
+            QPixmap pixmap;
+            pixmap.loadFromData(logo);
+            return QIcon{pixmap};
+        }).then([this](QIcon icon){
+            setIcon(icon);
+            defaultIcon = false;
+        });
     }
     else
     {
@@ -50,11 +62,13 @@ ChannelTreeItem::ChannelTreeItem(const MediaSegment& segment, AbstractChannelTre
     }
     setIcon(*defaultChannelIcon);
 }
-
+ChannelTreeItem::~ChannelTreeItem()
+{
+    iconFutureLoader.waitForFinished();
+}
 ChannelTreeItem* ChannelTreeItem::clone(AbstractChannelTreeItem* newParent) const
 {
-    auto channel = new ChannelTreeItem(name, uri, logoUri, logo, newParent);
-    channel->icon = icon;
+    auto channel = new ChannelTreeItem(name, uri, logoUri, logo, icon, newParent);
     channel->id = id;
     return channel;
 }
