@@ -7,6 +7,8 @@
 #include <QMessageBox>
 
 #include "iptviewmainwindow.h"
+#include "databaseprovider.h"
+#include "database.h"
 
 int main(int argc, char** argv)
 {
@@ -40,6 +42,7 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    DatabaseProvider::GetDatabase()->SetupSchema();
 
     IPTViewMainWindow window;
     QSettings settings;

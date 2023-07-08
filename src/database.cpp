@@ -29,6 +29,9 @@ Database::Database(ConstructorKey, const std::filesystem::path& dbPath)
 
     executeStatement("PRAGMA journal_mode=WAL", "Cannot enable WAL journal mode");
     executeStatement("PRAGMA foreign_keys = ON", "Cannot enable foreign_keys support");
+}
+void Database::SetupSchema()
+{
     executeStatement("CREATE TABLE IF NOT EXISTS SCHEMA_VERSION(VERSION INT)", "Cannot create table SCHEMA_VERSION");
     executeStatement("CREATE TABLE IF NOT EXISTS CHANNEL_GROUPS(GROUP_ID INTEGER NOT NULL PRIMARY KEY, "
                      "PARENT_GROUP_ID INTEGER, NAME TEXT, FOREIGN KEY (PARENT_GROUP_ID) REFERENCES CHANNEL_GROUPS(GROUP_ID))", "Cannot create table CHANNEL_GROUPS");
@@ -40,8 +43,7 @@ Database::Database(ConstructorKey, const std::filesystem::path& dbPath)
     if(version < 1)
     {
         incrementSchemaVersion(version);
-        rc = sqlite3_exec(db.get(),"ALTER TABLE USER ADD COLUMN LAST_LOGGEDIN INT",nullptr,nullptr,nullptr);
-        DB_ERR_CHECK(rc, "Cannot alter table USER");
+        executeStatement("ALTER TABLE CHANNELS ADD COLUMN ICON BLOB", "Cannot alter table CHANNELS");
     }*/
 }
 void Database::executeStatement(const char* sql, const char* errMsg) const

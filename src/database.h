@@ -45,6 +45,7 @@ public:
     void LoadChannels(GroupTreeItem* parentItem) const;
     int GetGroupsCount();
     std::vector<ChannelTreeItem*> GetFavouriteChannels() const;
+    void SetupSchema();
 private:
     void addGroupTree(GroupTreeItem* group) const;
     void addGroup(GroupTreeItem* group, std::optional<int64_t> parentGroupId) const;
