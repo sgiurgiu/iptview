@@ -36,7 +36,7 @@ echo "Using lib mpv directory: $libMpvDir"
 echo "Using lib mpv include directory: $libMpvIncludeDir"
 
 
-cmake -B $buildDir -S . -G Ninja -DLIBMPV_DIR="$libMpvDir" -DLIBMPV_INCLUDE="$libMpvIncludeDir" -DCMAKE_BUILD_TYPE=Release -DVCPKG_INSTALL_OPTIONS="--x-buildtrees-root=E:/sa"  -DCMAKE_TOOLCHAIN_FILE=E:/projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCPACK_GENERATOR=WIX
+cmake -B $buildDir -S . -G Ninja -DLIBMPV_DIR="$libMpvDir" -DLIBMPV_INCLUDE="$libMpvIncludeDir" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=E:/projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCPACK_GENERATOR=WIX
 
 cmake --build $buildDir -- -j8 package
 
