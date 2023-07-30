@@ -25,7 +25,12 @@ signals:
     void selectChannel(int64_t id);
     void updateImportedChannelIndex(qint64);
     void channelsImported();
+    void enableSkipForward(bool);
+    void enableSkipBack(bool);
 
+public slots:
+    void SkipForward();
+    void SkipBack();
 private slots:
     void onDoubleClickedTreeItem(const QModelIndex &index);
     void onCustomContextMenu(const QPoint &point);

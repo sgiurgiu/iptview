@@ -26,7 +26,8 @@ IPTViewMainWindow::IPTViewMainWindow(QWidget *parent)
     createMenus();
     addStatusBar();
     addWindowWidgets();
-    connect(this, &IPTViewMainWindow::importPlaylist, this, &IPTViewMainWindow::onImportPlaylist, Qt::QueuedConnection);
+    connect(this, &IPTViewMainWindow::importPlaylist, this, &IPTViewMainWindow::onImportPlaylist, Qt::QueuedConnection);    
+
 }
 void IPTViewMainWindow::createActions()
 {
@@ -165,3 +166,4 @@ void IPTViewMainWindow::fullScreen(bool flag)
         statusBar()->show();
     }
 }
+

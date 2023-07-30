@@ -7,7 +7,9 @@
 
 class ChannelsWidget;
 class MediaWidget;
-
+#ifdef IPTVIEW_DBUS
+class MPRISDBus;
+#endif
 class IPTViewMainWidget : public QSplitter
 {
     Q_OBJECT
@@ -17,6 +19,9 @@ public:
 public slots:
     void ImportPlaylist(M3UList list);
     void CancelImportChannels();
+    void SkipForward();
+    void SkipBack();
+
 signals:
     void showingFullScreen(bool);
     void updateImportedChannelIndex(qint64);
@@ -24,9 +29,18 @@ signals:
 private slots:
     void fullScreen(bool flag);
 private:
+#ifdef IPTVIEW_DBUS
+  void setupMprisDBus();
+#endif
+
+private:
     ChannelsWidget* channelsWidget;
     MediaWidget* mediaWidget;
     QMargins contentMargins;
+#ifdef IPTVIEW_DBUS
+  MPRISDBus* dbus = nullptr;
+#endif
+
 };
 
 #endif // IPTVIEWMAINWIDGET_H

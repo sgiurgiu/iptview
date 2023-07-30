@@ -168,16 +168,16 @@ void MediaWidget::stopTriggered()
 }
 void MediaWidget::skipBackTriggered()
 {
-
+    emit skipBack();
 }
 void MediaWidget::skipForwardTriggered()
 {
-
+    emit skipForward();
 }
-void MediaWidget::playChannel(ChannelTreeItem* channel)
+void MediaWidget::playChannel(std::unique_ptr<ChannelTreeItem> channel)
 {
     if(!channel) return;
-    selectedChannel = channel;
+    selectedChannel = std::move(channel);
     subtitles.clear();
     mpvWidget->command(QStringList() << "stop");
     mpvWidget->stopRenderingMedia();
@@ -200,14 +200,14 @@ void MediaWidget::playChannel(ChannelTreeItem* channel)
 void MediaWidget::PlayChannel(int64_t id)
 {
     fileLoadRetryTimes = 0;
-    playChannel(DatabaseProvider::GetDatabase()->GetChannel(id));
+    playChannel(std::unique_ptr<ChannelTreeItem>{DatabaseProvider::GetDatabase()->GetChannel(id)});
 }
 void MediaWidget::SelectChannel(int64_t id)
 {
     if(selectedChannel && !stopped) return;
     auto channel = DatabaseProvider::GetDatabase()->GetChannel(id);
     if(!channel) return;
-    selectedChannel = channel;
+    selectedChannel.reset(channel);
     playPauseAction->setEnabled(true);
     playPauseAction->setIcon(playIcon);
     playPauseAction->setToolTip("Play");
@@ -316,6 +316,7 @@ void MediaWidget::fileLoaded()
         }
     }
     setupSubtitlesMenu();
+    emit playingTrack(selectedChannel->getID());
 }
 void MediaWidget::setupSubtitlesMenu()
 {
@@ -532,3 +533,12 @@ void MediaWidget::outputInitializationError(QString message)
     mediaTitleLabel->setText(message);
     mediaTitleLabel->setStyleSheet("QLabel { color : red; }");
 }
+void MediaWidget::EnableSkipForward(bool flag)
+{
+    skipForwardAction->setEnabled(flag);
+}
+void MediaWidget::EnableSkipBack(bool flag)
+{
+    skipBackAction->setEnabled(flag);
+}
+

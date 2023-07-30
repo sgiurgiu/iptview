@@ -3,12 +3,19 @@
 #include "channelswidget.h"
 #include "mediawidget.h"
 
+#ifdef IPTVIEW_DBUS
+#include "mprisdbus.h"
+#endif
+
 IPTViewMainWidget::IPTViewMainWidget(QWidget *parent): QSplitter{Qt::Horizontal, parent}
 {
     channelsWidget = new ChannelsWidget(this);
 
     mediaWidget = new MediaWidget(this);
     connect(mediaWidget, SIGNAL(showingFullScreen(bool)), this, SLOT(fullScreen(bool)));
+    connect(mediaWidget, SIGNAL(skipForward()), channelsWidget, SLOT(SkipForward()));
+    connect(mediaWidget, SIGNAL(skipBack()), channelsWidget, SLOT(SkipBack()));
+
     addWidget(channelsWidget);
     addWidget(mediaWidget);
 
@@ -26,6 +33,13 @@ IPTViewMainWidget::IPTViewMainWidget(QWidget *parent): QSplitter{Qt::Horizontal,
     connect(channelsWidget, SIGNAL(selectChannel(int64_t)), mediaWidget, SLOT(SelectChannel(int64_t)));
     connect(channelsWidget, SIGNAL(updateImportedChannelIndex(qint64)),this, SIGNAL(updateImportedChannelIndex(qint64)));
     connect(channelsWidget, SIGNAL(channelsImported()),this, SIGNAL(channelsImported()));
+    connect(channelsWidget, SIGNAL(enableSkipForward(bool)), mediaWidget, SLOT(EnableSkipForward(bool)));
+    connect(channelsWidget, SIGNAL(enableSkipBack(bool)), mediaWidget, SLOT(EnableSkipBack(bool)));
+
+#ifdef IPTVIEW_DBUS
+    setupMprisDBus();
+#endif
+
 }
 
 void IPTViewMainWidget::ImportPlaylist(M3UList list)
@@ -52,3 +66,27 @@ void IPTViewMainWidget::CancelImportChannels()
 {
     channelsWidget->CancelImportChannels();
 }
+void IPTViewMainWidget::SkipForward()
+{
+    channelsWidget->SkipForward();
+}
+void IPTViewMainWidget::SkipBack()
+{
+    channelsWidget->SkipBack();
+}
+
+#ifdef IPTVIEW_DBUS
+void IPTViewMainWidget::setupMprisDBus()
+{
+    dbus = new MPRISDBus(this);
+    connect(mediaWidget, SIGNAL(showingFullScreen(bool)), dbus, SLOT(SetFullscreen(bool)));
+    connect(mediaWidget, SIGNAL(playingTrack(int64_t)), dbus, SLOT(PlayingChannel(int64_t)));
+    connect(dbus, SIGNAL(skipForward()), channelsWidget, SLOT(SkipForward()));
+    connect(dbus, SIGNAL(skipBack()), channelsWidget, SLOT(SkipBack()));
+    connect(channelsWidget, SIGNAL(selectChannel(int64_t)), dbus, SLOT(SelectedChannel(int64_t)));
+
+    connect(channelsWidget, SIGNAL(enableSkipForward(bool)), dbus, SLOT(EnableSkipForward(bool)));
+    connect(channelsWidget, SIGNAL(enableSkipBack(bool)), dbus, SLOT(EnableSkipBack(bool)));
+
+}
+#endif

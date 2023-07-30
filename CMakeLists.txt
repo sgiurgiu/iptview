@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 option(ENABLE_TESTS "Build tests" ON)
+option(ENABLE_DBUS "Build DBus support" ON)
 
 if(ENABLE_TESTS AND VCPKG_TOOLCHAIN)
   list(APPEND VCPKG_MANIFEST_FEATURES "tests")
@@ -32,18 +33,26 @@ set(LIBRARY_NAME iptviewlib)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Threads REQUIRED)
-find_package(Qt6 COMPONENTS Core Gui Test Widgets OpenGLWidgets Network Sql DBus Concurrent REQUIRED)
-
+set(IPTVIEW_QT_COMPONENTS Core Gui Test Widgets OpenGLWidgets Network Sql Concurrent)
 set(IPTVIEW_APP_LIBARIES ${CMAKE_DL_LIBS} Threads::Threads Qt6::Core)
 set(IPTVIEW_APP_INCLUDES)
 
-set(IPTVIEW_LIB_LIBARIES Qt6::Core Qt6::Widgets Qt6::OpenGLWidgets Qt6::Network Qt6::Sql Qt6::DBus Qt6::Concurrent)
+set(IPTVIEW_LIB_LIBARIES Qt6::Core Qt6::Widgets Qt6::OpenGLWidgets Qt6::Network Qt6::Sql Qt6::Concurrent)
 set(IPTVIEW_LIB_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 set(IPTVIEW_TEST_LIBARIES Qt6::Core Qt6::Test ${CMAKE_DL_LIBS} Threads::Threads)
 set(IPTVIEW_TEST_INCLUDES)
+
+if(ENABLE_DBUS)
+    list(APPEND IPTVIEW_QT_COMPONENTS DBus)
+    list(APPEND IPTVIEW_LIB_LIBARIES Qt6::DBus)
+endif()
+
+find_package(Threads REQUIRED)
+find_package(Qt6 COMPONENTS ${IPTVIEW_QT_COMPONENTS} REQUIRED)
+
 
 if(UNIX)
     find_package(PkgConfig REQUIRED)

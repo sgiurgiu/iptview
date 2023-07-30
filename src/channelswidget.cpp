@@ -88,6 +88,14 @@ void ChannelsWidget::onDoubleClickedTreeItem(const QModelIndex &index)
         if(id.isValid())
         {
             emit playChannel(id.toLongLong());
+            // TODO: This will need to become an option
+            // Right now we're only moving forward&back within the same group
+            // we may want to (in the future) cross groups as well
+
+            auto nextIndex = index.siblingAtRow(index.row()+1);
+            auto backIndex = index.siblingAtRow(index.row()-1);
+            emit enableSkipForward(nextIndex.isValid() && nextIndex.data(ChannelsModel::ChannelRoles::IdRole).isValid());
+            emit enableSkipBack(backIndex.isValid() && backIndex.data(ChannelsModel::ChannelRoles::IdRole).isValid());
         }
     }
 }
@@ -297,3 +305,42 @@ void ChannelsWidget::CancelImportChannels()
 {
     model->CancelImportChannels();
 }
+
+void ChannelsWidget::SkipForward()
+{
+    if(!channels->selectionModel()->hasSelection()) return;
+    auto currentSelectedIndex = channels->selectionModel()->currentIndex();
+    if(!currentSelectedIndex.isValid()) return;
+    auto nextIndex = currentSelectedIndex.siblingAtRow(currentSelectedIndex.row()+1);
+    if(!nextIndex.isValid()) return;
+    auto id = nextIndex.data(ChannelsModel::ChannelRoles::IdRole);
+    if(!id.isValid()) return;
+    channels->selectionModel()->clearSelection();
+    channels->selectionModel()->setCurrentIndex(nextIndex,QItemSelectionModel::SelectionFlag::Select);
+    emit playChannel(id.toLongLong());
+
+    auto nextIndex2 = nextIndex.siblingAtRow(nextIndex.row()+1);
+    auto backIndex = nextIndex.siblingAtRow(nextIndex.row()-1);
+    emit enableSkipForward(nextIndex2.isValid() && nextIndex2.data(ChannelsModel::ChannelRoles::IdRole).isValid());
+    emit enableSkipBack(backIndex.isValid() && backIndex.data(ChannelsModel::ChannelRoles::IdRole).isValid());
+}
+void ChannelsWidget::SkipBack()
+{
+    if(!channels->selectionModel()->hasSelection()) return;
+    auto currentSelectedIndex = channels->selectionModel()->currentIndex();
+    if(!currentSelectedIndex.isValid()) return;
+    auto backIndex = currentSelectedIndex.siblingAtRow(currentSelectedIndex.row()-1);
+    if(!backIndex.isValid()) return;
+    auto id = backIndex.data(ChannelsModel::ChannelRoles::IdRole);
+    if(!id.isValid()) return;
+    channels->selectionModel()->clearSelection();
+    channels->selectionModel()->setCurrentIndex(backIndex,QItemSelectionModel::SelectionFlag::Select);
+    emit playChannel(id.toLongLong());
+
+    auto nextIndex = backIndex.siblingAtRow(backIndex.row()+1);
+    auto backIndex2 = backIndex.siblingAtRow(backIndex.row()-1);
+    emit enableSkipForward(nextIndex.isValid() && nextIndex.data(ChannelsModel::ChannelRoles::IdRole).isValid());
+    emit enableSkipBack(backIndex2.isValid() && backIndex2.data(ChannelsModel::ChannelRoles::IdRole).isValid());
+
+}
+

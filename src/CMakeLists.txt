@@ -6,8 +6,6 @@ set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/../resources/iptview.
 
 qt_add_executable(${EXECUTABLE_NAME} ${IPTVIEW_SRCS} ${IPTVIEW_SRCS_RS_SRCS} ${app_icon_resource_windows})
 
-
-
 set(IPTVIEWLIB_SRCS
     m3uparser.h m3uparser.cpp
     mediasegment.h mediasegment.cpp
@@ -31,6 +29,14 @@ set(IPTVIEWLIB_SRCS
     loadingchanneliconsworker.h loadingchanneliconsworker.cpp
     )
 
+if(ENABLE_DBUS)
+    qt_add_dbus_adaptor(GENERATED_DBUS_ADAPTORS manager_adaptor.xml mprisdbus.h MPRISDBus mprisdbus_manager_adaptor DBusManagerAdaptor)
+    qt_add_dbus_adaptor(GENERATED_DBUS_ADAPTORS player_adaptor.xml mprisdbus.h MPRISDBus mprisdbus_player_adaptor DBusPlayerAdaptor)
+
+    list(APPEND IPTVIEWLIB_SRCS mprisdbus.h mprisdbus.cpp ${GENERATED_DBUS_ADAPTORS})
+endif()
+
+
 add_library(${LIBRARY_NAME} STATIC ${IPTVIEWLIB_SRCS} )
 
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${IPTVIEW_APP_LIBARIES} ${LIBMPV})
@@ -39,9 +45,10 @@ target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${LIBRARY_NAME})
 target_link_libraries(${LIBRARY_NAME} PUBLIC ${IPTVIEW_LIB_LIBARIES})
 target_include_directories(${LIBRARY_NAME} PUBLIC ${IPTVIEW_LIB_INCLUDES})
 
-
 foreach(TARGET_ITEM IN ITEMS ${EXECUTABLE_NAME} ${LIBRARY_NAME})
     target_compile_definitions(${TARGET_ITEM} PRIVATE "$<$<CONFIG:Debug>:IPTVIEW_DEBUG>")
+    target_compile_definitions(${TARGET_ITEM} PRIVATE "$<$<BOOL:${ENABLE_DBUS}>:IPTVIEW_DBUS>")
+
     set_property(TARGET ${TARGET_ITEM} PROPERTY  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     target_compile_definitions(${TARGET_ITEM} PRIVATE "$<$<C_COMPILER_ID:MSVC>:_WIN32_WINNT=0x0601>")
     target_compile_definitions(${TARGET_ITEM} PRIVATE "$<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>")

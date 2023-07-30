@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QIcon>
 #include <memory>
-
+#include "channeltreeitem.h"
 
 class MpvWidget;
 class QAction;
@@ -13,7 +13,6 @@ class QTimer;
 class QToolButton;
 class QMenu;
 class QLabel;
-class ChannelTreeItem;
 
 class MediaWidget : public QWidget
 {
@@ -23,8 +22,13 @@ public:
 public slots:
     void PlayChannel(int64_t);
     void SelectChannel(int64_t);
+    void EnableSkipForward(bool);
+    void EnableSkipBack(bool);
 signals:
     void showingFullScreen(bool);
+    void skipBack();
+    void skipForward();
+    void playingTrack(int64_t);
 private slots:
     void playPauseTriggered();
     void stopTriggered();
@@ -54,7 +58,7 @@ private:
     void setSubtitle(const QString& id);
     void toggleSystemSleep();
     void toggleFullScreen();
-    void playChannel(ChannelTreeItem* channel);
+    void playChannel(std::unique_ptr<ChannelTreeItem> channel);
 private:
     struct Subtitle
     {
@@ -70,7 +74,7 @@ private:
     QSlider* volumeSlider = nullptr;
     QAction* volumeAction = nullptr;
     QAction* fullScreenAction = nullptr;
-    ChannelTreeItem* selectedChannel = nullptr;
+    std::unique_ptr<ChannelTreeItem> selectedChannel = nullptr;
     bool stopped = true;
     QTimer* volumeOsdTimer = nullptr;
     QIcon stopIcon = QIcon{":/icons/stop.png"};
