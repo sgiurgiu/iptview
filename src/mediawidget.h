@@ -19,19 +19,24 @@ class MediaWidget : public QWidget
     Q_OBJECT
 public:
     explicit MediaWidget(QWidget *parent = nullptr);
+    int GetVolume() const;
 public slots:
     void PlayChannel(int64_t);
     void SelectChannel(int64_t);
     void EnableSkipForward(bool);
     void EnableSkipBack(bool);
+    void Stop();
+    void PlayPause();
+    void Pause();
+    void PlaySelected();
 signals:
     void showingFullScreen(bool);
     void skipBack();
     void skipForward();
     void playingTrack(int64_t);
 private slots:
-    void playPauseTriggered();
-    void stopTriggered();
+
+
     void skipBackTriggered();
     void skipForwardTriggered();
     void volumeChanged(int);

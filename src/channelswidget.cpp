@@ -118,6 +118,11 @@ void ChannelsWidget::itemsSelectionChanged(const QItemSelection &selected, const
     if(id.isValid())
     {
         emit selectChannel(id.toLongLong());
+
+        auto nextIndex = firstSelected.siblingAtRow(firstSelected.row()+1);
+        auto backIndex = firstSelected.siblingAtRow(firstSelected.row()-1);
+        emit enableSkipForward(nextIndex.isValid() && nextIndex.data(ChannelsModel::ChannelRoles::IdRole).isValid());
+        emit enableSkipBack(backIndex.isValid() && backIndex.data(ChannelsModel::ChannelRoles::IdRole).isValid());
     }
 }
 void ChannelsWidget::onCustomContextMenu(const QPoint &point)

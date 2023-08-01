@@ -65,13 +65,13 @@ QWidget* MediaWidget::createControlsWidget()
     stopAction->setCheckable(false);
     stopAction->setEnabled(false);
     stopAction->setToolTip("Stop");
-    connect(stopAction, SIGNAL(triggered(bool)), this, SLOT(stopTriggered()));
+    connect(stopAction, SIGNAL(triggered(bool)), this, SLOT(Stop()));
 
     playPauseAction = new QAction(playIcon, "", this);
     playPauseAction->setCheckable(false);
     playPauseAction->setEnabled(false);
     playPauseAction->setShortcut(QKeySequence{settings.value("player/pause", Qt::Key_Space).toInt()});
-    connect(playPauseAction, SIGNAL(triggered(bool)), this, SLOT(playPauseTriggered()));
+    connect(playPauseAction, SIGNAL(triggered(bool)), this, SLOT(PlayPause()));
 
     skipForwardAction = new QAction(playSkipForwardIcon, "", this);
     skipForwardAction->setCheckable(false);
@@ -142,7 +142,11 @@ QWidget* MediaWidget::createControlsWidget()
     widget->setOrientation(Qt::Orientation::Horizontal);
     return widget;
 }
-void MediaWidget::playPauseTriggered()
+int MediaWidget::GetVolume() const
+{
+    return volumeSlider->value();
+}
+void MediaWidget::PlayPause()
 {
     if(stopped && selectedChannel)
     {
@@ -157,7 +161,7 @@ void MediaWidget::playPauseTriggered()
     mpvWidget->setProperty("pause", QVariant{!paused});
 }
 
-void MediaWidget::stopTriggered()
+void MediaWidget::Stop()
 {
     mpvWidget->command(QStringList() << "stop");
     mpvWidget->stopRenderingMedia();
@@ -487,7 +491,7 @@ void MediaWidget::keyPressEvent(QKeyEvent *event)
         }
         else if(matchesPlayPauseAction)
         {
-            playPauseTriggered();
+            PlayPause();
             event->accept();
         }
     }
@@ -542,3 +546,11 @@ void MediaWidget::EnableSkipBack(bool flag)
     skipBackAction->setEnabled(flag);
 }
 
+void MediaWidget::Pause()
+{
+
+}
+void MediaWidget::PlaySelected()
+{
+
+}

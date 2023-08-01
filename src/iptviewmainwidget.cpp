@@ -79,6 +79,7 @@ void IPTViewMainWidget::SkipBack()
 void IPTViewMainWidget::setupMprisDBus()
 {
     dbus = new MPRISDBus(this);
+    dbus->SetInitialVolume(mediaWidget->GetVolume());
     connect(mediaWidget, SIGNAL(showingFullScreen(bool)), dbus, SLOT(SetFullscreen(bool)));
     connect(mediaWidget, SIGNAL(playingTrack(int64_t)), dbus, SLOT(PlayingChannel(int64_t)));
     connect(dbus, SIGNAL(skipForward()), channelsWidget, SLOT(SkipForward()));
@@ -87,6 +88,12 @@ void IPTViewMainWidget::setupMprisDBus()
 
     connect(channelsWidget, SIGNAL(enableSkipForward(bool)), dbus, SLOT(EnableSkipForward(bool)));
     connect(channelsWidget, SIGNAL(enableSkipBack(bool)), dbus, SLOT(EnableSkipBack(bool)));
+
+
+    connect(dbus, SIGNAL(playSelectedChannel()), mediaWidget, SLOT(PlaySelected()));
+    connect(dbus, SIGNAL(pausePlayingSelectedChannel()), mediaWidget, SLOT(Pause()));
+    connect(dbus, SIGNAL(stopPlayingSelectedChannel()), mediaWidget, SLOT(Stop()));
+    connect(dbus, SIGNAL(playPauseSelectedChannel()), mediaWidget, SLOT(PlayPause()));
 
 }
 #endif

@@ -71,6 +71,7 @@ class MPRISDBus : public QObject
 
 public:
     explicit MPRISDBus(QObject *parent = nullptr);
+    void SetInitialVolume(int volume);
 public slots:
     void SetFullscreen(bool flag);
     void PlayingChannel(int64_t);
@@ -81,6 +82,11 @@ signals:
     void showingFullScreen(bool);
     void skipBack();
     void skipForward();
+    void playSelectedChannel();
+    void pausePlayingSelectedChannel();
+    void stopPlayingSelectedChannel();
+    void playPauseSelectedChannel();
+    void volumeChanged(double vol);
 private slots:
     void propertyChanged(QString name, QVariantMap map, QStringList list);
 
@@ -175,6 +181,7 @@ private:
     void SetVolume(double v)
     {
         volume = v;
+        emit volumeChanged(volume);
     }
     bool CanControl() const
     {
@@ -216,6 +223,12 @@ private:
     {
         canPause = flag;
     }
+
+    void emitManagerChangedPropertySignal();
+    void notifyManagerChangedProperties(const QString& property, const QVariant& value);
+    void emitPlayerChangedPropertySignal();
+    void notifyPlayerChangedProperties(const QString& property, const QVariant& value);
+
 private:
     DBusTracklist* tracklist = nullptr;
 
@@ -231,6 +244,8 @@ private:
     bool canGoPrevious = false;
     bool canPlay = false;
     bool canPause = false;
+    QVariantMap playerSignalingProperties;
+    QVariantMap managerSignalingProperties;
 };
 
 #endif // MPRISDBUS_H

@@ -58,9 +58,14 @@ void MPRISDBus::propertyChanged(QString name, QVariantMap map, QStringList list)
         qDebug() << "list element: " << element;
     }
 }
+void MPRISDBus::SetInitialVolume(int volume)
+{
+    this->volume = volume;
+}
 void MPRISDBus::SetFullscreen(bool flag)
 {
     this->fullScreen = flag;
+    notifyManagerChangedProperties("Fullscreen", flag);
 }
 void MPRISDBus::PlayingChannel(int64_t id)
 {
@@ -74,19 +79,14 @@ void MPRISDBus::PlayingChannel(int64_t id)
     }
     metadata["xesam:url"] = channel->getUri();
     metadata["xesam:title"] = channel->getName();
-    QDBusMessage signal = QDBusMessage::createSignal(
-     "/org/mpris/MediaPlayer2",
-    QStringLiteral("org.freedesktop.DBus.Properties"),
-    QStringLiteral("PropertiesChanged"));
-    signal << "org.mpris.MediaPlayer2.Player";
-    QVariantMap changedProps;
-    changedProps.insert("Metadata", metadata);
-    changedProps.insert("CanPause", true);
-    changedProps.insert("CanPlay", false);
-    changedProps.insert("PlaybackStatus", "Playing");
+    playbackStatus = "Playing";
+    canPlay = false;
+    canPause = true;
+    notifyPlayerChangedProperties("Metadata", metadata);
+    notifyPlayerChangedProperties("CanPause", canPause);
+    notifyPlayerChangedProperties("CanPlay", canPlay);
+    notifyPlayerChangedProperties("PlaybackStatus", playbackStatus);
 
-    signal << changedProps<< QStringList();;
-    QDBusConnection::sessionBus().send(signal);
 }
 void MPRISDBus::SelectedChannel(int64_t id)
 {
@@ -100,43 +100,24 @@ void MPRISDBus::SelectedChannel(int64_t id)
     }
     metadata["xesam:url"] = channel->getUri();
     metadata["xesam:title"] = channel->getName();
-    QDBusMessage signal = QDBusMessage::createSignal(
-     "/org/mpris/MediaPlayer2",
-     QStringLiteral("org.freedesktop.DBus.Properties"),
-     QStringLiteral("PropertiesChanged"));
-    signal << "org.mpris.MediaPlayer2.Player";
-    QVariantMap changedProps;
-    changedProps.insert("Metadata", metadata);
-    changedProps.insert("CanPause", false);
-    changedProps.insert("CanPlay", true);
-    changedProps.insert("PlaybackStatus", "Stopped");
 
-    signal << changedProps<< QStringList();;
-    QDBusConnection::sessionBus().send(signal);
+    playbackStatus = "Stopped";
+    canPlay = true;
+    canPause = false;
+    notifyPlayerChangedProperties("Metadata", metadata);
+    notifyPlayerChangedProperties("CanPause", canPause);
+    notifyPlayerChangedProperties("CanPlay", canPlay);
+    notifyPlayerChangedProperties("PlaybackStatus", playbackStatus);
 }
 void MPRISDBus::EnableSkipForward(bool flag)
 {
-    QDBusMessage signal = QDBusMessage::createSignal(
-     "/org/mpris/MediaPlayer2",
-    QStringLiteral("org.freedesktop.DBus.Properties"),
-    QStringLiteral("PropertiesChanged"));
-    signal << "org.mpris.MediaPlayer2.Player";
-    QVariantMap changedProps;
-    changedProps.insert("CanGoNext", flag);
-    signal << changedProps << QStringList();
-    QDBusConnection::sessionBus().send(signal);
+    canGoNext = flag;
+    notifyPlayerChangedProperties("CanGoNext", flag);
 }
 void MPRISDBus::EnableSkipBack(bool flag)
 {
-    QDBusMessage signal = QDBusMessage::createSignal(
-     "/org/mpris/MediaPlayer2",
-     QStringLiteral("org.freedesktop.DBus.Properties"),
-     QStringLiteral("PropertiesChanged"));
-    signal << "org.mpris.MediaPlayer2.Player";
-    QVariantMap changedProps;
-    changedProps.insert("CanGoPrevious", flag);
-    signal << changedProps<< QStringList();;
-    QDBusConnection::sessionBus().send(signal);
+    canGoPrevious = flag;
+    notifyPlayerChangedProperties("CanGoPrevious", flag);
 }
 
 void MPRISDBus::Raise()
@@ -158,25 +139,25 @@ void MPRISDBus::Previous()
 }
 void MPRISDBus::Pause()
 {
-
+    emit pausePlayingSelectedChannel();
 }
 void MPRISDBus::PlayPause()
 {
-
+    emit playPauseSelectedChannel();
 }
 void MPRISDBus::Stop()
 {
-
+    emit stopPlayingSelectedChannel();
 }
 void MPRISDBus::Play()
 {
-
+    emit playSelectedChannel();
 }
-void MPRISDBus::Seek(int microSeconds)
+void MPRISDBus::Seek(int )
 {
 
 }
-void MPRISDBus::SetPosition(const QDBusObjectPath& id, int position)
+void MPRISDBus::SetPosition(const QDBusObjectPath& , int )
 {
 
 }
@@ -186,6 +167,48 @@ void MPRISDBus::OpenUri(const QString& uri)
 }
 
 
+void MPRISDBus::emitManagerChangedPropertySignal()
+{
+    if(managerSignalingProperties.empty()) return;
+    QDBusMessage signal = QDBusMessage::createSignal(
+     "/org/mpris/MediaPlayer2",
+     QStringLiteral("org.freedesktop.DBus.Properties"),
+     QStringLiteral("PropertiesChanged"));
+    signal << "org.mpris.MediaPlayer2";
+    signal << managerSignalingProperties << QStringList();;
+    QDBusConnection::sessionBus().send(signal);
+    managerSignalingProperties.clear();
+}
+void MPRISDBus::notifyManagerChangedProperties(const QString& property, const QVariant& value)
+{
+    const bool firstChange = managerSignalingProperties.empty();
+    managerSignalingProperties[property] = value;
+    if(firstChange)
+    {
+        QMetaObject::invokeMethod(this, &MPRISDBus::emitManagerChangedPropertySignal, Qt::QueuedConnection);
+    }
+}
+void MPRISDBus::emitPlayerChangedPropertySignal()
+{
+    if(playerSignalingProperties.empty()) return;
+    QDBusMessage signal = QDBusMessage::createSignal(
+     "/org/mpris/MediaPlayer2",
+     QStringLiteral("org.freedesktop.DBus.Properties"),
+     QStringLiteral("PropertiesChanged"));
+    signal << "org.mpris.MediaPlayer2.Player";
+    signal << playerSignalingProperties << QStringList();;
+    QDBusConnection::sessionBus().send(signal);
+    playerSignalingProperties.clear();
+}
+void MPRISDBus::notifyPlayerChangedProperties(const QString& property, const QVariant& value)
+{
+    const bool firstChange = playerSignalingProperties.empty();
+    playerSignalingProperties[property] = value;
+    if(firstChange)
+    {
+        QMetaObject::invokeMethod(this, &MPRISDBus::emitPlayerChangedPropertySignal, Qt::QueuedConnection);
+    }
+}
 
 
 DBusTracklist::DBusTracklist(QObject *parent): QDBusAbstractAdaptor{parent}
