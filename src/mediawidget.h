@@ -29,19 +29,21 @@ public slots:
     void PlayPause();
     void Pause();
     void PlaySelected();
+    void VolumeChanged(int);
+    void VolumeToggled(bool);
 signals:
     void showingFullScreen(bool);
     void skipBack();
     void skipForward();
     void playingTrack(int64_t);
+    void volumeChangedSignal(int);
+    void volumeToggledSignal(bool);
 private slots:
 
 
     void skipBackTriggered();
     void skipForwardTriggered();
-    void volumeChanged(int);
     void volumeOsdTimerTimeout();
-    void volumeToggled(bool);
     void mediaWheelEvent(QPoint delta);
     void fileLoaded();
     void subtitleChanged(bool);

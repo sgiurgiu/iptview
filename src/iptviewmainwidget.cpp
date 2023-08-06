@@ -79,9 +79,13 @@ void IPTViewMainWidget::SkipBack()
 void IPTViewMainWidget::setupMprisDBus()
 {
     dbus = new MPRISDBus(this);
+    dbus->setObjectName("MPRISDBus");
     dbus->SetInitialVolume(mediaWidget->GetVolume());
     connect(mediaWidget, SIGNAL(showingFullScreen(bool)), dbus, SLOT(SetFullscreen(bool)));
-    connect(mediaWidget, SIGNAL(playingTrack(int64_t)), dbus, SLOT(PlayingChannel(int64_t)));
+    connect(mediaWidget, SIGNAL(playingTrack(int64_t)), dbus, SLOT(PlayingChannel(int64_t)));    
+    connect(mediaWidget, SIGNAL(volumeToggledSignal(bool)), dbus, SLOT(VolumeToggledExternal(bool)));
+    connect(mediaWidget, SIGNAL(volumeChangedSignal(int)), dbus, SLOT(VolumeChangedExternal(int)));
+
     connect(dbus, SIGNAL(skipForward()), channelsWidget, SLOT(SkipForward()));
     connect(dbus, SIGNAL(skipBack()), channelsWidget, SLOT(SkipBack()));
     connect(channelsWidget, SIGNAL(selectChannel(int64_t)), dbus, SLOT(SelectedChannel(int64_t)));
@@ -94,6 +98,7 @@ void IPTViewMainWidget::setupMprisDBus()
     connect(dbus, SIGNAL(pausePlayingSelectedChannel()), mediaWidget, SLOT(Pause()));
     connect(dbus, SIGNAL(stopPlayingSelectedChannel()), mediaWidget, SLOT(Stop()));
     connect(dbus, SIGNAL(playPauseSelectedChannel()), mediaWidget, SLOT(PlayPause()));
-
+    connect(dbus, SIGNAL(volumeChanged(int)), mediaWidget, SLOT(VolumeChanged(int)));
+    //connect(dbus, SIGNAL(volumeToggledSignal(bool)), mediaWidget, SLOT(VolumeToggled(bool)));
 }
 #endif

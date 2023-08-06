@@ -165,7 +165,20 @@ void MPRISDBus::OpenUri(const QString& uri)
 {
 
 }
-
+void MPRISDBus::SetVolume(double v)
+{
+    volume = v;
+    emit volumeChanged(static_cast<int>(volume*100.0));
+}
+void MPRISDBus::VolumeToggledExternal(bool)
+{
+    //volume
+}
+void MPRISDBus::VolumeChangedExternal(int newVolume)
+{
+    volume = static_cast<double>(newVolume) / 100.0;
+    notifyPlayerChangedProperties("Volume", volume);
+}
 
 void MPRISDBus::emitManagerChangedPropertySignal()
 {

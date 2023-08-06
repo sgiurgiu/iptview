@@ -15,6 +15,7 @@
 #include <QDBusInterface>
 #include <QDBusReply>
 #include <QKeyEvent>
+#include <QSignalBlocker>
 
 #include "mpvwidget.h"
 #include "databaseprovider.h"
@@ -88,8 +89,10 @@ QWidget* MediaWidget::createControlsWidget()
     volumeAction = new QAction(volumeMediumIcon, "", this);
     volumeAction->setCheckable(true);
     volumeAction->setEnabled(true);
+    volumeAction->setObjectName("Volume Mute toggle");
     volumeAction->setShortcut(QKeySequence{settings.value("player/mute", Qt::Key_M).toInt()});
-    connect(volumeAction, SIGNAL(toggled(bool)), this, SLOT(volumeToggled(bool)));
+    connect(volumeAction, SIGNAL(toggled(bool)), this, SLOT(VolumeToggled(bool)));
+    connect(volumeAction, SIGNAL(toggled(bool)), this, SIGNAL(volumeToggledSignal(bool)));
 
     fullScreenAction = new QAction(fullScreenIcon, "", this);
     fullScreenAction->setCheckable(true);
@@ -102,8 +105,10 @@ QWidget* MediaWidget::createControlsWidget()
     volumeSlider->setMinimum(0);
     volumeSlider->setMaximum(150);    
     volumeSlider->setSingleStep(5);
+    volumeSlider->setObjectName("Volume Slider");
     volumeSlider->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
-    connect(volumeSlider,SIGNAL(valueChanged(int)), this, SLOT(volumeChanged(int)));
+    connect(volumeSlider,SIGNAL(valueChanged(int)), this, SLOT(VolumeChanged(int)));
+    connect(volumeSlider,SIGNAL(valueChanged(int)), this, SIGNAL(volumeChangedSignal(int)));
     volumeSlider->setValue(settings.value("player/volume", 100.0).toDouble());
     mpvWidget->setProperty("volume", settings.value("player/volume", 100.0).toDouble());
 
@@ -217,7 +222,7 @@ void MediaWidget::SelectChannel(int64_t id)
     playPauseAction->setToolTip("Play");
     mediaTitleLabel->setText(selectedChannel->getName());
 }
-void MediaWidget::volumeToggled(bool checked)
+void MediaWidget::VolumeToggled(bool checked)
 {
     mpvWidget->setProperty("mute", QVariant{checked});
     volumeAction->setIcon(checked ? volumeMuteIcon: getVolumeIcon());
@@ -251,8 +256,17 @@ QIcon MediaWidget::getVolumeIcon()
         return volumeHighIcon;
     }
 }
-void MediaWidget::volumeChanged(int volume)
+void MediaWidget::VolumeChanged(int volume)
 {
+    qDebug() << "volume changed:"<<volume;
+    if(sender() != volumeSlider)
+    {
+        QSignalBlocker volumeActionBlocker(volumeAction);
+        QSignalBlocker volumeSliderBlocker(volumeSlider);
+        volumeAction->setChecked(false);
+        volumeAction->setIcon(getVolumeIcon());
+        volumeSlider->setSliderPosition(volume);
+    }
     double vol = static_cast<double>(volume);
     mpvWidget->setProperty("volume", QVariant{vol});
     volumeAction->setIcon(getVolumeIcon());

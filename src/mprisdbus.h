@@ -78,6 +78,8 @@ public slots:
     void SelectedChannel(int64_t);
     void EnableSkipForward(bool);
     void EnableSkipBack(bool);
+    void VolumeToggledExternal(bool);
+    void VolumeChangedExternal(int);
 signals:
     void showingFullScreen(bool);
     void skipBack();
@@ -86,7 +88,7 @@ signals:
     void pausePlayingSelectedChannel();
     void stopPlayingSelectedChannel();
     void playPauseSelectedChannel();
-    void volumeChanged(double vol);
+    void volumeChanged(int);
 private slots:
     void propertyChanged(QString name, QVariantMap map, QStringList list);
 
@@ -178,11 +180,7 @@ private:
     {
         return volume;
     }
-    void SetVolume(double v)
-    {
-        volume = v;
-        emit volumeChanged(volume);
-    }
+    void SetVolume(double v);
     bool CanControl() const
     {
         return true;
