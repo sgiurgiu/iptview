@@ -41,6 +41,7 @@ public:
     void addGroup(GroupTreeItem* group);
     GroupTreeItem* getGroup(int64_t id) const;
     ChannelTreeItem* getChannel(int64_t id) const;
+    virtual void clear() override;
 private:
     QString name;
     QHash<int64_t, GroupTreeItem*> groupsIdMap;

@@ -39,6 +39,7 @@ ChannelsWidget::ChannelsWidget(QWidget *parent)
     proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
     proxyModel->setFilterRole(ChannelsModel::NameRole);
     channels->setSelectionBehavior(QAbstractItemView::SelectItems);
+    channels->setSelectionMode(QAbstractItemView::ExtendedSelection);
     channels->setModel(proxyModel);
     searchField = new QLineEdit(this);
     searchField->setPlaceholderText("Search");
@@ -56,15 +57,13 @@ ChannelsWidget::ChannelsWidget(QWidget *parent)
     addToFavouritesAction = new QAction("Add to Favourites", this);
     removeFromFavouritesAction = new QAction("Remove from Favourites", this);
     addNewChannelAction = new QAction("Add new channel", this);
-    removeChannelAction = new QAction("Remove channel", this);
-    removeChannelGroupAction = new QAction("Remove group", this);
+    removeChannelGroupAction = new QAction("Remove channel(s)/group(s)", this);
     addNewChannelGroupAction = new QAction("Add new group", this);
     channels->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(channels, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onCustomContextMenu(QPoint)));
     connect(addToFavouritesAction, SIGNAL(triggered(bool)), this, SLOT(onAddToFavourites()));
     connect(removeFromFavouritesAction, SIGNAL(triggered(bool)), this, SLOT(onRemoveFromFavourites()));
     connect(addNewChannelAction, SIGNAL(triggered(bool)), this, SLOT(onAddNewChannel()));
-    connect(removeChannelAction, SIGNAL(triggered(bool)), this, SLOT(onRemoveChannel()));
     connect(removeChannelGroupAction, SIGNAL(triggered(bool)), this, SLOT(onRemoveChannelGroup()));
     connect(addNewChannelGroupAction, SIGNAL(triggered(bool)), this, SLOT(onAddNewChannelGroup()));
 
@@ -130,7 +129,21 @@ void ChannelsWidget::onCustomContextMenu(const QPoint &point)
     contextMenu->clear();
     addNewChannelAction->setData(QVariant{});
     addNewChannelGroupAction->setData(QVariant{});
-    QModelIndex proxyIndex = channels->indexAt(point);    
+    auto selectedIndexes = channels->selectionModel()->selectedIndexes();
+    if(selectedIndexes.empty())
+    {
+        contextMenu->addAction(addNewChannelAction);
+        contextMenu->addAction(addNewChannelGroupAction);
+        contextMenu->exec(channels->viewport()->mapToGlobal(point));
+        return;
+    }
+    if(selectedIndexes.count() > 1)
+    {
+        contextMenu->addAction(removeChannelGroupAction);
+        contextMenu->exec(channels->viewport()->mapToGlobal(point));
+        return;
+    }
+    QModelIndex proxyIndex = selectedIndexes.front();
     auto index = proxyModel->mapToSource(proxyIndex);
     if(!index.isValid())
     {
@@ -166,14 +179,14 @@ void ChannelsWidget::onCustomContextMenu(const QPoint &point)
             addNewChannelAction->setData(QVariant::fromValue(parentTreeItemIndex));
             addNewChannelGroupAction->setData(QVariant::fromValue(parentTreeItemIndex));
 
-            removeChannelAction->setData(QVariant::fromValue(std::move(treeItemIndex)));
+            removeChannelGroupAction->setData(QVariant::fromValue(std::move(treeItemIndex)));
             addToFavouritesAction->setData(QVariant::fromValue(treeItem));
 
             contextMenu->addAction(addToFavouritesAction);
             contextMenu->addSeparator();
             contextMenu->addAction(addNewChannelAction);
             contextMenu->addAction(addNewChannelGroupAction);
-            contextMenu->addAction(removeChannelAction);
+            contextMenu->addAction(removeChannelGroupAction);
             contextMenu->exec(channels->viewport()->mapToGlobal(point));
         }
     }
@@ -259,30 +272,65 @@ void ChannelsWidget::onAddNewChannel()
 
     dialog->open();
 }
-void ChannelsWidget::onRemoveChannel()
-{
-    auto treeItemIndex = removeChannelAction->data().value<TreeItemIndex>();
-    if(treeItemIndex.treeItem != nullptr && treeItemIndex.index.isValid())
-    {
-        auto selectedButton = QMessageBox::question(this, "Confirm",QString("Are you sure you want to delete channel %1?").arg(treeItemIndex.treeItem->getName()));
-        if(selectedButton == QMessageBox::StandardButton::Yes)
-        {
-            DatabaseProvider::GetDatabase()->RemoveChannel(treeItemIndex.treeItem->getID());
-            model->RemoveChild(treeItemIndex.treeItem, treeItemIndex.index);
-        }
-    }
-}
+
 void ChannelsWidget::onRemoveChannelGroup()
 {
     auto treeItemIndex = removeChannelGroupAction->data().value<TreeItemIndex>();
     if(treeItemIndex.treeItem != nullptr && treeItemIndex.index.isValid())
     {
-        auto selectedButton = QMessageBox::question(this, "Confirm",QString("Are you sure you want to delete channel group %1 and all its channels?").arg(treeItemIndex.treeItem->getName()));
+        auto selectedButton = QMessageBox::question(this, "Confirm",QString("Are you sure you want to delete channel/group %1?").arg(treeItemIndex.treeItem->getName()));
         if(selectedButton == QMessageBox::StandardButton::Yes)
         {
-            DatabaseProvider::GetDatabase()->RemoveGroup(treeItemIndex.treeItem->getID());
+            if(treeItemIndex.treeItem->getType() == ChannelTreeItemType::Group)
+            {
+                DatabaseProvider::GetDatabase()->RemoveGroup(treeItemIndex.treeItem->getID());
+            }
+            else if(treeItemIndex.treeItem->getType() == ChannelTreeItemType::Channel)
+            {
+                DatabaseProvider::GetDatabase()->RemoveChannel(treeItemIndex.treeItem->getID());
+            }
+            else
+            {
+                return;
+            }
             model->RemoveChild(treeItemIndex.treeItem, treeItemIndex.index);
         }
+    }
+    else
+    {
+        auto selection = channels->selectionModel()->selectedIndexes();
+        if(!selection.empty())
+        {
+            auto selectedButton = QMessageBox::question(this, "Confirm",QString("Are you sure you want to delete %1 channels/groups?").arg(selection.count()));
+            if(selectedButton != QMessageBox::StandardButton::Yes) return;
+        }
+        std::vector<int64_t> groups;
+        std::vector<int64_t> channels;
+        for(const auto& proxyIndex : selection)
+        {
+            if(!proxyIndex.isValid()) continue;
+            auto index = proxyModel->mapToSource(proxyIndex);
+            if(!index.isValid()) continue;
+            auto treeItem = static_cast<AbstractChannelTreeItem*>(index.internalPointer());
+            if(!treeItem) continue;
+            if(treeItem->getType() == ChannelTreeItemType::Group)
+            {
+                groups.push_back(treeItem->getID());
+            }
+            else if(treeItem->getType() == ChannelTreeItemType::Channel)
+            {
+                channels.push_back(treeItem->getID());
+            }
+        }
+        for(auto id:groups)
+        {
+            DatabaseProvider::GetDatabase()->RemoveGroup(id);
+        }
+        for(auto id:channels)
+        {
+            DatabaseProvider::GetDatabase()->RemoveChannel(id);
+        }
+        model->ReloadChannels();
     }
 }
 void ChannelsWidget::onAddNewChannelGroup()

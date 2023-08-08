@@ -24,7 +24,7 @@ class AbstractChannelTreeItem : public QObject
     Q_OBJECT
 public:
     explicit AbstractChannelTreeItem(AbstractChannelTreeItem* parent = nullptr);
-    virtual ~AbstractChannelTreeItem() = default;
+    virtual ~AbstractChannelTreeItem();
     virtual ChannelTreeItemType getType() const = 0;
     virtual QString getName() const = 0;
     virtual QIcon getIcon() const;
@@ -37,6 +37,7 @@ public:
     virtual AbstractChannelTreeItem* getParent() const;
     int64_t getID() const;
     void setID(int64_t id);
+    virtual void clear();
 signals:
     void aquiredIcon(AbstractChannelTreeItem*);
 protected:

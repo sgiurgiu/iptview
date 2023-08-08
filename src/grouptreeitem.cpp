@@ -120,3 +120,9 @@ void GroupTreeItem::addChannel(ChannelTreeItem* channel)
     }
     appendChild(channel);
 }
+void GroupTreeItem::clear()
+{
+    AbstractChannelTreeItem::clear();
+    groupsIdMap.clear();
+    channelsIdMap.clear();
+}

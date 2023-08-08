@@ -24,6 +24,7 @@ public:
     void AddList(M3UList list);
     void AddChild(AbstractChannelTreeItem* child, const QModelIndex &parent);
     void RemoveChild(AbstractChannelTreeItem* child, const QModelIndex &index);
+    void ReloadChannels();
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     virtual int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -57,10 +58,11 @@ private:
     QModelIndex indexFromItem(AbstractChannelTreeItem* item);
     void loadChannels();
     void loadGroupChannelsIcons(GroupTreeItem* group);
+    void stopAndClearThreads();
 private:
     std::unique_ptr<RootTreeItem> rootItem;
     LoadingChannelsThread* loadingChannelsThread = nullptr;
-    QThread loadingChannelIconsThread;
+    QThread* loadingChannelIconsThread = nullptr;
     LoadingChannelIconsWorker* channelIconsWorker = nullptr;
     std::atomic_bool cancelImportingChannels = false;
 };

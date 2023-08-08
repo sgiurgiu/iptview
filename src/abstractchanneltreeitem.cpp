@@ -6,7 +6,10 @@ AbstractChannelTreeItem::AbstractChannelTreeItem(AbstractChannelTreeItem* parent
     parent{parent}
 {
 }
-
+AbstractChannelTreeItem::~AbstractChannelTreeItem()
+{
+    clear();
+}
 void AbstractChannelTreeItem::appendChild(AbstractChannelTreeItem* child)
 {
     child->setParent(this);
@@ -64,3 +67,11 @@ void AbstractChannelTreeItem::setID(int64_t id)
     this->id = id;
 }
 
+void AbstractChannelTreeItem::clear()
+{
+    for(auto child:children)
+    {
+        delete child;
+    }
+    children.clear();
+}

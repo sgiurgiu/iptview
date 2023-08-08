@@ -130,3 +130,13 @@ std::pair<AbstractChannelTreeItem*,AbstractChannelTreeItem*> RootTreeItem::remov
     auto lastChild = favourites->removeFavouriteChild(item);
     return std::make_pair(favourites,lastChild);
 }
+
+void RootTreeItem::clear()
+{
+    AbstractChannelTreeItem::clear();
+    groupsIdMap.clear();
+    groupsIdMap.clear();
+    favourites = new FavouritesTreeItem(this);
+    connect(favourites, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)));
+    appendChild(favourites);
+}

@@ -17,15 +17,13 @@ ChannelsModel::ChannelsModel(QObject *parent)
     : QAbstractItemModel{parent},
       rootItem{std::make_unique<RootTreeItem>()}
 {
-    channelIconsWorker  = new LoadingChannelIconsWorker();
-    channelIconsWorker->moveToThread(&loadingChannelIconsThread);
-    connect(&loadingChannelIconsThread, &QThread::finished, channelIconsWorker, &QObject::deleteLater);
-    connect(this, &ChannelsModel::loadChannelIcon, channelIconsWorker, &LoadingChannelIconsWorker::loadChannelIcon);
-    connect(channelIconsWorker, &LoadingChannelIconsWorker::channelIconReady, this, &ChannelsModel::onChannelIconReady);
-    loadingChannelIconsThread.start();
     loadChannels();
 }
 ChannelsModel::~ChannelsModel()
+{
+    stopAndClearThreads();
+}
+void ChannelsModel::stopAndClearThreads()
 {
     CancelImportChannels();
     if(loadingChannelsThread)
@@ -34,16 +32,36 @@ ChannelsModel::~ChannelsModel()
         loadingChannelsThread->wait();
         delete loadingChannelsThread;
     }
-    loadingChannelIconsThread.quit();
-    loadingChannelIconsThread.wait();
+    if(loadingChannelIconsThread)
+    {
+        loadingChannelIconsThread->quit();
+        loadingChannelIconsThread->wait();
+        delete loadingChannelIconsThread;
+    }
 }
 void ChannelsModel::loadChannels()
 {
-   loadingChannelsThread = new LoadingChannelsThread(QThread::currentThread(), this);
-   connect(loadingChannelsThread, &LoadingChannelsThread::groupLoaded,this, &ChannelsModel::onGroupLoaded);
-   connect(loadingChannelsThread, &LoadingChannelsThread::groupsCount, this,  &ChannelsModel::onGroupsCount);
-   connect(loadingChannelsThread, &LoadingChannelsThread::favouriteChannels, this,  &ChannelsModel::onFavouriteChannels);
-   loadingChannelsThread->start();
+    loadingChannelIconsThread = new QThread(this);
+    channelIconsWorker  = new LoadingChannelIconsWorker();
+    channelIconsWorker->moveToThread(loadingChannelIconsThread);
+    connect(loadingChannelIconsThread, &QThread::finished, channelIconsWorker, &QObject::deleteLater);
+    connect(this, &ChannelsModel::loadChannelIcon, channelIconsWorker, &LoadingChannelIconsWorker::loadChannelIcon);
+    connect(channelIconsWorker, &LoadingChannelIconsWorker::channelIconReady, this, &ChannelsModel::onChannelIconReady);
+    loadingChannelIconsThread->start();
+
+    loadingChannelsThread = new LoadingChannelsThread(QThread::currentThread(), this);
+    connect(loadingChannelsThread, &LoadingChannelsThread::groupLoaded,this, &ChannelsModel::onGroupLoaded);
+    connect(loadingChannelsThread, &LoadingChannelsThread::groupsCount, this,  &ChannelsModel::onGroupsCount);
+    connect(loadingChannelsThread, &LoadingChannelsThread::favouriteChannels, this,  &ChannelsModel::onFavouriteChannels);
+    loadingChannelsThread->start();
+}
+void ChannelsModel::ReloadChannels()
+{
+    stopAndClearThreads();
+    beginResetModel();
+    rootItem->clear();
+    endResetModel();
+    loadChannels();
 }
 void ChannelsModel::onGroupsCount(int)
 {
@@ -161,6 +179,7 @@ int ChannelsModel::rowCount(const QModelIndex &parent) const
     else
         parentItem = static_cast<AbstractChannelTreeItem*>(parent.internalPointer());
 
+    //qDebug() << "parentItem->childCount():"<<parentItem->getName() <<" ," << parentItem->childCount();
     return parentItem->childCount();
 }
 int ChannelsModel::columnCount(const QModelIndex &parent) const
@@ -338,5 +357,8 @@ void ChannelsModel::CancelImportChannels()
     {
         loadingChannelsThread->cancelOperation();
     }
-    loadingChannelIconsThread.quit();
+    if(loadingChannelIconsThread)
+    {
+        loadingChannelIconsThread->quit();
+    }
 }

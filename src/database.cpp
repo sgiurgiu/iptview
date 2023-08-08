@@ -11,21 +11,15 @@
 Database::Database(ConstructorKey, const std::filesystem::path& dbPath)
 {
     auto name = QString("DB%1").arg(qintptr(QThread::currentThreadId()));
-    if(QSqlDatabase::contains(name))
+    db = QSqlDatabase::addDatabase("QSQLITE", name);
+    db.setConnectOptions("SQLITE_CONFIG_SERIALIZED");
+    db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=30000");
+    db.setDatabaseName(dbPath.string().c_str());
+    if(!db.isValid() || !db.open())
     {
-        db = QSqlDatabase::database(name);
+        throw DatabaseException(QString{("Cannot open database "+dbPath.string()).c_str()});
     }
-    else
-    {
-        db = QSqlDatabase::addDatabase("QSQLITE", name);
-        db.setConnectOptions("SQLITE_CONFIG_SERIALIZED");
-        db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=30000");
-        db.setDatabaseName(dbPath.string().c_str());
-        if(!db.isValid() || !db.open())
-        {
-            throw DatabaseException(QString{("Cannot open database "+dbPath.string()).c_str()});
-        }
-    }
+
 
     executeStatement("PRAGMA journal_mode=WAL", "Cannot enable WAL journal mode");
     executeStatement("PRAGMA foreign_keys = ON", "Cannot enable foreign_keys support");

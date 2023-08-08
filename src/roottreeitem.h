@@ -33,6 +33,7 @@ public:
     void addToFavourites(ChannelTreeItem* channel);
     std::pair<AbstractChannelTreeItem*,AbstractChannelTreeItem*> addToFavourites(AbstractChannelTreeItem* item);
     std::pair<AbstractChannelTreeItem*,AbstractChannelTreeItem*> removeFromFavourites(AbstractChannelTreeItem* item);
+    virtual void clear() override;
 private:
     QHash<QString, GroupTreeItem*> groupsMap;
     QHash<int64_t, GroupTreeItem*> groupsIdMap;

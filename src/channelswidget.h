@@ -39,7 +39,6 @@ private slots:
     void itemsSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void searchTextChanged(const QString& text);
     void onAddNewChannel();
-    void onRemoveChannel();
     void onRemoveChannelGroup();
     void onAddNewChannelGroup();
 private:
@@ -52,7 +51,6 @@ private:
     QAction* removeFromFavouritesAction;
     QAction* addNewChannelAction;
     QAction* addNewChannelGroupAction;
-    QAction* removeChannelAction;
     QAction* removeChannelGroupAction;
     QLineEdit* searchField;
     ChannelsFilteringModel* proxyModel;
