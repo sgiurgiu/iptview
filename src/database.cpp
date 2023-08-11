@@ -20,7 +20,6 @@ Database::Database(ConstructorKey, const std::filesystem::path& dbPath)
         throw DatabaseException(QString{("Cannot open database "+dbPath.string()).c_str()});
     }
 
-
     executeStatement("PRAGMA journal_mode=WAL", "Cannot enable WAL journal mode");
     executeStatement("PRAGMA foreign_keys = ON", "Cannot enable foreign_keys support");
 }
@@ -344,7 +343,24 @@ void Database::SetFavourite(int64_t id, bool flag) const
         throw DatabaseException("Cannot update CHANNELS " + query.lastError().text());
     }
 }
-
+void Database::AddGroup(GroupTreeItem* group)
+{
+    WithTransaction([group, this](){
+        addGroup(group, {});
+        for(int i=0;i<group->childCount();i++)
+        {
+            auto child = group->child(i);
+            if(child->getType() == ChannelTreeItemType::Group)
+            {
+                addGroup(static_cast<GroupTreeItem*>(child), group->getID());
+            }
+            else if (child->getType() == ChannelTreeItemType::Channel)
+            {
+                addChannel(static_cast<ChannelTreeItem*>(child), group->getID());
+            }
+        }
+    });
+}
 void Database::addGroupTree(GroupTreeItem* group) const
 {
     auto parent = group->getParent();

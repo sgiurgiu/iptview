@@ -14,6 +14,7 @@
 
 #include "iptviewmainwidget.h"
 #include "m3uparsercontroller.h"
+#include "xstreamcodewizard.h"
 
 IPTViewMainWindow::IPTViewMainWindow(QWidget *parent)
     : QMainWindow{parent}
@@ -42,14 +43,19 @@ void IPTViewMainWindow::createActions()
     fileOpenAction = new QAction(QIcon(":/icons/open.png"), tr("&Open"), this);
     fileOpenAction->setShortcuts(QKeySequence::Open);
     fileOpenAction->setToolTip(tr("Open playlist"));
-    fileOpenAction->setStatusTip(quitApplicationAction->toolTip());
+    fileOpenAction->setStatusTip(fileOpenAction->toolTip());
     connect(fileOpenAction, SIGNAL(triggered()), SLOT(openPlaylist()));
 
+    fileImportXstreamCodeAction= new QAction(tr("&Import Xstream Playlist"), this);
+    fileImportXstreamCodeAction->setToolTip(tr("Import Xstream Playlist"));
+    fileImportXstreamCodeAction->setStatusTip(fileImportXstreamCodeAction->toolTip());
+    connect(fileImportXstreamCodeAction, SIGNAL(triggered()), SLOT(importXstreamCode()));
 }
 void IPTViewMainWindow::createMenus()
 {
     QMenu* fileMenu = menuBar()->addMenu( tr("&File") );
     fileMenu->addAction(fileOpenAction);
+    fileMenu->addAction(fileImportXstreamCodeAction);
     fileMenu->addSeparator();
     fileMenu->addAction(quitApplicationAction);
 
@@ -167,3 +173,24 @@ void IPTViewMainWindow::fullScreen(bool flag)
     }
 }
 
+void IPTViewMainWindow::importXstreamCode()
+{
+    auto xstreamInfo = XstreamCodeWizard::ImportXstreamCodes(this);
+    QProgressDialog* progress = new QProgressDialog(this);
+    progress->setWindowModality(Qt::WindowModal);
+    progress->setLabelText("Saving channels ...");
+    progress->setMinimum(0);
+    progress->setAutoClose(true);
+
+    connect(mainWidget, &IPTViewMainWidget::updateImportedChannelIndex, this, [progress](qint64 index) {
+        progress->setValue(index);
+    });
+    connect(progress, &QProgressDialog::canceled, mainWidget,&IPTViewMainWidget::CancelImportChannels);
+
+    connect(mainWidget, &IPTViewMainWidget::channelsImported, this, [progress]() {
+        progress->reset();
+        progress->deleteLater();
+    });
+
+    mainWidget->ImportPlaylist(std::move(xstreamInfo));
+}

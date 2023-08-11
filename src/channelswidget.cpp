@@ -79,6 +79,10 @@ void ChannelsWidget::ImportPlaylist(M3UList list)
 {
     model->AddList(std::move(list));
 }
+void ChannelsWidget::ImportPlaylist(CollectedInfo list)
+{
+    model->AddList(std::move(list));
+}
 void ChannelsWidget::onDoubleClickedTreeItem(const QModelIndex &index)
 {
     if(index.isValid())

@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "m3ulist.h"
+#include "xstreaminfo.h"
 #include <atomic>
 
 class QTreeView;
@@ -19,6 +20,7 @@ class ChannelsWidget : public QWidget
 public:
     explicit ChannelsWidget(QWidget *parent = nullptr);
     void ImportPlaylist(M3UList list);
+    void ImportPlaylist(CollectedInfo list);
     void CancelImportChannels();
 signals:
     void playChannel(int64_t id);

@@ -34,6 +34,7 @@ public:
     void AddChannelAndGroup(ChannelTreeItem* channel) const;
     ChannelTreeItem* AddChannel(const QString& name,const QString& url,const QString& icon, std::optional<int64_t> parentGroupId) const;
     GroupTreeItem* AddGroup(const QString& text, std::optional<int64_t> parentGroupId) const;
+    void AddGroup(GroupTreeItem* group);
     void SetChannelLogo(ChannelTreeItem* channel) const;
     void LoadChannelsAndGroups(RootTreeItem* rootItem) const;
     void SetFavourite(int64_t id, bool flag) const;

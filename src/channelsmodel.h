@@ -8,6 +8,7 @@
 #include <memory>
 #include "m3ulist.h"
 #include "channeltreeitem.h"
+#include "xstreaminfo.h"
 
 class AbstractChannelTreeItem;
 class RootTreeItem;
@@ -22,6 +23,7 @@ public:
     explicit ChannelsModel(QObject *parent = nullptr);
     ~ChannelsModel();
     void AddList(M3UList list);
+    void AddList(CollectedInfo list);
     void AddChild(AbstractChannelTreeItem* child, const QModelIndex &parent);
     void RemoveChild(AbstractChannelTreeItem* child, const QModelIndex &index);
     void ReloadChannels();

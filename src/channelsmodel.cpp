@@ -9,6 +9,12 @@
 #include "database.h"
 #include <QtDebug>
 #include <QNetworkAccessManager>
+#include <QUrlQuery>
+#include <QNetworkReply>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
+#include <QJsonArray>
 
 #include "loadingchannelsthread.h"
 #include "loadingchanneliconsworker.h"
@@ -126,6 +132,83 @@ void ChannelsModel::AddList(M3UList list)
     });
     endResetModel();
     emit channelsImported();
+}
+void ChannelsModel::AddList(CollectedInfo list)
+{
+    auto networkManager = new QNetworkAccessManager{this};
+    int totalCategories = list.liveCategories.size() + list.vodCategories.size();
+    int categoriesCounter = 0;
+
+    for(const auto& category: list.liveCategories)
+    {
+        QNetworkRequest request;
+        QUrl url;
+        url.setHost(list.authInfo.serverUrl);
+        url.setScheme(list.authInfo.serverSchema);
+        url.setPort(list.authInfo.serverPort.toInt());
+        url.setPath("/player_api.php");
+        QUrlQuery query;
+        query.addQueryItem("username",list.authInfo.username);
+        query.addQueryItem("password",list.authInfo.password);
+        query.addQueryItem("action","get_live_streams");
+        query.addQueryItem("category_id",category.categoryId);
+        url.setQuery(query);
+        request.setUrl(url);
+        request.setHeader(QNetworkRequest::UserAgentHeader, "IPTView 1.0");
+        auto reply = networkManager->get(request);
+        categoriesCounter++;
+        bool lastCategory = (categoriesCounter>= totalCategories);
+
+        connect(reply, &QNetworkReply::finished, this,
+                [reply, lastCategory,categoriesCounter,
+                networkManager, category, info=list.authInfo, this]()
+        {
+            if(reply->error())
+            {
+                reply->deleteLater();
+                return;
+            }
+            auto response = reply->readAll();
+            reply->deleteLater();
+            QJsonDocument doc = QJsonDocument::fromJson(response);
+            auto channels = doc.array();
+
+            GroupTreeItem* group = new GroupTreeItem(category.categoryName);
+            for(const auto& ch: channels)
+            {
+                auto channelObject = ch.toObject();
+                auto streamId = channelObject.value("stream_id").toInt();
+                QUrl url;
+                url.setHost(info.serverUrl);
+                url.setScheme(info.serverSchema);
+                url.setPort(info.serverPort.toInt());
+                url.setPath(QString("/live/%1/%2/%3.ts").arg(info.username,info.password).arg(streamId));
+
+                if(streamId == 0) continue;
+                ChannelTreeItem* channelTreeItem = new ChannelTreeItem(
+                            channelObject.value("name").toString(""),
+                            url.toString(),
+                            channelObject.value("stream_icon").toString(""),
+                            {},
+                            group
+                            );
+                group->addChannel(channelTreeItem);
+            }
+            auto db = DatabaseProvider::GetDatabase();
+            beginResetModel();
+            rootItem->addGroup(group);
+            db->AddGroup(group);
+            //emit loadChannelIcon(channelPtr);
+            endResetModel();
+
+            emit updateImportedChannelIndex(categoriesCounter);
+            if(lastCategory)
+            {
+               // networkManager->deleteLater();
+                emit channelsImported();
+            }
+        });
+    }
 }
 void ChannelsModel::AddToFavourites(AbstractChannelTreeItem* item)
 {

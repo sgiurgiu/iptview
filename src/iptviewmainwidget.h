@@ -4,6 +4,7 @@
 #include <QSplitter>
 
 #include "m3ulist.h"
+#include "xstreaminfo.h"
 
 class ChannelsWidget;
 class MediaWidget;
@@ -18,6 +19,7 @@ public:
 
 public slots:
     void ImportPlaylist(M3UList list);
+    void ImportPlaylist(CollectedInfo list);
     void CancelImportChannels();
     void SkipForward();
     void SkipBack();

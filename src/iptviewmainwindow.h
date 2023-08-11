@@ -20,6 +20,7 @@ private slots:
   void openPlaylist();
   void fullScreen(bool flag);
   void onImportPlaylist(M3UList list);
+  void importXstreamCode();
 private:
   void centerOnScreen();
   void createActions();
@@ -29,7 +30,7 @@ private:
   void loadPlaylist(const QString& fileName);
 private:
   QMenu* viewMenu;
-  QAction* fileNewAction;
+  QAction* fileImportXstreamCodeAction;
   QAction* fileOpenAction;
   QAction* quitApplicationAction;
   IPTViewMainWidget* mainWidget;

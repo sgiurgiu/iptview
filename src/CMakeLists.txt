@@ -27,6 +27,8 @@ set(IPTVIEWLIB_SRCS
     channelsfilteringmodel.h channelsfilteringmodel.cpp
     loadingchannelsthread.h loadingchannelsthread.cpp
     loadingchanneliconsworker.h loadingchanneliconsworker.cpp
+    xstreamcodewizard.cpp xstreamcodewizard.h
+    xstreaminfo.h
     )
 
 if(ENABLE_DBUS)
