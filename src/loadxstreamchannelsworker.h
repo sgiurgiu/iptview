@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include "xstreaminfo.h"
-
+#include <atomic>
 class QNetworkAccessManager;
 class GroupTreeItem;
 class QThread;
@@ -19,6 +19,11 @@ public:
     }
 public slots:
     void importChannels();
+    void cancelImportChannels()
+    {
+        cancelled = false;
+        emit finished();
+    }
 signals:
     void finished();
     void loadedGroup(GroupTreeItem*);
@@ -31,6 +36,7 @@ private:
     CollectedInfo list;
     qsizetype processedCategories = 0;
     QThread* destinationThread = nullptr;
+    std::atomic_bool cancelled = {false};
 };
 
 #endif // LOADXSTREAMCHANNELSWORKER_H

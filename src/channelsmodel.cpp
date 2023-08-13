@@ -20,6 +20,7 @@ ChannelsModel::ChannelsModel(QObject *parent)
       rootItem{std::make_unique<RootTreeItem>()}
 {
     loadChannels();
+    connect(this, SIGNAL(cancelImportChannels()),this, SLOT(cancelImportChannelsSlot()));
 }
 ChannelsModel::~ChannelsModel()
 {
@@ -27,18 +28,20 @@ ChannelsModel::~ChannelsModel()
 }
 void ChannelsModel::stopAndClearThreads()
 {
-    CancelImportChannels();
+    cancelImportChannelsSlot();
     if(loadingChannelsThread)
     {
         loadingChannelsThread->cancelOperation();
         loadingChannelsThread->wait();
         delete loadingChannelsThread;
+        loadingChannelsThread = nullptr;
     }
     if(loadingChannelIconsThread)
     {
         loadingChannelIconsThread->quit();
         loadingChannelIconsThread->wait();
         delete loadingChannelIconsThread;
+        loadingChannelIconsThread = nullptr;
     }
 }
 void ChannelsModel::loadChannels()
@@ -148,6 +151,7 @@ void ChannelsModel::AddList(CollectedInfo list)
         xstreamGroupImportingCount++;
         emit updateImportedChannelIndex(xstreamGroupImportingCount);
     });
+    connect(this, SIGNAL(cancelImportChannels()), worker, SLOT(cancelImportChannels()));
     thread->start();
 }
 void ChannelsModel::AddToFavourites(AbstractChannelTreeItem* item)
@@ -373,7 +377,7 @@ void ChannelsModel::onChannelIconReady(ChannelTreeItem* channel)
     auto index = indexFromItem(channel);
     emit dataChanged(index,index);
 }
-void ChannelsModel::CancelImportChannels()
+void ChannelsModel::cancelImportChannelsSlot()
 {
     cancelImportingChannels = true;
     if(loadingChannelsThread)

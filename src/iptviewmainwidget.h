@@ -20,11 +20,11 @@ public:
 public slots:
     void ImportPlaylist(M3UList list);
     void ImportPlaylist(CollectedInfo list);
-    void CancelImportChannels();
     void SkipForward();
     void SkipBack();
 
 signals:
+    void cancelImportChannels();
     void showingFullScreen(bool);
     void updateImportedChannelIndex(qint64);
     void channelsImported();

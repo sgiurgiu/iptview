@@ -35,7 +35,7 @@ IPTViewMainWidget::IPTViewMainWidget(QWidget *parent): QSplitter{Qt::Horizontal,
     connect(channelsWidget, SIGNAL(channelsImported()),this, SIGNAL(channelsImported()));
     connect(channelsWidget, SIGNAL(enableSkipForward(bool)), mediaWidget, SLOT(EnableSkipForward(bool)));
     connect(channelsWidget, SIGNAL(enableSkipBack(bool)), mediaWidget, SLOT(EnableSkipBack(bool)));
-
+    connect(this, SIGNAL(cancelImportChannels()), channelsWidget, SIGNAL(cancelImportChannels()));
 #ifdef IPTVIEW_DBUS
     setupMprisDBus();
 #endif
@@ -67,10 +67,7 @@ void IPTViewMainWidget::fullScreen(bool flag)
         this->setContentsMargins(contentMargins);
     }
 }
-void IPTViewMainWidget::CancelImportChannels()
-{
-    channelsWidget->CancelImportChannels();
-}
+
 void IPTViewMainWidget::SkipForward()
 {
     channelsWidget->SkipForward();

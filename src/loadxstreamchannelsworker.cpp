@@ -24,10 +24,12 @@ void LoadXstreamChannelsWorker::importChannels()
 {
     for(const auto& category: list.liveCategories)
     {
+        if(cancelled) return;
         loadGroup(category,"get_live_streams");
     }
     for(const auto& category: list.vodCategories)
     {
+        if(cancelled) return;
         loadGroup(category,"get_vod_streams");
     }
 }
@@ -54,6 +56,7 @@ void LoadXstreamChannelsWorker::loadGroup(const CategoryInfo& category,
             [reply,
             category, info=list.authInfo, this]()
     {
+        if(cancelled) return;
         if(reply->error())
         {
             reply->deleteLater();
@@ -67,6 +70,7 @@ void LoadXstreamChannelsWorker::loadGroup(const CategoryInfo& category,
         GroupTreeItem* group = new GroupTreeItem(category.categoryName);
         for(const auto& ch: channels)
         {
+            if(cancelled) return;
             auto channelObject = ch.toObject();
             auto streamId = channelObject.value("stream_id").toInt();
             auto categoryType = channelObject.value("stream_type").toString("");

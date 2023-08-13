@@ -70,6 +70,8 @@ ChannelsWidget::ChannelsWidget(QWidget *parent)
     connect(model, SIGNAL(updateImportedChannelIndex(qint64)),this, SIGNAL(updateImportedChannelIndex(qint64)));
     connect(model, SIGNAL(channelsImported()),this, SIGNAL(channelsImported()));
 
+    connect(this, SIGNAL(cancelImportChannels()), model, SIGNAL(cancelImportChannels()));
+
 }
 void ChannelsWidget::searchTextChanged(const QString& text)
 {
@@ -358,10 +360,6 @@ void ChannelsWidget::onAddNewChannelGroup()
     }
 }
 
-void ChannelsWidget::CancelImportChannels()
-{
-    model->CancelImportChannels();
-}
 
 void ChannelsWidget::SkipForward()
 {

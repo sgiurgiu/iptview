@@ -117,7 +117,7 @@ void IPTViewMainWindow::onImportPlaylist(M3UList list)
     connect(mainWidget, &IPTViewMainWidget::updateImportedChannelIndex, this, [progress](qint64 index) {
         progress->setValue(index);
     });
-    connect(progress, &QProgressDialog::canceled, mainWidget,&IPTViewMainWidget::CancelImportChannels);
+    connect(progress, &QProgressDialog::canceled, mainWidget,&IPTViewMainWidget::cancelImportChannels);
 
     connect(mainWidget, &IPTViewMainWidget::channelsImported, this, [progress]() {
         progress->reset();
@@ -184,11 +184,10 @@ void IPTViewMainWindow::importXstreamCode()
     progress->setMinimum(0);
     progress->setAutoClose(true);
     progress->setMaximum(xstreamInfo.liveCategories.size()+xstreamInfo.vodCategories.size());
-
+    connect(progress, &QProgressDialog::canceled, mainWidget,&IPTViewMainWidget::cancelImportChannels);
     connect(mainWidget, &IPTViewMainWidget::updateImportedChannelIndex, this, [progress](qint64 index) {
         progress->setValue(index);
     });
-    connect(progress, &QProgressDialog::canceled, mainWidget,&IPTViewMainWidget::CancelImportChannels);
 
     connect(mainWidget, &IPTViewMainWidget::channelsImported, this, [progress]() {
         progress->reset();

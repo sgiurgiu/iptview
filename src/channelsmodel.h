@@ -44,14 +44,16 @@ public:
     };
     void AddToFavourites(AbstractChannelTreeItem* item);
     void RemoveFromFavourites(AbstractChannelTreeItem* item);
-    void CancelImportChannels();
+
 signals:
+    void cancelImportChannels();
     void groupLoaded(GroupTreeItem* group);
     void loadChannelIcon(ChannelTreeItem* channel);
     void updateImportedChannelIndex(qint64);
     void channelsImported();
 
 private slots:
+    void cancelImportChannelsSlot();
     void onGroupLoaded(GroupTreeItem* group);
     void onGroupsCount(int count);
     void onFavouriteChannels(std::vector<ChannelTreeItem*>);
