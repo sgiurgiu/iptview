@@ -176,11 +176,14 @@ void IPTViewMainWindow::fullScreen(bool flag)
 void IPTViewMainWindow::importXstreamCode()
 {
     auto xstreamInfo = XstreamCodeWizard::ImportXstreamCodes(this);
+    auto totalCategories = xstreamInfo.liveCategories.size()+xstreamInfo.vodCategories.size();
+    if(totalCategories <= 0) return;
     QProgressDialog* progress = new QProgressDialog(this);
     progress->setWindowModality(Qt::WindowModal);
     progress->setLabelText("Saving channels ...");
     progress->setMinimum(0);
     progress->setAutoClose(true);
+    progress->setMaximum(xstreamInfo.liveCategories.size()+xstreamInfo.vodCategories.size());
 
     connect(mainWidget, &IPTViewMainWidget::updateImportedChannelIndex, this, [progress](qint64 index) {
         progress->setValue(index);

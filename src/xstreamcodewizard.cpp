@@ -49,8 +49,6 @@ XstreamCodeLoginPage::XstreamCodeLoginPage(QWidget* parent):QWizardPage{parent},
     layout->addWidget(verifiedLabel, 3, 1);
     setLayout(layout);
 
-    usernameEdit->setFocus();
-
     registerField("info", this, "AuthInfo");
 }
 void XstreamCodeLoginPage::verifyInfo()
@@ -112,6 +110,22 @@ void XstreamCodeLoginPage::verifyInfo()
 bool XstreamCodeLoginPage::isComplete() const
 {
     return isAuthenticated;
+}
+
+void XstreamCodeLoginPage::initializePage()
+{
+    usernameEdit->setFocus();
+    auto infoField = field("info").value<AuthenticationInfo>();
+    usernameEdit->setText(infoField.username);
+    passwordEdit->setText(infoField.password);
+    if(!info.serverUrl.isEmpty())
+    {
+        QUrl url;
+        url.setHost(info.serverUrl);
+        url.setScheme(info.serverSchema);
+        url.setPort(info.serverPort.toInt());
+        urlEdit->setText(url.toString());
+    }
 }
 
 XstreamCodeCategoriesPage::XstreamCodeCategoriesPage(QWidget* parent):QWizardPage{parent},

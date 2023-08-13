@@ -26,13 +26,13 @@ void LoadingChannelIconsWorker::loadChannelIcon(ChannelTreeItem* channel)
         auto base64Index = channel->getLogoUri().indexOf("base64,");
         if(base64Index > 0)
         {
-            auto db = DatabaseProvider::GetDatabase();
             QString base64Data = channel->getLogoUri().right(channel->getLogoUri().size() - base64Index - 7);
             auto logo = QByteArray::fromBase64(base64Data.toUtf8());
             QImage image = QImage::fromData(logo);
             QIcon icon = QIcon{QPixmap::fromImage(image)};
             channel->setIcon(icon);
             channel->setLogo(logo);
+            auto db = DatabaseProvider::GetDatabase();
             db->SetChannelLogo(channel);
             emit channelIconReady(channel);
         }
@@ -45,14 +45,16 @@ void LoadingChannelIconsWorker::loadChannelIcon(ChannelTreeItem* channel)
         auto reply = networkManager->get(request);
         connect(reply, &QNetworkReply::finished, this, [this, channel, reply]()
         {
-            auto db = DatabaseProvider::GetDatabase();
+
             auto logo = reply->readAll();
             QImage image = QImage::fromData(logo);
             QIcon icon = QIcon{QPixmap::fromImage(image)};
             channel->setIcon(icon);
             channel->setLogo(logo);
-            db->SetChannelLogo(channel);
             reply->deleteLater();
+
+            auto db = DatabaseProvider::GetDatabase();
+            db->SetChannelLogo(channel);
             emit channelIconReady(channel);
         });
     }

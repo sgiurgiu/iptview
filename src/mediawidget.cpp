@@ -518,9 +518,9 @@ void MediaWidget::fullScreenActionToggled(bool)
 }
 
 void MediaWidget::fileLoadingError(QString message)
-{
+{    
     QString errorMessage = QString("%1. Retrying (attempt %2 of %3)... ").arg(message).arg(fileLoadRetryTimes+1).arg(MAX_FILE_LOAD_RETRY_TIMES);
-    if(fileLoadRetryTimes >= MAX_FILE_LOAD_RETRY_TIMES)
+    if(fileLoadRetryTimes >= MAX_FILE_LOAD_RETRY_TIMES || stopped)
     {
         errorMessage = QString("%1. No more retries ").arg(message);
     }
@@ -528,7 +528,7 @@ void MediaWidget::fileLoadingError(QString message)
     mediaTitleLabel->setText(errorMessage);
     mediaTitleLabel->setStyleSheet("QLabel { color : red; }");
 
-    if(fileLoadRetryTimes < MAX_FILE_LOAD_RETRY_TIMES)
+    if(fileLoadRetryTimes < MAX_FILE_LOAD_RETRY_TIMES && !stopped)
     {
         QTimer::singleShot(2000, this, [this](){
             playChannel(std::move(selectedChannel));

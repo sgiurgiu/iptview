@@ -11,10 +11,17 @@
 Database::Database(ConstructorKey, const std::filesystem::path& dbPath)
 {
     auto name = QString("DB%1").arg(qintptr(QThread::currentThreadId()));
-    db = QSqlDatabase::addDatabase("QSQLITE", name);
-    db.setConnectOptions("SQLITE_CONFIG_SERIALIZED");
-    db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=30000");
-    db.setDatabaseName(dbPath.string().c_str());
+    if(QSqlDatabase::contains(name))
+    {
+        db = QSqlDatabase::database(name);
+    }
+    else
+    {
+        db = QSqlDatabase::addDatabase("QSQLITE", name);
+        db.setConnectOptions("SQLITE_CONFIG_SERIALIZED");
+        db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=30000");
+        db.setDatabaseName(dbPath.string().c_str());
+    }
     if(!db.isValid() || !db.open())
     {
         throw DatabaseException(QString{("Cannot open database "+dbPath.string()).c_str()});

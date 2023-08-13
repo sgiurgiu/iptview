@@ -27,6 +27,7 @@ class XstreamCodeLoginPage : public QWizardPage
     Q_PROPERTY(AuthenticationInfo AuthInfo READ AuthInfo WRITE SetAuthInfo)
 public:
     XstreamCodeLoginPage(QWidget* parent = nullptr);
+    void initializePage() override;
     bool isComplete() const override;
     AuthenticationInfo AuthInfo() const
     {

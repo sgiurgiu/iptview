@@ -67,6 +67,7 @@ private:
     QThread* loadingChannelIconsThread = nullptr;
     LoadingChannelIconsWorker* channelIconsWorker = nullptr;
     std::atomic_bool cancelImportingChannels = false;
+    int xstreamGroupImportingCount = 0;
 };
 
 #endif // CHANNELSMODEL_H
