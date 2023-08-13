@@ -14,6 +14,13 @@ Database::Database(ConstructorKey, const std::filesystem::path& dbPath)
     if(QSqlDatabase::contains(name))
     {
         db = QSqlDatabase::database(name);
+        if(!db.isValid())
+        {
+            db = QSqlDatabase::addDatabase("QSQLITE", name);
+            db.setConnectOptions("SQLITE_CONFIG_SERIALIZED");
+            db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=30000");
+            db.setDatabaseName(dbPath.string().c_str());
+        }
     }
     else
     {

@@ -366,7 +366,7 @@ void ChannelsModel::RemoveChild(AbstractChannelTreeItem* child, const QModelInde
 
 void ChannelsModel::onChannelIconReady(ChannelTreeItem* channel)
 {
-    if(!channel)
+    if(cancelImportingChannels || !channel)
     {
         return;
     }
@@ -380,8 +380,13 @@ void ChannelsModel::CancelImportChannels()
     {
         loadingChannelsThread->cancelOperation();
     }
+    if(channelIconsWorker)
+    {
+        channelIconsWorker->CancelIconsLoading();
+    }
     if(loadingChannelIconsThread)
     {
         loadingChannelIconsThread->quit();
+        loadingChannelIconsThread->wait();
     }
 }
