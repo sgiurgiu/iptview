@@ -1,6 +1,5 @@
 #include "channeltreeitem.h"
 
-#include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QUrl>
 #include <QImage>

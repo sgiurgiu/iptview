@@ -11,13 +11,14 @@
 #include <QMessageBox>
 #include <QDir>
 #include <QProgressDialog>
+#include <QNetworkAccessManager>
 
 #include "iptviewmainwidget.h"
 #include "m3uparsercontroller.h"
 #include "xstreamcodewizard.h"
 
 IPTViewMainWindow::IPTViewMainWindow(QWidget *parent)
-    : QMainWindow{parent}
+    : QMainWindow{parent}, networkManager{new QNetworkAccessManager{this}}
 {
     setWindowIcon(QIcon(":/icons/iptview-icon.png"));
     setMinimumSize(640,480);
@@ -67,7 +68,7 @@ void IPTViewMainWindow::addStatusBar()
 }
 void IPTViewMainWindow::addWindowWidgets()
 {
-   mainWidget = new IPTViewMainWidget(this);
+   mainWidget = new IPTViewMainWidget(networkManager, this);
    connect(mainWidget, SIGNAL(showingFullScreen(bool)), this, SLOT(fullScreen(bool)));
    setCentralWidget(mainWidget);
 }
@@ -175,7 +176,7 @@ void IPTViewMainWindow::fullScreen(bool flag)
 
 void IPTViewMainWindow::importXstreamCode()
 {
-    auto xstreamInfo = XstreamCodeWizard::ImportXstreamCodes(this);
+    auto xstreamInfo = XstreamCodeWizard::ImportXstreamCodes(this,networkManager);
     auto totalCategories = xstreamInfo.liveCategories.size()+xstreamInfo.vodCategories.size();
     if(totalCategories <= 0) return;
     QProgressDialog* progress = new QProgressDialog(this);

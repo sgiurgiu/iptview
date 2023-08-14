@@ -5,6 +5,7 @@
 #include "m3ulist.h"
 
 class IPTViewMainWidget;
+class QNetworkAccessManager;
 
 class IPTViewMainWindow : public QMainWindow
 {
@@ -35,6 +36,7 @@ private:
   QAction* quitApplicationAction;
   IPTViewMainWidget* mainWidget;
   QMargins contentMargins;
+  QNetworkAccessManager* networkManager;
 };
 
 #endif // IPTVIEWMAINWINDOW_H

@@ -13,12 +13,14 @@ class QTimer;
 class QToolButton;
 class QMenu;
 class QLabel;
+class QNetworkAccessManager;
+class QJsonDocument;
 
 class MediaWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit MediaWidget(QWidget *parent = nullptr);
+    explicit MediaWidget(QNetworkAccessManager* networkManager,QWidget *parent = nullptr);
     int GetVolume() const;
 public slots:
     void PlayChannel(int64_t);
@@ -66,6 +68,7 @@ private:
     void toggleSystemSleep();
     void toggleFullScreen();
     void playChannel(std::unique_ptr<ChannelTreeItem> channel);
+    void buildEpgListing(const QJsonDocument& doc);
 private:
     struct Subtitle
     {
@@ -100,10 +103,12 @@ private:
     QActionGroup* subtitlesChoicesActionGroup = nullptr;
     QMenu* subtitlesMenu = nullptr;
     QLabel* mediaTitleLabel = nullptr;
+    QLabel* epgPlayingNowLabel = nullptr;
     bool fullScreen = false;
     QWidget* controlsWidget = nullptr;
     QMargins contentMargins;
     int fileLoadRetryTimes = 0;
+    QNetworkAccessManager* networkManager = nullptr;
 };
 
 #endif // MEDIAWIDGET_H

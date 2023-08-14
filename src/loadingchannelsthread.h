@@ -6,7 +6,6 @@
 #include <memory>
 #include "grouptreeitem.h"
 
-class QNetworkAccessManager;
 class Database;
 
 class LoadingChannelsThread : public QThread

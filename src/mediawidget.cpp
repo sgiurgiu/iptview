@@ -16,6 +16,15 @@
 #include <QDBusReply>
 #include <QKeyEvent>
 #include <QSignalBlocker>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
+#include <QJsonArray>
+#include <QDateTime>
+#include <QLocale>
 
 #include "mpvwidget.h"
 #include "databaseprovider.h"
@@ -29,8 +38,8 @@ namespace
     constexpr int MAX_FILE_LOAD_RETRY_TIMES = 10;
 }
 
-MediaWidget::MediaWidget(QWidget *parent)
-    : QWidget{parent}
+MediaWidget::MediaWidget(QNetworkAccessManager* networkManager,QWidget *parent)
+    : QWidget{parent}, networkManager{networkManager}
 {
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0,0,0,0);
@@ -126,6 +135,10 @@ QWidget* MediaWidget::createControlsWidget()
 
     mediaTitleLabel = new QLabel(this);
     mediaTitleLabel->setMargin(10);
+
+    epgPlayingNowLabel = new QLabel(this);
+    epgPlayingNowLabel->setMargin(10);
+
     QToolBar* widget = new QToolBar(this);
     widget->addAction(skipBackAction);
     widget->addAction(playPauseAction);
@@ -134,6 +147,7 @@ QWidget* MediaWidget::createControlsWidget()
     widget->addWidget(subtitlesChoicesButton);
     widget->addAction(fullScreenAction);
     widget->addWidget(mediaTitleLabel);
+    widget->addWidget(epgPlayingNowLabel);
 
     QWidget* empty = new QWidget(this);
     empty->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
@@ -188,6 +202,7 @@ void MediaWidget::playChannel(std::unique_ptr<ChannelTreeItem> channel)
     if(!channel) return;
     selectedChannel = std::move(channel);
     subtitles.clear();
+    epgPlayingNowLabel->clear();
     mpvWidget->command(QStringList() << "stop");
     mpvWidget->stopRenderingMedia();
     mpvWidget->command(QStringList() << "apply-profile" << "gpu-hq");
@@ -334,7 +349,58 @@ void MediaWidget::fileLoaded()
         }
     }
     setupSubtitlesMenu();
+
+    if(!selectedChannel->getEpgChannelUri().isEmpty())
+    {
+        QNetworkRequest request;
+        request.setUrl(selectedChannel->getEpgChannelUri());
+        request.setHeader(QNetworkRequest::UserAgentHeader, "IPTView 1.0");
+        auto reply = networkManager->get(request);
+        connect(reply, &QNetworkReply::finished, this, [reply, this]()
+        {
+            if(reply->error())
+            {
+                reply->deleteLater();
+                return;
+            }
+            auto response = reply->readAll();
+            reply->deleteLater();
+            QJsonDocument doc = QJsonDocument::fromJson(response);
+            buildEpgListing(doc);
+        });
+    }
+
     emit playingTrack(selectedChannel->getID());
+}
+void MediaWidget::buildEpgListing(const QJsonDocument& doc)
+{
+    auto jsonObject = doc.object();
+    auto epgListingArray = jsonObject.value("epg_listings").toArray();
+    auto now = QDateTime::currentDateTime();
+    auto currentSecondsSinceEpoch = now.currentSecsSinceEpoch();
+    auto systemLocale = QLocale::system();
+    for(const auto& listing : epgListingArray)
+    {
+        auto listingObject = listing.toObject();
+        auto startTimestampString = listingObject.value("start_timestamp").toString("");
+        auto endTimestampString = listingObject.value("stop_timestamp").toString("");
+        if(startTimestampString.isEmpty() || endTimestampString.isEmpty()) continue;
+        bool ok = false;
+        qint64 startTime = startTimestampString.toLongLong(&ok);
+        if(!ok) continue;
+        qint64 endTime = endTimestampString.toLongLong(&ok);
+        if(!ok) continue;
+        if(endTime < currentSecondsSinceEpoch) continue;
+        if(startTime > currentSecondsSinceEpoch) continue;
+        auto titleEncoded = listingObject.value("title").toString("");
+        if(titleEncoded.isEmpty()) continue;
+        auto title = QByteArray::fromBase64(titleEncoded.toUtf8(), QByteArray::Base64Encoding);
+        auto startDateTime = QDateTime::fromSecsSinceEpoch(startTime);
+        auto endDateTime = QDateTime::fromSecsSinceEpoch(endTime);
+        auto playingNowText = QString("%1-%2 %3").arg(systemLocale.toString(startDateTime.time(),QLocale::ShortFormat),systemLocale.toString(endDateTime.time(),QLocale::ShortFormat)).arg(title);
+
+        epgPlayingNowLabel->setText(playingNowText);
+    }
 }
 void MediaWidget::setupSubtitlesMenu()
 {

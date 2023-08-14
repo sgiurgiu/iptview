@@ -7,11 +7,13 @@
 #include "mprisdbus.h"
 #endif
 
-IPTViewMainWidget::IPTViewMainWidget(QWidget *parent): QSplitter{Qt::Horizontal, parent}
+IPTViewMainWidget::IPTViewMainWidget(QNetworkAccessManager* networkManager,QWidget *parent)
+    : QSplitter{Qt::Horizontal, parent},
+    networkManager{networkManager}
 {
     channelsWidget = new ChannelsWidget(this);
 
-    mediaWidget = new MediaWidget(this);
+    mediaWidget = new MediaWidget(networkManager,this);
     connect(mediaWidget, SIGNAL(showingFullScreen(bool)), this, SLOT(fullScreen(bool)));
     connect(mediaWidget, SIGNAL(skipForward()), channelsWidget, SLOT(SkipForward()));
     connect(mediaWidget, SIGNAL(skipBack()), channelsWidget, SLOT(SkipBack()));

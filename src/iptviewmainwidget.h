@@ -8,6 +8,8 @@
 
 class ChannelsWidget;
 class MediaWidget;
+class QNetworkAccessManager;
+
 #ifdef IPTVIEW_DBUS
 class MPRISDBus;
 #endif
@@ -15,7 +17,7 @@ class IPTViewMainWidget : public QSplitter
 {
     Q_OBJECT
 public:
-    IPTViewMainWidget(QWidget *parent = nullptr);
+    IPTViewMainWidget(QNetworkAccessManager* networkManager,QWidget *parent = nullptr);
 
 public slots:
     void ImportPlaylist(M3UList list);
@@ -39,6 +41,7 @@ private:
     ChannelsWidget* channelsWidget;
     MediaWidget* mediaWidget;
     QMargins contentMargins;
+    QNetworkAccessManager* networkManager;
 #ifdef IPTVIEW_DBUS
   MPRISDBus* dbus = nullptr;
 #endif

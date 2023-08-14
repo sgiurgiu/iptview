@@ -9,8 +9,6 @@
 #include <shared_mutex>
 #include <atomic>
 
-class QNetworkAccessManager;
-
 enum class ChannelTreeItemType
 {
     Root = 0,

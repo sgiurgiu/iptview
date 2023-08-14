@@ -22,8 +22,8 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
-XstreamCodeLoginPage::XstreamCodeLoginPage(QWidget* parent):QWizardPage{parent},
-    networkManager{new QNetworkAccessManager{this}}
+XstreamCodeLoginPage::XstreamCodeLoginPage(QNetworkAccessManager* networkManager,QWidget* parent):QWizardPage{parent},
+    networkManager{networkManager}
 {
     setTitle("Xstream-Code Login Information");
     QLabel* urlLabel = new QLabel("URL:");
@@ -128,8 +128,8 @@ void XstreamCodeLoginPage::initializePage()
     }
 }
 
-XstreamCodeCategoriesPage::XstreamCodeCategoriesPage(QWidget* parent):QWizardPage{parent},
-    networkManager{new QNetworkAccessManager{this}}
+XstreamCodeCategoriesPage::XstreamCodeCategoriesPage(QNetworkAccessManager* networkManager,QWidget* parent):QWizardPage{parent},
+    networkManager{networkManager}
 {
     setTitle("Select categories");
     QWidget* liveCategoriesTab = new QWidget();
@@ -354,13 +354,13 @@ bool XstreamCodeCategoriesPage::validatePage()
     return !(liveCategories.empty() && vodCategories.empty());
 }
 
-CollectedInfo XstreamCodeWizard::ImportXstreamCodes(QWidget* parent)
+CollectedInfo XstreamCodeWizard::ImportXstreamCodes(QWidget* parent,QNetworkAccessManager* networkManager)
 {
     QWizard wizard(parent, Qt::Dialog);
     wizard.setModal(true);
     wizard.setWindowTitle("Import Xtream-Code Playlist");
-    wizard.addPage(new XstreamCodeLoginPage());
-    auto categoriesPage = new XstreamCodeCategoriesPage();
+    wizard.addPage(new XstreamCodeLoginPage(networkManager));
+    auto categoriesPage = new XstreamCodeCategoriesPage(networkManager);
     wizard.addPage(categoriesPage);
     CollectedInfo info;
     if(wizard.exec() == QDialog::Accepted)

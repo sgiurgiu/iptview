@@ -67,33 +67,49 @@ void LoadXstreamChannelsWorker::loadGroup(const CategoryInfo& category,
         QJsonDocument doc = QJsonDocument::fromJson(response);
         auto channels = doc.array();
 
-        GroupTreeItem* group = new GroupTreeItem(category.categoryName);
+        auto group = std::make_unique<GroupTreeItem>(category.categoryName);
         for(const auto& ch: channels)
         {
             if(cancelled) return;
             auto channelObject = ch.toObject();
             auto streamId = channelObject.value("stream_id").toInt();
             auto categoryType = channelObject.value("stream_type").toString("");
-            QUrl url;
-            url.setHost(info.serverUrl);
-            url.setScheme(info.serverSchema);
-            url.setPort(info.serverPort.toInt());
-            url.setPath(QString("/%1/%2/%3/%4.ts").arg(categoryType,info.username,info.password).arg(streamId));
+            QUrl streamUrl;
+            streamUrl.setHost(info.serverUrl);
+            streamUrl.setScheme(info.serverSchema);
+            streamUrl.setPort(info.serverPort.toInt());
+            streamUrl.setPath(QString("/%1/%2/%3/%4.ts").arg(categoryType,info.username,info.password).arg(streamId));
+            QUrl epgUrl;
+            epgUrl.setHost(info.serverUrl);
+            epgUrl.setScheme(info.serverSchema);
+            epgUrl.setPort(info.serverPort.toInt());
+            epgUrl.setPath("/player_api.php");
+            QUrlQuery epgQuery;
+            epgQuery.addQueryItem("username",list.authInfo.username);
+            epgQuery.addQueryItem("password",list.authInfo.password);
+            epgQuery.addQueryItem("action","get_short_epg");
+            epgQuery.addQueryItem("stream_id",QString::number(streamId));
+            epgUrl.setQuery(epgQuery);
 
             if(streamId == 0) continue;
             ChannelTreeItem* channelTreeItem = new ChannelTreeItem(
                         channelObject.value("name").toString(""),
-                        url.toString(),
+                        streamUrl.toString(),
                         channelObject.value("stream_icon").toString(""),
                         {},
-                        group
+                        group.get()
                         );
+            if(categoryType == "live")
+            {
+                channelTreeItem->setEpgChannelId(channelObject.value("epg_channel_id").toString(""));
+                channelTreeItem->setEpgChannelUri(epgUrl.toString());
+            }
             group->addChannel(channelTreeItem);
         }
         auto db = DatabaseProvider::GetDatabase();
-        db->AddGroup(group);
+        db->AddGroup(group.get());
         group->moveToThread(destinationThread);
-        emit loadedGroup(group);
+        emit loadedGroup(group.release());
         ++processedCategories;
         if(processedCategories >= totalCategories)
         {

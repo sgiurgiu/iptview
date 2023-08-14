@@ -47,6 +47,23 @@ public:
         favourite = flag;
     }
 
+    void setEpgChannelId(const QString& id)
+    {
+        this->epgChannelId = id;
+    }
+    QString getEpgChannelId() const
+    {
+        return epgChannelId;
+    }
+
+    void setEpgChannelUri(const QString& uri)
+    {
+        this->channelEpgUri = uri;
+    }
+    QString getEpgChannelUri() const
+    {
+        return channelEpgUri;
+    }
     ChannelTreeItem* clone(AbstractChannelTreeItem* parent) const;
 
 private:
@@ -54,9 +71,12 @@ private:
     QString uri;
     QString logoUri;
     QByteArray logo;
+    QString epgChannelId;
+    QString channelEpgUri;
     bool defaultIcon = true;
     bool favourite = false;
     QFuture<void> iconFutureLoader;
+
 };
 
 #endif // CHANNELTREEITEM_H

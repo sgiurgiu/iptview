@@ -16,7 +16,7 @@ class QStandardItemModel;
 class XstreamCodeWizard
 {
 public:
-    static CollectedInfo ImportXstreamCodes(QWidget* parent);
+    static CollectedInfo ImportXstreamCodes(QWidget* parent,QNetworkAccessManager* networkManager);
 
 };
 
@@ -26,7 +26,7 @@ class XstreamCodeLoginPage : public QWizardPage
     Q_OBJECT
     Q_PROPERTY(AuthenticationInfo AuthInfo READ AuthInfo WRITE SetAuthInfo)
 public:
-    XstreamCodeLoginPage(QWidget* parent = nullptr);
+    XstreamCodeLoginPage(QNetworkAccessManager* networkManager, QWidget* parent = nullptr);
     void initializePage() override;
     bool isComplete() const override;
     AuthenticationInfo AuthInfo() const
@@ -54,7 +54,7 @@ class XstreamCodeCategoriesPage : public QWizardPage
 {
     Q_OBJECT
 public:
-    XstreamCodeCategoriesPage(QWidget* parent = nullptr);
+    XstreamCodeCategoriesPage(QNetworkAccessManager* networkManager, QWidget* parent = nullptr);
     bool validatePage() override;
     void initializePage() override;
     const QList<CategoryInfo>& GetLiveCategories() const
