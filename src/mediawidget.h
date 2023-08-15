@@ -110,7 +110,6 @@ private:
     QMargins contentMargins;
     int fileLoadRetryTimes = 0;
     QNetworkAccessManager* networkManager = nullptr;
-    QTimer* epgListingTimer = nullptr;
 };
 
 #endif // MEDIAWIDGET_H

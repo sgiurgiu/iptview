@@ -68,8 +68,6 @@ MediaWidget::MediaWidget(QNetworkAccessManager* networkManager,QWidget *parent)
     layout->addWidget(controlsWidget, 0);
 
     setLayout(layout);
-
-    epgListingTimer = new QTimer(this);
 }
 
 QWidget* MediaWidget::createControlsWidget()
@@ -422,9 +420,8 @@ void MediaWidget::buildEpgListing(const QJsonDocument& doc)
         auto playingNowText = QString("%1-%2 %3").arg(systemLocale.toString(startDateTime.time(),QLocale::ShortFormat),systemLocale.toString(endDateTime.time(),QLocale::ShortFormat), title);
 
         epgPlayingNowLabel->setText(playingNowText);
-        epgListingTimer->singleShot((endTime-currentSecondsSinceEpoch)*1000, this,"retrieveEpgListings");
-    }    
-
+        QTimer::singleShot((endTime-currentSecondsSinceEpoch)*1000, this, &MediaWidget::retrieveEpgListings);
+    }
 }
 void MediaWidget::setupSubtitlesMenu()
 {
