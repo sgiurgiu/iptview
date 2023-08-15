@@ -15,6 +15,7 @@ struct AuthenticationInfo
     QString httpsPort;
     QString serverSchema;
     QString rtmpPort;
+    QString timezone;
 };
 
 struct CategoryInfo

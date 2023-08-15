@@ -98,6 +98,7 @@ void XstreamCodeLoginPage::verifyInfo()
             info.httpsPort = serverInfo.value("https_port").toString("");
             info.rtmpPort = serverInfo.value("rtmp_port").toString("");
             info.serverSchema = serverInfo.value("server_protocol").toString("");
+            info.timezone = serverInfo.value("timezone").toString("");
         }
         QVariant infoVariant;
         this->SetAuthInfo(info);

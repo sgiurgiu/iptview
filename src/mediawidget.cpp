@@ -25,6 +25,8 @@
 #include <QJsonArray>
 #include <QDateTime>
 #include <QLocale>
+#include <QTimer>
+#include <QTimeZone>
 
 #include "mpvwidget.h"
 #include "databaseprovider.h"
@@ -66,6 +68,8 @@ MediaWidget::MediaWidget(QNetworkAccessManager* networkManager,QWidget *parent)
     layout->addWidget(controlsWidget, 0);
 
     setLayout(layout);
+
+    epgListingTimer = new QTimer(this);
 }
 
 QWidget* MediaWidget::createControlsWidget()
@@ -349,7 +353,13 @@ void MediaWidget::fileLoaded()
         }
     }
     setupSubtitlesMenu();
+    retrieveEpgListings();
 
+    emit playingTrack(selectedChannel->getID());
+}
+
+void MediaWidget::retrieveEpgListings()
+{
     if(!selectedChannel->getEpgChannelUri().isEmpty())
     {
         QNetworkRequest request;
@@ -357,23 +367,32 @@ void MediaWidget::fileLoaded()
         request.setHeader(QNetworkRequest::UserAgentHeader, "IPTView 1.0");
         auto reply = networkManager->get(request);
         connect(reply, &QNetworkReply::finished, this, [reply, this]()
-        {
-            if(reply->error())
-            {
-                reply->deleteLater();
-                return;
-            }
-            auto response = reply->readAll();
-            reply->deleteLater();
-            QJsonDocument doc = QJsonDocument::fromJson(response);
-            buildEpgListing(doc);
-        });
+                {
+                    if(reply->error())
+                    {
+                        reply->deleteLater();
+                        return;
+                    }
+                    auto response = reply->readAll();
+                    reply->deleteLater();
+                    QJsonDocument doc = QJsonDocument::fromJson(response);
+                    buildEpgListing(doc);
+                });
     }
-
-    emit playingTrack(selectedChannel->getID());
 }
 void MediaWidget::buildEpgListing(const QJsonDocument& doc)
 {
+    QString xstreamServerTimezone = DatabaseProvider::GetDatabase()->GetXStreamServerTimezone(selectedChannel->getXStreamServerId());
+    int64_t serverTimezoneUTCDifference = 0;
+    if(!xstreamServerTimezone.isEmpty())
+    {
+        QTimeZone serversTimezone{xstreamServerTimezone.toUtf8()};
+        if(serversTimezone.isValid())
+        {
+            QDateTime local(QDateTime::currentDateTime());
+            serverTimezoneUTCDifference = local.toTimeZone(serversTimezone).offsetFromUtc();
+        }
+    }
     auto jsonObject = doc.object();
     auto epgListingArray = jsonObject.value("epg_listings").toArray();
     auto now = QDateTime::currentDateTime();
@@ -390,17 +409,22 @@ void MediaWidget::buildEpgListing(const QJsonDocument& doc)
         if(!ok) continue;
         qint64 endTime = endTimestampString.toLongLong(&ok);
         if(!ok) continue;
+        startTime -= serverTimezoneUTCDifference;
+        endTime -= serverTimezoneUTCDifference;
+
         if(endTime < currentSecondsSinceEpoch) continue;
         if(startTime > currentSecondsSinceEpoch) continue;
         auto titleEncoded = listingObject.value("title").toString("");
-        if(titleEncoded.isEmpty()) continue;
+        if(titleEncoded.isEmpty()) return;
         auto title = QByteArray::fromBase64(titleEncoded.toUtf8(), QByteArray::Base64Encoding);
         auto startDateTime = QDateTime::fromSecsSinceEpoch(startTime);
         auto endDateTime = QDateTime::fromSecsSinceEpoch(endTime);
-        auto playingNowText = QString("%1-%2 %3").arg(systemLocale.toString(startDateTime.time(),QLocale::ShortFormat),systemLocale.toString(endDateTime.time(),QLocale::ShortFormat)).arg(title);
+        auto playingNowText = QString("%1-%2 %3").arg(systemLocale.toString(startDateTime.time(),QLocale::ShortFormat),systemLocale.toString(endDateTime.time(),QLocale::ShortFormat), title);
 
         epgPlayingNowLabel->setText(playingNowText);
-    }
+        epgListingTimer->singleShot((endTime-currentSecondsSinceEpoch)*1000, this,"retrieveEpgListings");
+    }    
+
 }
 void MediaWidget::setupSubtitlesMenu()
 {

@@ -37,6 +37,11 @@ void LoadXstreamChannelsWorker::importChannels()
 void LoadXstreamChannelsWorker::loadGroup(const CategoryInfo& category,
                const QString& action)
 {
+    int64_t xstreamServerId = 0;
+    {
+        auto db = DatabaseProvider::GetDatabase();
+        xstreamServerId = db->AddRetrieveXStreamServer(list.authInfo);
+    }
     QNetworkRequest request;
     QUrl url;
     url.setHost(list.authInfo.serverUrl);
@@ -54,7 +59,7 @@ void LoadXstreamChannelsWorker::loadGroup(const CategoryInfo& category,
     auto reply = networkManager->get(request);
     connect(reply, &QNetworkReply::finished, this,
             [reply,
-            category, info=list.authInfo, this]()
+            category, info=list.authInfo, xstreamServerId, this]()
     {
         if(cancelled) return;
         if(reply->error())
@@ -104,6 +109,8 @@ void LoadXstreamChannelsWorker::loadGroup(const CategoryInfo& category,
                 channelTreeItem->setEpgChannelId(channelObject.value("epg_channel_id").toString(""));
                 channelTreeItem->setEpgChannelUri(epgUrl.toString());
             }
+            channelTreeItem->setXStreamServerId(xstreamServerId);
+
             group->addChannel(channelTreeItem);
         }
         auto db = DatabaseProvider::GetDatabase();

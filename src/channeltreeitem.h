@@ -64,6 +64,15 @@ public:
     {
         return channelEpgUri;
     }
+    int64_t getXStreamServerId() const
+    {
+        return xstreamServerId;
+    }
+    void setXStreamServerId(int64_t id)
+    {
+        xstreamServerId = id;
+    }
+
     ChannelTreeItem* clone(AbstractChannelTreeItem* parent) const;
 
 private:
@@ -76,6 +85,7 @@ private:
     bool defaultIcon = true;
     bool favourite = false;
     QFuture<void> iconFutureLoader;
+    int64_t xstreamServerId = -1;
 
 };
 

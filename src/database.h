@@ -7,6 +7,7 @@
 #include <optional>
 #include <QString>
 #include <QSqlDatabase>
+#include "xstreaminfo.h"
 
 class DatabaseProvider;
 class ChannelTreeItem;
@@ -47,6 +48,8 @@ public:
     int GetGroupsCount();
     std::vector<ChannelTreeItem*> GetFavouriteChannels() const;
     void SetupSchema();
+    int64_t AddRetrieveXStreamServer(const AuthenticationInfo& xstreamServerInfo) const;
+    QString GetXStreamServerTimezone(int64_t id) const;
 private:
     void addGroupTree(GroupTreeItem* group) const;
     void addGroup(GroupTreeItem* group, std::optional<int64_t> parentGroupId) const;
@@ -58,7 +61,7 @@ private:
     void loadRootChannels(RootTreeItem* rootItem) const;
 
     int getSchemaVersion() const;
-    void incrementSchemaVersion(int version) const;
+    void incrementSchemaVersion(int& version) const;
     void executeStatement(const char* sql, const char* errMsg) const;
 private:
     QSqlDatabase db;
