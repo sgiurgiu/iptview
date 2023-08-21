@@ -9,12 +9,11 @@
 class MpvWidget;
 class QAction;
 class QSlider;
-class QTimer;
 class QToolButton;
 class QMenu;
 class QLabel;
 class QNetworkAccessManager;
-class QJsonDocument;
+class EPGWidget;
 
 class MediaWidget : public QWidget
 {
@@ -61,15 +60,13 @@ private slots:
 protected:
     virtual void keyPressEvent(QKeyEvent *event) override;
 private:
-    QWidget* createControlsWidget();
+    QWidget* createControlsWidget(QNetworkAccessManager* networkManager);
     QIcon getVolumeIcon();
     void setupSubtitlesMenu();
     void setSubtitle(const QString& id);
     void toggleSystemSleep();
     void toggleFullScreen();
     void playChannel(std::unique_ptr<ChannelTreeItem> channel);
-    void buildEpgListing(const QJsonDocument& doc);
-    void retrieveEpgListings();
 private:
     struct Subtitle
     {
@@ -85,7 +82,7 @@ private:
     QSlider* volumeSlider = nullptr;
     QAction* volumeAction = nullptr;
     QAction* fullScreenAction = nullptr;
-    std::unique_ptr<ChannelTreeItem> selectedChannel = nullptr;
+    std::unique_ptr<ChannelTreeItem> selectedChannel = {nullptr};
     bool stopped = true;
     QTimer* volumeOsdTimer = nullptr;
     QIcon stopIcon = QIcon{":/icons/stop.png"};
@@ -104,12 +101,11 @@ private:
     QActionGroup* subtitlesChoicesActionGroup = nullptr;
     QMenu* subtitlesMenu = nullptr;
     QLabel* mediaTitleLabel = nullptr;
-    QLabel* epgPlayingNowLabel = nullptr;
+    EPGWidget* epgWidget = nullptr;
     bool fullScreen = false;
     QWidget* controlsWidget = nullptr;
     QMargins contentMargins;
     int fileLoadRetryTimes = 0;
-    QNetworkAccessManager* networkManager = nullptr;
 };
 
 #endif // MEDIAWIDGET_H

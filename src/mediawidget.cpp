@@ -16,22 +16,11 @@
 #include <QDBusReply>
 #include <QKeyEvent>
 #include <QSignalBlocker>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
-#include <QNetworkRequest>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonValue>
-#include <QJsonArray>
-#include <QDateTime>
-#include <QLocale>
-#include <QTimer>
-#include <QTimeZone>
 
+#include "epgwidget.h"
 #include "mpvwidget.h"
 #include "databaseprovider.h"
 #include "database.h"
-#include "channeltreeitem.h"
 
 namespace
 {
@@ -41,7 +30,7 @@ namespace
 }
 
 MediaWidget::MediaWidget(QNetworkAccessManager* networkManager,QWidget *parent)
-    : QWidget{parent}, networkManager{networkManager}
+    : QWidget{parent}
 {
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0,0,0,0);
@@ -64,13 +53,13 @@ MediaWidget::MediaWidget(QNetworkAccessManager* networkManager,QWidget *parent)
     volumeOsdTimer->setInterval(1000);
     connect(volumeOsdTimer, SIGNAL(timeout()), this, SLOT(volumeOsdTimerTimeout()));
 
-    controlsWidget = createControlsWidget();
+    controlsWidget = createControlsWidget(networkManager);
     layout->addWidget(controlsWidget, 0);
 
     setLayout(layout);
 }
 
-QWidget* MediaWidget::createControlsWidget()
+QWidget* MediaWidget::createControlsWidget(QNetworkAccessManager* networkManager)
 {
     QSettings settings;
     stopAction = new QAction(stopIcon, "", this);
@@ -138,8 +127,7 @@ QWidget* MediaWidget::createControlsWidget()
     mediaTitleLabel = new QLabel(this);
     mediaTitleLabel->setMargin(10);
 
-    epgPlayingNowLabel = new QLabel(this);
-    epgPlayingNowLabel->setMargin(10);
+    epgWidget = new EPGWidget(networkManager, this);
 
     QToolBar* widget = new QToolBar(this);
     widget->addAction(skipBackAction);
@@ -149,7 +137,7 @@ QWidget* MediaWidget::createControlsWidget()
     widget->addWidget(subtitlesChoicesButton);
     widget->addAction(fullScreenAction);
     widget->addWidget(mediaTitleLabel);
-    widget->addWidget(epgPlayingNowLabel);
+    widget->addWidget(epgWidget);
 
     QWidget* empty = new QWidget(this);
     empty->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
@@ -204,7 +192,7 @@ void MediaWidget::playChannel(std::unique_ptr<ChannelTreeItem> channel)
     if(!channel) return;
     selectedChannel = std::move(channel);
     subtitles.clear();
-    epgPlayingNowLabel->clear();
+    epgWidget->ClearChannel();
     mpvWidget->command(QStringList() << "stop");
     mpvWidget->stopRenderingMedia();
     mpvWidget->command(QStringList() << "apply-profile" << "gpu-hq");
@@ -351,78 +339,11 @@ void MediaWidget::fileLoaded()
         }
     }
     setupSubtitlesMenu();
-    retrieveEpgListings();
+    epgWidget->SetChannel(selectedChannel->getID());
 
     emit playingTrack(selectedChannel->getID());
 }
 
-void MediaWidget::retrieveEpgListings()
-{
-    if(!selectedChannel->getEpgChannelUri().isEmpty())
-    {
-        QNetworkRequest request;
-        request.setUrl(selectedChannel->getEpgChannelUri());
-        request.setHeader(QNetworkRequest::UserAgentHeader, "IPTView 1.0");
-        auto reply = networkManager->get(request);
-        connect(reply, &QNetworkReply::finished, this, [reply, this]()
-                {
-                    if(reply->error())
-                    {
-                        reply->deleteLater();
-                        return;
-                    }
-                    auto response = reply->readAll();
-                    reply->deleteLater();
-                    QJsonDocument doc = QJsonDocument::fromJson(response);
-                    buildEpgListing(doc);
-                });
-    }
-}
-void MediaWidget::buildEpgListing(const QJsonDocument& doc)
-{
-    QString xstreamServerTimezone = DatabaseProvider::GetDatabase()->GetXStreamServerTimezone(selectedChannel->getXStreamServerId());
-    int64_t serverTimezoneUTCDifference = 0;
-    if(!xstreamServerTimezone.isEmpty())
-    {
-        QTimeZone serversTimezone{xstreamServerTimezone.toUtf8()};
-        if(serversTimezone.isValid())
-        {
-            QDateTime local(QDateTime::currentDateTime());
-            serverTimezoneUTCDifference = local.toTimeZone(serversTimezone).offsetFromUtc();
-        }
-    }
-    auto jsonObject = doc.object();
-    auto epgListingArray = jsonObject.value("epg_listings").toArray();
-    auto now = QDateTime::currentDateTime();
-    auto currentSecondsSinceEpoch = now.currentSecsSinceEpoch();
-    auto systemLocale = QLocale::system();
-    for(const auto& listing : epgListingArray)
-    {
-        auto listingObject = listing.toObject();
-        auto startTimestampString = listingObject.value("start_timestamp").toString("");
-        auto endTimestampString = listingObject.value("stop_timestamp").toString("");
-        if(startTimestampString.isEmpty() || endTimestampString.isEmpty()) continue;
-        bool ok = false;
-        qint64 startTime = startTimestampString.toLongLong(&ok);
-        if(!ok) continue;
-        qint64 endTime = endTimestampString.toLongLong(&ok);
-        if(!ok) continue;
-        startTime -= serverTimezoneUTCDifference;
-        endTime -= serverTimezoneUTCDifference;
-
-        if(endTime < currentSecondsSinceEpoch) continue;
-        if(startTime > currentSecondsSinceEpoch) continue;
-        auto titleEncoded = listingObject.value("title").toString("");
-        if(titleEncoded.isEmpty()) return;
-        auto title = QByteArray::fromBase64(titleEncoded.toUtf8(), QByteArray::Base64Encoding);
-        auto startDateTime = QDateTime::fromSecsSinceEpoch(startTime);
-        auto endDateTime = QDateTime::fromSecsSinceEpoch(endTime);
-        auto playingNowText = QString("%1-%2 %3").arg(systemLocale.toString(startDateTime.time(),QLocale::ShortFormat),systemLocale.toString(endDateTime.time(),QLocale::ShortFormat), title);
-
-        epgPlayingNowLabel->setText(playingNowText);
-        QTimer::singleShot((endTime-currentSecondsSinceEpoch)*1000, this, &MediaWidget::retrieveEpgListings);
-    }
-}
 void MediaWidget::setupSubtitlesMenu()
 {
     subtitlesMenu->clear();

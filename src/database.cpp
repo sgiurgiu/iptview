@@ -199,6 +199,7 @@ ChannelTreeItem* Database::GetChannel(int64_t id) const
         QString epgChannelUri = query.value(5).toString();
         int64_t xstreamServerId = query.value(6).toLongLong();
         auto channel = new ChannelTreeItem(name,uri,logoUri,logo,nullptr);
+        channel->setID(id);
         channel->setEpgChannelId(epgChannelId);
         channel->setEpgChannelUri(epgChannelUri);
         channel->setXStreamServerId(xstreamServerId);
