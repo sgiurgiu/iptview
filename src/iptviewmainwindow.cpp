@@ -51,11 +51,19 @@ void IPTViewMainWindow::createActions()
     fileImportXstreamCodeAction->setToolTip(tr("Import Xstream Playlist"));
     fileImportXstreamCodeAction->setStatusTip(fileImportXstreamCodeAction->toolTip());
     connect(fileImportXstreamCodeAction, SIGNAL(triggered()), SLOT(importXstreamCode()));
+
+    fileSaveAction = new QAction(tr("&Save"), this);;
+    fileSaveAction->setShortcuts(QKeySequence::Save);
+    fileSaveAction->setToolTip(tr("Save playlist"));
+    fileSaveAction->setStatusTip(fileSaveAction->toolTip());
+    connect(fileSaveAction, SIGNAL(triggered()), SLOT(savePlaylist()));
+
 }
 void IPTViewMainWindow::createMenus()
 {
     QMenu* fileMenu = menuBar()->addMenu( tr("&File") );
     fileMenu->addAction(fileOpenAction);
+    fileMenu->addAction(fileSaveAction);
     fileMenu->addAction(fileImportXstreamCodeAction);
     fileMenu->addSeparator();
     fileMenu->addAction(quitApplicationAction);
@@ -196,4 +204,27 @@ void IPTViewMainWindow::importXstreamCode()
     });
 
     mainWidget->ImportPlaylist(std::move(xstreamInfo));
+}
+
+void IPTViewMainWindow::savePlaylist()
+{
+    QSettings settings;
+    QString defaultFolder = settings.value("lastOpenFolder").value<QString>();
+
+    auto fileName = QFileDialog::getSaveFileName(this,tr("Save M3U"),defaultFolder,
+                                                 tr("M3U Files (*.m3u *.m3u8);;All Files (*)"));
+    if(fileName.isEmpty()) return;
+    QFileInfo file(fileName);
+    settings.setValue("lastOpenFolder",file.absoluteDir().absolutePath());
+    if(file.completeSuffix().isEmpty())
+    {
+        fileName += ".m3u8";
+    }
+    exportPlaylist(fileName);
+}
+
+void IPTViewMainWindow::exportPlaylist(const QString& fileName)
+{
+    auto  list = mainWidget->GetM3UList();
+    list.SaveToFile(fileName);
 }

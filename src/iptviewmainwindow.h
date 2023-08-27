@@ -22,6 +22,7 @@ private slots:
   void fullScreen(bool flag);
   void onImportPlaylist(M3UList list);
   void importXstreamCode();
+  void savePlaylist();
 private:
   void centerOnScreen();
   void createActions();
@@ -29,10 +30,12 @@ private:
   void addStatusBar();
   void addWindowWidgets();
   void loadPlaylist(const QString& fileName);
+  void exportPlaylist(const QString& fileName);
 private:
   QMenu* viewMenu;
   QAction* fileImportXstreamCodeAction;
   QAction* fileOpenAction;
+  QAction* fileSaveAction;
   QAction* quitApplicationAction;
   IPTViewMainWidget* mainWidget;
   QMargins contentMargins;

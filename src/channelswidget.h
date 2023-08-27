@@ -21,7 +21,7 @@ public:
     explicit ChannelsWidget(QWidget *parent = nullptr);
     void ImportPlaylist(M3UList list);
     void ImportPlaylist(CollectedInfo list);
-
+    M3UList GetM3UList() const;
 signals:
     void cancelImportChannels();
     void playChannel(int64_t id);

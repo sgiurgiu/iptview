@@ -18,7 +18,7 @@ class IPTViewMainWidget : public QSplitter
     Q_OBJECT
 public:
     IPTViewMainWidget(QNetworkAccessManager* networkManager,QWidget *parent = nullptr);
-
+    M3UList GetM3UList() const;
 public slots:
     void ImportPlaylist(M3UList list);
     void ImportPlaylist(CollectedInfo list);

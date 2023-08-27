@@ -2,10 +2,10 @@
 #define GROUPTREEITEM_H
 
 #include "abstractchanneltreeitem.h"
-
+#include "mediasegment.h"
+#include <QList>
 class RootTreeItem;
 class ChannelTreeItem;
-class MediaSegment;
 
 class TestingItem
 {
@@ -36,6 +36,7 @@ public:
     {
         return name;
     }
+    QList<MediaSegment> GetMediaSegments() const;
     ChannelTreeItem* addMediaSegment(const MediaSegment& segment);
     void addChannel(ChannelTreeItem* channel);
     void addGroup(GroupTreeItem* group);

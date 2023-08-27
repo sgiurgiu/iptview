@@ -73,6 +73,10 @@ ChannelsWidget::ChannelsWidget(QWidget *parent)
     connect(this, SIGNAL(cancelImportChannels()), model, SIGNAL(cancelImportChannels()));
 
 }
+M3UList ChannelsWidget::GetM3UList() const
+{
+    return model->GetM3UList();
+}
 void ChannelsWidget::searchTextChanged(const QString& text)
 {
     proxyModel->setFilterWildcard(text);
@@ -135,6 +139,7 @@ void ChannelsWidget::onCustomContextMenu(const QPoint &point)
     contextMenu->clear();
     addNewChannelAction->setData(QVariant{});
     addNewChannelGroupAction->setData(QVariant{});
+    removeChannelGroupAction->setData(QVariant{});
     auto selectedIndexes = channels->selectionModel()->selectedIndexes();
     if(selectedIndexes.empty())
     {

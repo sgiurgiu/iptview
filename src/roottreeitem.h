@@ -2,6 +2,7 @@
 #define ROOTTREEITEM_H
 
 #include "abstractchanneltreeitem.h"
+#include "m3ulist.h"
 
 class ChannelTreeItem;
 class GroupTreeItem;
@@ -34,6 +35,7 @@ public:
     std::pair<AbstractChannelTreeItem*,AbstractChannelTreeItem*> addToFavourites(AbstractChannelTreeItem* item);
     std::pair<AbstractChannelTreeItem*,AbstractChannelTreeItem*> removeFromFavourites(AbstractChannelTreeItem* item);
     virtual void clear() override;
+    M3UList GetM3UList() const;
 private:
     QHash<QString, GroupTreeItem*> groupsMap;
     QHash<int64_t, GroupTreeItem*> groupsIdMap;

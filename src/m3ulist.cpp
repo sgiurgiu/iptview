@@ -159,6 +159,7 @@ void M3UList::SaveToFile(const QString& fileName) const
 {
     QFile file(fileName);
     file.open(QIODevice::WriteOnly | QIODevice::Truncate);
+
     if(file.isOpen())
     {
         QTextStream outStream(&file);

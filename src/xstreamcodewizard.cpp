@@ -66,6 +66,7 @@ void XstreamCodeLoginPage::verifyInfo()
     auto reply = networkManager->get(request);
     connect(reply, &QNetworkReply::finished, this, [reply, this]()
     {
+        verifyButton->setEnabled(true);
         if(reply->error())
         {
             reply->deleteLater();
@@ -85,7 +86,6 @@ void XstreamCodeLoginPage::verifyInfo()
             bool isActive = userInfo.value("status").toString() == "Active";
             this->isAuthenticated = isAuthenticated && isActive;
             verifiedLabel->setText(this->isAuthenticated ? "Verified" : "Verification failed");
-            verifyButton->setEnabled(true);
             info.username = userInfo.value("username").toString("");
             info.password = userInfo.value("password").toString("");
             info.outputFormats = userInfo.value("allowed_output_formats").toArray({}).toVariantList();

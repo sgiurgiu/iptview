@@ -35,6 +35,34 @@ GroupTreeItem::GroupTreeItem(QString name)
     }
     icon = *defaultGroupIcon;
 }
+QList<MediaSegment> GroupTreeItem::GetMediaSegments() const
+{
+    QList<MediaSegment> list;
+    for(auto child:children)
+    {
+        auto type = child->getType();
+        if(type == ChannelTreeItemType::Group)
+        {
+            auto group = dynamic_cast<GroupTreeItem*>(child);
+            list.append(group->GetMediaSegments());
+        }
+        else if(type == ChannelTreeItemType::Channel)
+        {
+            auto channel = dynamic_cast<ChannelTreeItem*>(child);
+            MediaSegment segment;
+            segment.SetDuration(-1);
+            segment.SetTitle(channel->getName());
+            segment.SetUri(channel->getUri());
+            segment.AddAttribute("tvg-logo", channel->getLogoUri());
+            segment.AddAttribute("tvg-name", channel->getName());
+            segment.AddAttribute("tvg-id", channel->getEpgChannelId());
+            segment.AddAttribute("group-title", this->getName());
+
+            list.append(std::move(segment));
+        }
+    }
+    return list;
+}
 /*void GroupTreeItem::loadChannelsIcons()
 {
     if(cancelOngoingOperations) return;

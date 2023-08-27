@@ -22,6 +22,7 @@ class ChannelsModel : public QAbstractItemModel
 public:
     explicit ChannelsModel(QObject *parent = nullptr);
     ~ChannelsModel();
+    M3UList GetM3UList() const;
     void AddList(M3UList list);
     void AddList(CollectedInfo list);
     void AddChild(AbstractChannelTreeItem* child, const QModelIndex &parent);

@@ -54,6 +54,11 @@ void IPTViewMainWidget::ImportPlaylist(CollectedInfo list)
     channelsWidget->ImportPlaylist(std::move(list));
 }
 
+M3UList IPTViewMainWidget::GetM3UList() const
+{
+    return channelsWidget->GetM3UList();
+}
+
 void IPTViewMainWidget::fullScreen(bool flag)
 {
     emit showingFullScreen(flag);

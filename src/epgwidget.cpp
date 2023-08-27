@@ -44,7 +44,6 @@ EPGWidget::EPGWidget(QNetworkAccessManager* networkManager,QWidget *parent)
     setOrientation(Qt::Orientation::Horizontal);
     previousListingAction->setVisible(false);
     nextListingAction->setVisible(false);
-   // setVisible(false);
 }
 
 void EPGWidget::SetChannel(int64_t channelId)
@@ -76,10 +75,11 @@ void EPGWidget::ClearChannel()
     titleLabel->clear();
     previousListingAction->setEnabled(false);
     nextListingAction->setEnabled(false);
+    previousListingAction->setVisible(false);
+    nextListingAction->setVisible(false);
 }
 void EPGWidget::retrieveEpgListings()
 {
-    setVisible(false);
     if(!selectedChannel->getEpgChannelUri().isEmpty())
     {
         QNetworkRequest request;
@@ -122,8 +122,8 @@ void EPGWidget::buildEpgListings(const QJsonDocument& doc)
         if(!ok) continue;
         qint64 endTime = endTimestampString.toLongLong(&ok);
         if(!ok) continue;
-        startTime -= serverTimezoneUTCDifference;
-        endTime -= serverTimezoneUTCDifference;
+       // startTime -= serverTimezoneUTCDifference;
+       // endTime -= serverTimezoneUTCDifference;
         auto titleEncoded = listingObject.value("title").toString("");
         if(titleEncoded.isEmpty()) return;
         EpgListing epgListing;
@@ -176,8 +176,6 @@ void EPGWidget::displayCurrentListing()
     nextListingAction->setEnabled(currentListingIndex < (listings.size()-1));
     previousListingAction->setVisible(!listings.isEmpty());
     nextListingAction->setVisible(!listings.isEmpty());
-
-    //setVisible(!listings.isEmpty());
 }
 
 void EPGWidget::showPreviousListing()

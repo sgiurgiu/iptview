@@ -11,7 +11,34 @@ RootTreeItem::RootTreeItem() : AbstractChannelTreeItem(nullptr)
     connect(favourites, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)), this, SIGNAL(aquiredIcon(AbstractChannelTreeItem*)));
     appendChild(favourites);
 }
+M3UList RootTreeItem::GetM3UList() const
+{
+    M3UList list;
+    for(auto child:children)
+    {
+        auto type = child->getType();
+        if(type == ChannelTreeItemType::Group)
+        {
+            auto group = dynamic_cast<GroupTreeItem*>(child);
+            auto segments = group->GetMediaSegments();
+            list.AddSegmentsSafe(segments);
+        }
+        else if(type == ChannelTreeItemType::Channel)
+        {
+            auto channel = dynamic_cast<ChannelTreeItem*>(child);
+            MediaSegment segment;
+            segment.SetDuration(-1);
+            segment.SetTitle(channel->getName());
+            segment.SetUri(channel->getUri());
+            segment.AddAttribute("tvg-logo", channel->getLogoUri());
+            segment.AddAttribute("tvg-name", channel->getName());
+            segment.AddAttribute("tvg-id", channel->getEpgChannelId());
 
+            list.AddSegment(std::move(segment));
+        }
+    }
+    return list;
+}
 ChannelTreeItem* RootTreeItem::addMediaSegment(const MediaSegment& segment)
 {
     auto groupTitle = segment.GetAttributeValue("group-title");

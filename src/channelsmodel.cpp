@@ -60,6 +60,10 @@ void ChannelsModel::loadChannels()
     connect(loadingChannelsThread, &LoadingChannelsThread::favouriteChannels, this,  &ChannelsModel::onFavouriteChannels);
     loadingChannelsThread->start();
 }
+M3UList ChannelsModel::GetM3UList() const
+{
+    return rootItem->GetM3UList();
+}
 void ChannelsModel::ReloadChannels()
 {
     stopAndClearThreads();
