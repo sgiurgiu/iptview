@@ -90,6 +90,7 @@ void MPRISDBus::PlayingChannel(int64_t id)
 }
 void MPRISDBus::SelectedChannel(int64_t id)
 {
+    if(playbackStatus == "Playing") return;
     std::unique_ptr<ChannelTreeItem> channel{DatabaseProvider::GetDatabase()->GetChannel(id)};
     if(!channel) return;
     metadata.clear();

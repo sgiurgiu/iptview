@@ -195,7 +195,7 @@ void MediaWidget::playChannel(std::unique_ptr<ChannelTreeItem> channel)
     epgWidget->ClearChannel();
     mpvWidget->command(QStringList() << "stop");
     mpvWidget->stopRenderingMedia();
-    mpvWidget->command(QStringList() << "apply-profile" << "gpu-hq");
+//    mpvWidget->command(QStringList() << "apply-profile" << "gpu-hq");
     mpvWidget->command(QStringList() << "loadfile" << selectedChannel->getUri());
     playPauseAction->setEnabled(true);
     playPauseAction->setIcon(pauseIcon);

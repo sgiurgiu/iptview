@@ -40,6 +40,7 @@ MpvWidget::MpvWidget(QWidget *parent): QOpenGLWidget{parent}
     if (!mpv)
         throw std::runtime_error("could not create mpv context");
 
+
     mpv_set_property_string(mpv, "terminal", "yes");
     mpv_set_property_string(mpv, "msg-level", "all=v");
     mpv_set_property_string(mpv, "sub-create-cc-track", "yes");
@@ -54,7 +55,7 @@ MpvWidget::MpvWidget(QWidget *parent): QOpenGLWidget{parent}
         throw std::runtime_error("could not initialize mpv context");
 
     // Request hw decoding, just for testing.
-    //mpv::qt::set_option_variant(mpv, "hwdec", "auto");
+    mpv::qt::set_option_variant(mpv, "hwdec", "auto");
 
     mpv_observe_property(mpv, 0, "duration", MPV_FORMAT_DOUBLE);
     mpv_observe_property(mpv, 0, "time-pos", MPV_FORMAT_DOUBLE);
