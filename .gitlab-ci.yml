@@ -37,7 +37,7 @@ linux-job:       # This job runs in the build stage, which runs first.
 
 windows-job:
     stage: build
-    timeout: 5h
+    timeout: 10h
     tags:
         - windows
     variables:
