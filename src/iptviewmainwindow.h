@@ -23,6 +23,8 @@ private slots:
   void onImportPlaylist(M3UList list);
   void importXstreamCode();
   void savePlaylist();
+  void about();
+  void ipDetails();
 private:
   void centerOnScreen();
   void createActions();
@@ -32,14 +34,14 @@ private:
   void loadPlaylist(const QString& fileName);
   void exportPlaylist(const QString& fileName);
 private:
-  QMenu* viewMenu;
-  QAction* fileImportXstreamCodeAction;
-  QAction* fileOpenAction;
-  QAction* fileSaveAction;
-  QAction* quitApplicationAction;
-  IPTViewMainWidget* mainWidget;
+  QAction* fileImportXstreamCodeAction = nullptr;
+  QAction* fileOpenAction = nullptr;
+  QAction* fileSaveAction = nullptr;
+  QAction* quitApplicationAction = nullptr;
+  QAction* aboutAction = nullptr;
+  IPTViewMainWidget* mainWidget = nullptr;
   QMargins contentMargins;
-  QNetworkAccessManager* networkManager;
+  QNetworkAccessManager* networkManager = nullptr;
 };
 
 #endif // IPTVIEWMAINWINDOW_H

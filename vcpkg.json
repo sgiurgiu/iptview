@@ -3,6 +3,7 @@
   "name": "iptview",
   "version-string": "0.0.1",
   "dependencies": [
-     "qtbase"
+     "qtbase",
+     "openssl"
   ]
 }

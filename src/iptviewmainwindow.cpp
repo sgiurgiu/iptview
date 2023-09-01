@@ -12,6 +12,11 @@
 #include <QDir>
 #include <QProgressDialog>
 #include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
 
 #include "iptviewmainwidget.h"
 #include "m3uparsercontroller.h"
@@ -52,12 +57,17 @@ void IPTViewMainWindow::createActions()
     fileImportXstreamCodeAction->setStatusTip(fileImportXstreamCodeAction->toolTip());
     connect(fileImportXstreamCodeAction, SIGNAL(triggered()), SLOT(importXstreamCode()));
 
-    fileSaveAction = new QAction(tr("&Save"), this);;
+    fileSaveAction = new QAction(tr("&Save"), this);
     fileSaveAction->setShortcuts(QKeySequence::Save);
     fileSaveAction->setToolTip(tr("Save playlist"));
     fileSaveAction->setStatusTip(fileSaveAction->toolTip());
     connect(fileSaveAction, SIGNAL(triggered()), SLOT(savePlaylist()));
 
+
+    aboutAction = new QAction(tr("&About"), this);
+    aboutAction->setToolTip(tr("About IPTV View"));
+    aboutAction->setStatusTip(aboutAction->toolTip());
+    connect(aboutAction, SIGNAL(triggered()), SLOT(about()));
 }
 void IPTViewMainWindow::createMenus()
 {
@@ -68,7 +78,13 @@ void IPTViewMainWindow::createMenus()
     fileMenu->addSeparator();
     fileMenu->addAction(quitApplicationAction);
 
-    viewMenu = menuBar()->addMenu(tr("View"));
+    auto helpMenu = menuBar()->addMenu( tr("&Help") );
+    auto ipAction = helpMenu->addAction("Network Details");
+    helpMenu->addAction(aboutAction);
+
+    ipAction->setToolTip(tr("Show network details"));
+    ipAction->setStatusTip(ipAction->toolTip());
+    connect(ipAction, SIGNAL(triggered()), SLOT(ipDetails()));
 }
 void IPTViewMainWindow::addStatusBar()
 {
@@ -227,4 +243,61 @@ void IPTViewMainWindow::exportPlaylist(const QString& fileName)
 {
     auto  list = mainWidget->GetM3UList();
     list.SaveToFile(fileName);
+}
+
+void IPTViewMainWindow::about()
+{
+    auto text = QString("<h3>About %1</h3><p>%2</p><p>Licensed under <a href=\"https://www.gnu.org/licenses/gpl-3.0.en.html\">GPLv3</a></p>"
+                        "The latest version is available at <a href=\"https://github.com/sgiurgiu/iptview\">https://github.com/sgiurgiu/iptview</a>").arg(IPTVIEW_STRING, IPTVIEW_COPYRIGHT);
+    QMessageBox::about(this, "About IPTV View",text);
+}
+
+void IPTViewMainWindow::ipDetails()
+{
+    QProgressDialog* progress = new QProgressDialog(this);
+    progress->setLabelText("Retrieving network information");
+    progress->setMinimum(0);
+    progress->setMaximum(0);
+    progress->setAutoClose(true);
+    progress->setMinimumDuration(0);
+
+    QNetworkRequest request;
+    request.setUrl(QUrl("https://ipinfo.io"));
+    request.setHeader(QNetworkRequest::UserAgentHeader, "IPTView 1.0");
+    request.setRawHeader("Accept", "application/json");
+    auto reply = networkManager->get(request);
+    connect(progress, &QProgressDialog::canceled, reply,&QNetworkReply::abort);
+
+    connect(reply, &QNetworkReply::finished, this, [reply, progress, this](){
+        reply->deleteLater();
+        progress->reset();
+        progress->deleteLater();
+        if(reply->error())
+        {
+            QMessageBox::critical(this,"Error", QString("Error retrieving IP information: %1").arg(reply->errorString()));
+            return;
+        }
+        auto response = reply->readAll();
+        QJsonDocument doc = QJsonDocument::fromJson(response);
+        auto object = doc.object();
+        auto text = QString("<h5>Network information</h5>"
+                            "<table>"
+                            "<tr><td>IP</td><td>%1</td></tr>"
+                            "<tr><td>Host</td><td>%2</td></tr>"
+                            "<tr><td>ISP</td><td>%3</td></tr>"
+                            "<tr><td>City</td><td>%4</td></tr>"
+                            "<tr><td>Region</td><td>%5</td></tr>"
+                            "<tr><td>Country</td><td>%6</td></tr>"
+                            "<tr><td>Timezone</td><td>%7</td></tr>"
+                            "</table>")
+                        .arg(object.value("ip").toString(""),
+                             object.value("hostname").toString(""),
+                             object.value("org").toString(""),
+                             object.value("city").toString(""),
+                             object.value("region").toString(""),
+                             object.value("country").toString(""),
+                             object.value("timezone").toString(""));
+
+        QMessageBox::information(this, "Network", text);
+    });
 }

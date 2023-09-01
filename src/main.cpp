@@ -18,9 +18,7 @@ int main(int argc, char** argv)
     QCoreApplication::setApplicationVersion(IPTVIEW_VERSION);
 
     QApplication app(argc, argv);
-    // Qt sets the locale in the QApplication constructor, but libmpv requires
-    // the LC_NUMERIC category to be set to "C", so change it back.
-    setlocale(LC_NUMERIC, "C");
+
     if(!QSslSocket::supportsSsl())
     {
         // we apparently need this song and dance, otherwise just making an
@@ -43,6 +41,9 @@ int main(int argc, char** argv)
     }
 
     DatabaseProvider::GetDatabase()->SetupSchema();
+    // Qt sets the locale in the QApplication constructor, but libmpv requires
+    // the LC_NUMERIC category to be set to "C", so change it back.
+    setlocale(LC_NUMERIC, "C");
 
     IPTViewMainWindow window;
     QSettings settings;

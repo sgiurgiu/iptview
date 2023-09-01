@@ -5,6 +5,9 @@ option(ENABLE_DBUS "Build DBus support" ON)
 if(ENABLE_TESTS AND VCPKG_TOOLCHAIN)
   list(APPEND VCPKG_MANIFEST_FEATURES "tests")
 endif()
+set(VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_LIST_DIR}/vcpkg-ports")
+set(VCPKG_C_FLAGS "-DOPENSSL_NO_AUTOLOAD_CONFIG ${VCPKG_C_FLAGS}")
+
 
 project(iptview LANGUAGES CXX)
 
@@ -19,9 +22,10 @@ if(NOT IPTVIEW_VERSION)
     SET(IPTVIEW_VERSION "0.0.1")
 endif()
 
-SET(IPTVIEW_COPYRIGHT "Copyright (c) 2022 Sergiu Giurgiu <sgiurgiu11@gmail.com>")
+SET(IPTVIEW_COPYRIGHT "Copyright (c) 2023 Sergiu Giurgiu <sgiurgiu11@gmail.com>")
 add_definitions(-DIPTVIEW_VERSION="${IPTVIEW_VERSION}")
-add_definitions(-DIPTVIEW_STRING="M3U Edit v${IPTVIEW_VERSION}")
+add_definitions(-DIPTVIEW_STRING="IPTV View v${IPTVIEW_VERSION}")
+add_definitions(-DIPTVIEW_COPYRIGHT="${IPTVIEW_COPYRIGHT}")
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
@@ -39,7 +43,7 @@ set(IPTVIEW_QT_COMPONENTS Core Gui Test Widgets OpenGLWidgets Network Sql Concur
 set(IPTVIEW_APP_LIBARIES ${CMAKE_DL_LIBS} Threads::Threads Qt6::Core)
 set(IPTVIEW_APP_INCLUDES)
 
-set(IPTVIEW_LIB_LIBARIES Qt6::Core Qt6::Widgets Qt6::OpenGLWidgets Qt6::Network Qt6::Sql Qt6::Concurrent)
+set(IPTVIEW_LIB_LIBARIES Qt6::Core Qt6::Widgets Qt6::OpenGLWidgets Qt6::Network Qt6::Sql Qt6::Concurrent OpenSSL::SSL)
 set(IPTVIEW_LIB_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 set(IPTVIEW_TEST_LIBARIES Qt6::Core Qt6::Test ${CMAKE_DL_LIBS} Threads::Threads)
@@ -52,7 +56,7 @@ endif()
 
 find_package(Threads REQUIRED)
 find_package(Qt6 COMPONENTS ${IPTVIEW_QT_COMPONENTS} REQUIRED)
-
+find_package(OpenSSL REQUIRED)
 
 if(UNIX)
     find_package(PkgConfig REQUIRED)
