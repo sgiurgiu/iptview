@@ -76,3 +76,5 @@ packages
 CMakeSettings.json
 .vs
 .vscode/
+docker
+
