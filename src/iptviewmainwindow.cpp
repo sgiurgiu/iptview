@@ -257,10 +257,10 @@ void IPTViewMainWindow::ipDetails()
     QProgressDialog* progress = new QProgressDialog(this);
     progress->setLabelText("Retrieving network information");
     progress->setMinimum(0);
-    progress->setMaximum(0);
+    progress->setMaximum(1);
     progress->setAutoClose(true);
     progress->setMinimumDuration(0);
-
+    progress->show();
     QNetworkRequest request;
     request.setUrl(QUrl("https://ipinfo.io"));
     request.setHeader(QNetworkRequest::UserAgentHeader, "IPTView 1.0");
@@ -269,6 +269,7 @@ void IPTViewMainWindow::ipDetails()
     connect(progress, &QProgressDialog::canceled, reply,&QNetworkReply::abort);
 
     connect(reply, &QNetworkReply::finished, this, [reply, progress, this](){
+        progress->setValue(1);
         reply->deleteLater();
         progress->reset();
         progress->deleteLater();
