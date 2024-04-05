@@ -55,7 +55,7 @@ if(ENABLE_DBUS)
 endif()
 
 find_package(Threads REQUIRED)
-find_package(Qt6 COMPONENTS ${IPTVIEW_QT_COMPONENTS} REQUIRED)
+#find_package(Qt6 COMPONENTS ${IPTVIEW_QT_COMPONENTS} REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 if(UNIX)
@@ -70,6 +70,8 @@ if(WIN32)
     list(APPEND IPTVIEW_LIB_LIBARIES ${LIBMPV} "crypt32.lib")
     list(APPEND IPTVIEW_LIB_INCLUDES ${LIBMPV_INCLUDE})
 endif()
+
+find_package(Qt6 COMPONENTS ${IPTVIEW_QT_COMPONENTS} REQUIRED)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)

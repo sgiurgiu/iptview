@@ -1,0 +1,179 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 25,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "base",
+            "description": "Default build using Ninja generator",
+            "generator": "Ninja",
+            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+            "environment": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "default",
+            "binaryDir": "${sourceDir}/build",
+            "inherits": "base",
+            "description": "Default build using Ninja generator",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "ENABLE_TESTS": "ON"
+            }
+        },
+        {
+            "name": "release",
+            "inherits": "base",
+            "binaryDir": "${sourceDir}/build-release",
+            "description": "Release build using Ninja generator",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "ENABLE_TESTS": "OFF",
+                "CMAKE_INSTALL_PREFIX": "/usr"
+            }
+        },
+        {
+            "name": "release-windows",
+            "inherits": "base",
+            "binaryDir": "${sourceDir}/build-release",
+            "description": "Windows release build using Ninja generator",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "ENABLE_TESTS": "OFF",
+                "LIBMPV_DIR": "$env{libMpvDir}",
+                "LIBMPV_INCLUDE": "$env{libMpvIncludeDir}"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default",
+            "jobs": 8
+        },
+        {
+            "name": "release",
+            "configurePreset": "release",
+            "jobs": 8
+        },
+        {
+            "name": "release-windows",
+            "configurePreset": "release-windows",
+            "jobs": 4
+        }
+    ],
+    "packagePresets": [
+        {
+            "name": "default",
+            "configurePreset": "default",
+            "generators": [
+                "RPM"
+            ]
+        },
+        {
+            "name": "release",
+            "configurePreset": "release",
+            "generators": [
+                "RPM"
+            ]
+        },
+        {
+            "name": "release-deb",
+            "configurePreset": "release",
+            "generators": [
+                "DEB"
+            ]
+        },
+        {
+            "name": "release-windows",
+            "configurePreset": "release-windows",
+            "generators": [
+                "WIX"
+            ],
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        }
+    ],
+    "workflowPresets": [
+        {
+            "name": "default",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "default"
+                },
+                {
+                    "type": "build",
+                    "name": "default"
+                },
+                {
+                    "type": "package",
+                    "name": "default"
+                }
+            ]
+        },
+        {
+            "name": "release",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release"
+                },
+                {
+                    "type": "build",
+                    "name": "release"
+                },
+                {
+                    "type": "package",
+                    "name": "release"
+                }
+            ]
+        },
+        {
+            "name": "release-deb",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release"
+                },
+                {
+                    "type": "build",
+                    "name": "release"
+                },
+                {
+                    "type": "package",
+                    "name": "release-deb"
+                }
+            ]
+        },
+        {
+            "name": "release-windows",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release-windows"
+                },
+                {
+                    "type": "build",
+                    "name": "release-windows"
+                },
+                {
+                    "type": "package",
+                    "name": "release-windows"
+                }
+            ]
+        }
+    ]
+}
