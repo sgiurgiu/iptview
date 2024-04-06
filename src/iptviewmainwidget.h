@@ -21,7 +21,7 @@ public:
     M3UList GetM3UList() const;
 public slots:
     void ImportPlaylist(M3UList list);
-    void ImportPlaylist(CollectedInfo list);
+    void ImportPlaylist(XStreamCollectedInfo list);
     void SkipForward();
     void SkipBack();
 

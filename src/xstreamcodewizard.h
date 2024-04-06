@@ -12,56 +12,55 @@ class QLabel;
 class QListView;
 class QStandardItemModel;
 
-
 class XstreamCodeWizard
 {
 public:
-    static CollectedInfo ImportXstreamCodes(QWidget* parent,QNetworkAccessManager* networkManager);
-
+    static XStreamCollectedInfo ImportXstreamCodes(QWidget *parent, QNetworkAccessManager *networkManager);
 };
-
 
 class XstreamCodeLoginPage : public QWizardPage
 {
     Q_OBJECT
-    Q_PROPERTY(AuthenticationInfo AuthInfo READ AuthInfo WRITE SetAuthInfo)
+    Q_PROPERTY(XStreamAuthenticationInfo AuthInfo READ AuthInfo WRITE SetAuthInfo)
 public:
-    XstreamCodeLoginPage(QNetworkAccessManager* networkManager, QWidget* parent = nullptr);
+    XstreamCodeLoginPage(QNetworkAccessManager *networkManager, QWidget *parent = nullptr);
     void initializePage() override;
     bool isComplete() const override;
-    AuthenticationInfo AuthInfo() const
+    XStreamAuthenticationInfo AuthInfo() const
     {
         return info;
     }
-    void SetAuthInfo(const AuthenticationInfo& info)
+    void SetAuthInfo(const XStreamAuthenticationInfo &info)
     {
         this->info = info;
     }
 private slots:
     void verifyInfo();
+
 private:
-    QLineEdit* urlEdit;
-    QLineEdit* usernameEdit;
-    QLineEdit* passwordEdit;
-    QPushButton* verifyButton;
-    QNetworkAccessManager* networkManager;
-    QLabel* verifiedLabel = nullptr;
+    QLineEdit *urlEdit;
+    QLineEdit *usernameEdit;
+    QLineEdit *passwordEdit;
+    QPushButton *verifyButton;
+    QNetworkAccessManager *networkManager;
+    QLabel *verifiedLabel = nullptr;
     bool isAuthenticated = false;
-    AuthenticationInfo info;
+    XStreamAuthenticationInfo info;
+
 };
 
 class XstreamCodeCategoriesPage : public QWizardPage
 {
     Q_OBJECT
 public:
-    XstreamCodeCategoriesPage(QNetworkAccessManager* networkManager, QWidget* parent = nullptr);
+    XstreamCodeCategoriesPage(QNetworkAccessManager *networkManager, QWidget *parent = nullptr);
     bool validatePage() override;
     void initializePage() override;
-    const QList<CategoryInfo>& GetLiveCategories() const
+    const QList<XStreamCategoryInfo> &GetLiveCategories() const
     {
         return liveCategories;
     }
-    const QList<CategoryInfo>& GetVodCategories() const
+    const QList<XStreamCategoryInfo> &GetVodCategories() const
     {
         return vodCategories;
     }
@@ -72,21 +71,22 @@ private slots:
     void selectAllVod();
     void deselectAllVod();
     void invertSelectionVod();
+
 private:
-    void grabLiveCategories(const AuthenticationInfo& info);
-    void grabVodCategories(const AuthenticationInfo& info);
+    void grabLiveCategories(const XStreamAuthenticationInfo &info);
+    void grabVodCategories(const XStreamAuthenticationInfo &info);
+
 private:
-    QNetworkAccessManager* networkManager;
-    QList<CategoryInfo> liveCategories;
-    QList<CategoryInfo> vodCategories;
-    QListView* liveCategoriesView;
-    QListView* vodCategoriesView;
-    QStandardItemModel* liveCategoriesModel;
-    QStandardItemModel* vodCategoriesModel;
+    QNetworkAccessManager *networkManager;
+    QList<XStreamCategoryInfo> liveCategories;
+    QList<XStreamCategoryInfo> vodCategories;
+    QListView *liveCategoriesView;
+    QListView *vodCategoriesView;
+    QStandardItemModel *liveCategoriesModel;
+    QStandardItemModel *vodCategoriesModel;
 };
 
-
-Q_DECLARE_METATYPE(AuthenticationInfo)
-Q_DECLARE_METATYPE(CategoryInfo)
+Q_DECLARE_METATYPE(XStreamAuthenticationInfo)
+Q_DECLARE_METATYPE(XStreamCategoryInfo)
 
 #endif // XTREAMCODEWIZARD_H

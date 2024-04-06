@@ -1,20 +1,23 @@
 #ifndef ABSTRACTCHANNELTREEITEM_H
 #define ABSTRACTCHANNELTREEITEM_H
 
-#include <QObject>
-#include <QIcon>
-#include <vector>
 #include <QHash>
+#include <QIcon>
+#include <QObject>
+#include <vector>
 
-#include <shared_mutex>
 #include <atomic>
+#include <shared_mutex>
 
 enum class ChannelTreeItemType
 {
     Root = 0,
     Group,
     Channel,
-    Favourite
+    Favourite,
+    Server,
+    Loading,
+    Error
 };
 
 class AbstractChannelTreeItem : public QObject
@@ -38,6 +41,7 @@ public:
     virtual void clear();
 signals:
     void aquiredIcon(AbstractChannelTreeItem*);
+
 protected:
     int64_t id = -1;
     std::vector<AbstractChannelTreeItem*> children;

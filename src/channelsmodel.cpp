@@ -1,26 +1,24 @@
 #include "channelsmodel.h"
 #include "abstractchanneltreeitem.h"
-#include "roottreeitem.h"
-#include "grouptreeitem.h"
-#include "favouritestreeitem.h"
 #include "channeltreeitem.h"
+#include "favouritestreeitem.h"
+#include "grouptreeitem.h"
+#include "roottreeitem.h"
 
-#include "databaseprovider.h"
 #include "database.h"
+#include "databaseprovider.h"
 #include <QtDebug>
 
-
-#include "loadingchannelsthread.h"
 #include "loadingchanneliconsworker.h"
+#include "loadingchannelsthread.h"
 #include "loadxstreamchannelsworker.h"
 
-
 ChannelsModel::ChannelsModel(QObject *parent)
-    : QAbstractItemModel{parent},
-      rootItem{std::make_unique<RootTreeItem>()}
+: QAbstractItemModel{ parent }, rootItem{ std::make_unique<RootTreeItem>() }
 {
     loadChannels();
-    connect(this, SIGNAL(cancelImportChannels()),this, SLOT(cancelImportChannelsSlot()));
+    connect(this, SIGNAL(cancelImportChannels()), this,
+            SLOT(cancelImportChannelsSlot()));
 }
 ChannelsModel::~ChannelsModel()
 {
@@ -29,14 +27,14 @@ ChannelsModel::~ChannelsModel()
 void ChannelsModel::stopAndClearThreads()
 {
     cancelImportChannelsSlot();
-    if(loadingChannelsThread)
+    if (loadingChannelsThread)
     {
         loadingChannelsThread->cancelOperation();
         loadingChannelsThread->wait();
         delete loadingChannelsThread;
         loadingChannelsThread = nullptr;
     }
-    if(loadingChannelIconsThread)
+    if (loadingChannelIconsThread)
     {
         loadingChannelIconsThread->quit();
         loadingChannelIconsThread->wait();
@@ -47,17 +45,24 @@ void ChannelsModel::stopAndClearThreads()
 void ChannelsModel::loadChannels()
 {
     loadingChannelIconsThread = new QThread(this);
-    channelIconsWorker  = new LoadingChannelIconsWorker();
+    channelIconsWorker = new LoadingChannelIconsWorker();
     channelIconsWorker->moveToThread(loadingChannelIconsThread);
-    connect(loadingChannelIconsThread, &QThread::finished, channelIconsWorker, &QObject::deleteLater);
-    connect(this, &ChannelsModel::loadChannelIcon, channelIconsWorker, &LoadingChannelIconsWorker::loadChannelIcon);
-    connect(channelIconsWorker, &LoadingChannelIconsWorker::channelIconReady, this, &ChannelsModel::onChannelIconReady);
+    connect(loadingChannelIconsThread, &QThread::finished, channelIconsWorker,
+            &QObject::deleteLater);
+    connect(this, &ChannelsModel::loadChannelIcon, channelIconsWorker,
+            &LoadingChannelIconsWorker::loadChannelIcon);
+    connect(channelIconsWorker, &LoadingChannelIconsWorker::channelIconReady,
+            this, &ChannelsModel::onChannelIconReady);
     loadingChannelIconsThread->start();
 
-    loadingChannelsThread = new LoadingChannelsThread(QThread::currentThread(), this);
-    connect(loadingChannelsThread, &LoadingChannelsThread::groupLoaded,this, &ChannelsModel::onGroupLoaded);
-    connect(loadingChannelsThread, &LoadingChannelsThread::groupsCount, this,  &ChannelsModel::onGroupsCount);
-    connect(loadingChannelsThread, &LoadingChannelsThread::favouriteChannels, this,  &ChannelsModel::onFavouriteChannels);
+    loadingChannelsThread =
+        new LoadingChannelsThread(QThread::currentThread(), this);
+    connect(loadingChannelsThread, &LoadingChannelsThread::groupLoaded, this,
+            &ChannelsModel::onGroupLoaded);
+    connect(loadingChannelsThread, &LoadingChannelsThread::groupsCount, this,
+            &ChannelsModel::onGroupsCount);
+    connect(loadingChannelsThread, &LoadingChannelsThread::favouriteChannels,
+            this, &ChannelsModel::onFavouriteChannels);
     loadingChannelsThread->start();
 }
 M3UList ChannelsModel::GetM3UList() const
@@ -74,46 +79,47 @@ void ChannelsModel::ReloadChannels()
 }
 void ChannelsModel::onGroupsCount(int)
 {
-
 }
-void ChannelsModel::onGroupLoaded(GroupTreeItem* group)
+void ChannelsModel::onGroupLoaded(GroupTreeItem *group)
 {
-    beginInsertRows(QModelIndex(), rootItem->childCount(), rootItem->childCount());
+    beginInsertRows(QModelIndex(), rootItem->childCount(),
+                    rootItem->childCount());
     rootItem->addGroup(group);
     endInsertRows();
     loadGroupChannelsIcons(group);
 }
-void ChannelsModel::loadGroupChannelsIcons(GroupTreeItem* group)
+void ChannelsModel::loadGroupChannelsIcons(GroupTreeItem *group)
 {
     int count = group->childCount();
-    for(int i=0;i< count; i++)
+    for (int i = 0; i < count; i++)
     {
         auto child = group->child(i);
-        if(child->getType() == ChannelTreeItemType::Channel)
+        if (child->getType() == ChannelTreeItemType::Channel)
         {
-            auto channel = dynamic_cast<ChannelTreeItem*>(child);
+            auto channel = dynamic_cast<ChannelTreeItem *>(child);
             emit loadChannelIcon(channel);
         }
-        else if(child->getType() == ChannelTreeItemType::Group)
+        else if (child->getType() == ChannelTreeItemType::Group)
         {
-            auto childGroup = dynamic_cast<GroupTreeItem*>(child);
+            auto childGroup = dynamic_cast<GroupTreeItem *>(child);
             loadGroupChannelsIcons(childGroup);
         }
     }
 }
-void ChannelsModel::onFavouriteChannels(std::vector<ChannelTreeItem*> channels)
+void ChannelsModel::onFavouriteChannels(std::vector<ChannelTreeItem *> channels)
 {
-    if(channels.empty()) return;
+    if (channels.empty())
+        return;
     auto favourites = rootItem->getFavourites();
     auto parentIndex = indexFromItem(favourites);
-    beginInsertRows(parentIndex, 0, channels.size()-1);
-    for(auto c : channels)
+    beginInsertRows(parentIndex, 0, channels.size() - 1);
+    for (auto c : channels)
     {
         favourites->addChannel(c);
     }
     endInsertRows();
 
-    for(auto c : channels)
+    for (auto c : channels)
     {
         emit loadChannelIcon(c);
     }
@@ -123,42 +129,52 @@ void ChannelsModel::AddList(M3UList list)
     beginResetModel();
     auto db = DatabaseProvider::GetDatabase();
     auto dbptr = db.get();
-    db->WithTransaction([&list, dbptr, this](){
-        for(qsizetype i =0; i< list.GetSegmentsCount() && !cancelImportingChannels; i++)
-        {            
-            auto channelPtr = rootItem->addMediaSegment(list.GetSegmentAt(i));
-            dbptr->AddChannelAndGroup(channelPtr);
-            rootItem->updateMaps(channelPtr);
-            emit updateImportedChannelIndex(i);
-            emit loadChannelIcon(channelPtr);
-        }
-    });
+    db->WithTransaction(
+        [&list, dbptr, this]()
+        {
+            for (qsizetype i = 0;
+                 i < list.GetSegmentsCount() && !cancelImportingChannels; i++)
+            {
+                auto channelPtr = rootItem->addMediaSegment(list.GetSegmentAt(i));
+                dbptr->AddChannelAndGroup(channelPtr);
+                rootItem->updateMaps(channelPtr);
+                emit updateImportedChannelIndex(i);
+                emit loadChannelIcon(channelPtr);
+            }
+        });
     endResetModel();
     emit channelsImported();
 }
-void ChannelsModel::AddList(CollectedInfo list)
+void ChannelsModel::AddList(XStreamCollectedInfo list)
 {
-    QThread* thread = new QThread();
+    QThread *thread = new QThread();
     auto worker = new LoadXstreamChannelsWorker(std::move(list));
     xstreamGroupImportingCount = 0;
     worker->moveToThread(thread);
     worker->setDestinationThread(this->thread());
-    connect( thread, &QThread::started, worker, &LoadXstreamChannelsWorker::importChannels);
-    connect( thread, &QThread::finished, thread, &QThread::deleteLater);
-    connect( worker, &LoadXstreamChannelsWorker::finished, this, &ChannelsModel::channelsImported);
-    connect( worker, &LoadXstreamChannelsWorker::finished, thread, &QThread::quit);
-    connect( worker, &LoadXstreamChannelsWorker::finished, worker, &LoadXstreamChannelsWorker::deleteLater);    
-    connect( worker, &LoadXstreamChannelsWorker::loadedGroup, this, [this](GroupTreeItem* group){
-        beginInsertRows(QModelIndex(), rootItem->childCount(), rootItem->childCount());
-        rootItem->addGroup(group);
-        endInsertRows();
-        xstreamGroupImportingCount++;
-        emit updateImportedChannelIndex(xstreamGroupImportingCount);
-    });
-    connect(this, SIGNAL(cancelImportChannels()), worker, SLOT(cancelImportChannels()));
+    connect(thread, &QThread::started, worker,
+            &LoadXstreamChannelsWorker::importChannels);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    connect(worker, &LoadXstreamChannelsWorker::finished, this,
+            &ChannelsModel::channelsImported);
+    connect(worker, &LoadXstreamChannelsWorker::finished, thread, &QThread::quit);
+    connect(worker, &LoadXstreamChannelsWorker::finished, worker,
+            &LoadXstreamChannelsWorker::deleteLater);
+    connect(worker, &LoadXstreamChannelsWorker::loadedGroup, this,
+            [this](GroupTreeItem *group)
+            {
+                beginInsertRows(QModelIndex(), rootItem->childCount(),
+                                rootItem->childCount());
+                rootItem->addGroup(group);
+                endInsertRows();
+                xstreamGroupImportingCount++;
+                emit updateImportedChannelIndex(xstreamGroupImportingCount);
+            });
+    connect(this, SIGNAL(cancelImportChannels()), worker,
+            SLOT(cancelImportChannels()));
     thread->start();
 }
-void ChannelsModel::AddToFavourites(AbstractChannelTreeItem* item)
+void ChannelsModel::AddToFavourites(AbstractChannelTreeItem *item)
 {
     auto [parent, child] = rootItem->addToFavourites(item);
     auto db = DatabaseProvider::GetDatabase();
@@ -167,7 +183,7 @@ void ChannelsModel::AddToFavourites(AbstractChannelTreeItem* item)
     beginInsertRows(parentIndex, child->row(), child->row());
     endInsertRows();
 }
-void ChannelsModel::RemoveFromFavourites(AbstractChannelTreeItem* item)
+void ChannelsModel::RemoveFromFavourites(AbstractChannelTreeItem *item)
 {
     auto id = item->getID();
     auto parentIndex = indexFromItem(item->getParent());
@@ -187,8 +203,9 @@ QHash<int, QByteArray> ChannelsModel::roleNames() const
     return roles;
 }
 
-QVariant ChannelsModel::headerData(int section, Qt::Orientation orientation,
-                            int role) const
+QVariant ChannelsModel::headerData(int section,
+                                   Qt::Orientation orientation,
+                                   int role) const
 {
     Q_UNUSED(section);
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
@@ -208,9 +225,11 @@ int ChannelsModel::rowCount(const QModelIndex &parent) const
     if (!parent.isValid())
         parentItem = rootItem.get();
     else
-        parentItem = static_cast<AbstractChannelTreeItem*>(parent.internalPointer());
+        parentItem =
+            static_cast<AbstractChannelTreeItem *>(parent.internalPointer());
 
-    //qDebug() << "parentItem->childCount():"<<parentItem->getName() <<" ," << parentItem->childCount();
+    // qDebug() << "parentItem->childCount():"<<parentItem->getName() <<" ," <<
+    // parentItem->childCount();
     return parentItem->childCount();
 }
 int ChannelsModel::columnCount(const QModelIndex &parent) const
@@ -225,8 +244,9 @@ QVariant ChannelsModel::data(const QModelIndex &index, int role) const
         return QVariant();
     }
 
-    AbstractChannelTreeItem* item = static_cast<AbstractChannelTreeItem*>(index.internalPointer());
-    switch(role)
+    AbstractChannelTreeItem *item =
+        static_cast<AbstractChannelTreeItem *>(index.internalPointer());
+    switch (role)
     {
     case Qt::DisplayRole:
     case NameRole:
@@ -234,10 +254,10 @@ QVariant ChannelsModel::data(const QModelIndex &index, int role) const
     case Qt::DecorationRole:
         return item->getIcon();
     case UriRole:
-        if(item->getType() == ChannelTreeItemType::Channel)
+        if (item->getType() == ChannelTreeItemType::Channel)
         {
-            ChannelTreeItem* channel = dynamic_cast<ChannelTreeItem*>(item);
-            if(channel)
+            ChannelTreeItem *channel = dynamic_cast<ChannelTreeItem *>(item);
+            if (channel)
             {
                 return channel->getUri();
             }
@@ -251,12 +271,12 @@ QVariant ChannelsModel::data(const QModelIndex &index, int role) const
             return QVariant{};
         }
     case IdRole:
-        if(item->getType() == ChannelTreeItemType::Channel)
+        if (item->getType() == ChannelTreeItemType::Channel)
         {
-            ChannelTreeItem* channel = dynamic_cast<ChannelTreeItem*>(item);
-            if(channel)
+            ChannelTreeItem *channel = dynamic_cast<ChannelTreeItem *>(item);
+            if (channel)
             {
-                return QVariant{(qlonglong)channel->getID()};
+                return QVariant{ (qlonglong)channel->getID() };
             }
             else
             {
@@ -278,7 +298,8 @@ QModelIndex ChannelsModel::index(int row, int column, const QModelIndex &parent)
     if (!parent.isValid())
         parentItem = rootItem.get();
     else
-        parentItem = static_cast<AbstractChannelTreeItem*>(parent.internalPointer());
+        parentItem =
+            static_cast<AbstractChannelTreeItem *>(parent.internalPointer());
 
     AbstractChannelTreeItem *childItem = parentItem->child(row);
     if (childItem)
@@ -287,7 +308,7 @@ QModelIndex ChannelsModel::index(int row, int column, const QModelIndex &parent)
     }
     return QModelIndex();
 }
-Qt::ItemFlags ChannelsModel::flags(const QModelIndex& index) const
+Qt::ItemFlags ChannelsModel::flags(const QModelIndex &index) const
 {
     if (!index.isValid())
     {
@@ -302,7 +323,8 @@ QModelIndex ChannelsModel::parent(const QModelIndex &index) const
     if (!index.isValid())
         return QModelIndex();
 
-    AbstractChannelTreeItem *childItem = static_cast<AbstractChannelTreeItem*>(index.internalPointer());
+    AbstractChannelTreeItem *childItem =
+        static_cast<AbstractChannelTreeItem *>(index.internalPointer());
     AbstractChannelTreeItem *parentItem = childItem->getParent();
 
     if (parentItem == rootItem.get())
@@ -312,49 +334,53 @@ QModelIndex ChannelsModel::parent(const QModelIndex &index) const
 
     return createIndex(parentItem->row(), 0, parentItem);
 }
-QModelIndex ChannelsModel::indexFromItem(AbstractChannelTreeItem* item)
+QModelIndex ChannelsModel::indexFromItem(AbstractChannelTreeItem *item)
 {
-    if(item == rootItem.get() || item == nullptr)
+    if (item == rootItem.get() || item == nullptr)
     {
         return QModelIndex();
     }
 
     return createIndex(item->row(), 0, item);
 }
-void ChannelsModel::AddChild(AbstractChannelTreeItem* child, const QModelIndex &parent)
-{    
+void ChannelsModel::AddChild(AbstractChannelTreeItem *child,
+                             const QModelIndex &parent)
+{
     AbstractChannelTreeItem *parentItem = nullptr;
-    if(!parent.isValid())
+    if (!parent.isValid())
     {
         parentItem = rootItem.get();
     }
     else
     {
-        parentItem = static_cast<AbstractChannelTreeItem*>(parent.internalPointer());
+        parentItem =
+            static_cast<AbstractChannelTreeItem *>(parent.internalPointer());
     }
-    beginInsertRows(parent,parentItem->childCount(),parentItem->childCount());
+    beginInsertRows(parent, parentItem->childCount(), parentItem->childCount());
     auto parentType = parentItem->getType();
     auto childType = child->getType();
-    switch(parentType)
+    switch (parentType)
     {
     case ChannelTreeItemType::Group:
-        if(childType == ChannelTreeItemType::Channel)
+        if (childType == ChannelTreeItemType::Channel)
         {
-            (static_cast<GroupTreeItem*>(parentItem))->addChannel(static_cast<ChannelTreeItem*>(child));
+            (static_cast<GroupTreeItem *>(parentItem))
+                ->addChannel(static_cast<ChannelTreeItem *>(child));
         }
-        if(childType == ChannelTreeItemType::Group)
+        if (childType == ChannelTreeItemType::Group)
         {
-            (static_cast<GroupTreeItem*>(parentItem))->addGroup(static_cast<GroupTreeItem*>(child));
+            (static_cast<GroupTreeItem *>(parentItem))
+                ->addGroup(static_cast<GroupTreeItem *>(child));
         }
-    break;
+        break;
     case ChannelTreeItemType::Root:
-        if(childType == ChannelTreeItemType::Channel)
+        if (childType == ChannelTreeItemType::Channel)
         {
-            rootItem->addChannel(static_cast<ChannelTreeItem*>(child));
+            rootItem->addChannel(static_cast<ChannelTreeItem *>(child));
         }
-        if(childType == ChannelTreeItemType::Group)
+        if (childType == ChannelTreeItemType::Group)
         {
-            rootItem->addGroup(static_cast<GroupTreeItem*>(child));
+            rootItem->addGroup(static_cast<GroupTreeItem *>(child));
         }
         break;
     default:
@@ -363,36 +389,38 @@ void ChannelsModel::AddChild(AbstractChannelTreeItem* child, const QModelIndex &
 
     endInsertRows();
 }
-void ChannelsModel::RemoveChild(AbstractChannelTreeItem* child, const QModelIndex &index)
+void ChannelsModel::RemoveChild(AbstractChannelTreeItem *child,
+                                const QModelIndex &index)
 {
     auto parent = child->getParent();
-    if(parent == nullptr) return;
-    beginRemoveRows(index.parent(), index.row(),index.row());
+    if (parent == nullptr)
+        return;
+    beginRemoveRows(index.parent(), index.row(), index.row());
     parent->removeChild(child);
     endRemoveRows();
 }
 
-void ChannelsModel::onChannelIconReady(ChannelTreeItem* channel)
+void ChannelsModel::onChannelIconReady(ChannelTreeItem *channel)
 {
-    if(cancelImportingChannels || !channel)
+    if (cancelImportingChannels || !channel)
     {
         return;
     }
     auto index = indexFromItem(channel);
-    emit dataChanged(index,index);
+    emit dataChanged(index, index);
 }
 void ChannelsModel::cancelImportChannelsSlot()
 {
     cancelImportingChannels = true;
-    if(loadingChannelsThread)
+    if (loadingChannelsThread)
     {
         loadingChannelsThread->cancelOperation();
     }
-    if(channelIconsWorker)
+    if (channelIconsWorker)
     {
         channelIconsWorker->CancelIconsLoading();
     }
-    if(loadingChannelIconsThread)
+    if (loadingChannelIconsThread)
     {
         loadingChannelIconsThread->quit();
         loadingChannelIconsThread->wait();

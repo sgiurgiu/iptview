@@ -24,6 +24,8 @@
         <file>icons/chatbox-ellipses-outline.png</file>
         <file>icons/scan.png</file>
         <file>icons/film-outline.png</file>
+        <file>icons/server.png</file>
+        <file>icons/remove-circle.png</file>
         <file>shaders/mpv.vsh</file>
         <file>shaders/mpvFullScreenCircles.fsh</file>
         <file>shaders/mpvWaitWheel.fsh</file>

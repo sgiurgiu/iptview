@@ -7,41 +7,53 @@
 #include "mprisdbus.h"
 #endif
 
-IPTViewMainWidget::IPTViewMainWidget(QNetworkAccessManager* networkManager,QWidget *parent)
-    : QSplitter{Qt::Horizontal, parent},
-    networkManager{networkManager}
+IPTViewMainWidget::IPTViewMainWidget(QNetworkAccessManager* networkManager,
+                                     QWidget* parent)
+: QSplitter{ Qt::Horizontal, parent }, networkManager{ networkManager }
 {
-    channelsWidget = new ChannelsWidget(this);
+    channelsWidget = new ChannelsWidget(networkManager, this);
 
-    mediaWidget = new MediaWidget(networkManager,this);
-    connect(mediaWidget, SIGNAL(showingFullScreen(bool)), this, SLOT(fullScreen(bool)));
-    connect(mediaWidget, SIGNAL(skipForward()), channelsWidget, SLOT(SkipForward()));
+    mediaWidget = new MediaWidget(networkManager, this);
+    connect(mediaWidget, SIGNAL(showingFullScreen(bool)), this,
+            SLOT(fullScreen(bool)));
+    connect(mediaWidget, SIGNAL(skipForward()), channelsWidget,
+            SLOT(SkipForward()));
     connect(mediaWidget, SIGNAL(skipBack()), channelsWidget, SLOT(SkipBack()));
 
     addWidget(channelsWidget);
     addWidget(mediaWidget);
 
-    QSizePolicy mediaExpandingPolicy{QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Expanding};
+    QSizePolicy mediaExpandingPolicy{ QSizePolicy::Policy::Expanding,
+                                      QSizePolicy::Policy::Expanding };
     mediaExpandingPolicy.setHorizontalStretch(1);
     mediaExpandingPolicy.setVerticalStretch(1);
     mediaWidget->setSizePolicy(mediaExpandingPolicy);
 
-    QSizePolicy channelsExpandingPolicy{QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Expanding};
+    QSizePolicy channelsExpandingPolicy{ QSizePolicy::Policy::Expanding,
+                                         QSizePolicy::Policy::Expanding };
     channelsExpandingPolicy.setHorizontalStretch(0);
     channelsExpandingPolicy.setVerticalStretch(1);
     channelsWidget->setSizePolicy(channelsExpandingPolicy);
 
-    connect(channelsWidget, SIGNAL(playChannel(int64_t)), mediaWidget, SLOT(PlayChannel(int64_t)));
-    connect(channelsWidget, SIGNAL(selectChannel(int64_t)), mediaWidget, SLOT(SelectChannel(int64_t)));
-    connect(channelsWidget, SIGNAL(updateImportedChannelIndex(qint64)),this, SIGNAL(updateImportedChannelIndex(qint64)));
-    connect(channelsWidget, SIGNAL(channelsImported()),this, SIGNAL(channelsImported()));
-    connect(channelsWidget, SIGNAL(enableSkipForward(bool)), mediaWidget, SLOT(EnableSkipForward(bool)));
-    connect(channelsWidget, SIGNAL(enableSkipBack(bool)), mediaWidget, SLOT(EnableSkipBack(bool)));
-    connect(this, SIGNAL(cancelImportChannels()), channelsWidget, SIGNAL(cancelImportChannels()));
+    connect(channelsWidget, SIGNAL(playChannel(int64_t)), mediaWidget,
+            SLOT(PlayChannel(int64_t)));
+    connect(channelsWidget, SIGNAL(playChannel(ChannelTreeItem*)), mediaWidget,
+            SLOT(PlayChannel(ChannelTreeItem*)));
+    connect(channelsWidget, SIGNAL(selectChannel(int64_t)), mediaWidget,
+            SLOT(SelectChannel(int64_t)));
+    connect(channelsWidget, SIGNAL(updateImportedChannelIndex(qint64)), this,
+            SIGNAL(updateImportedChannelIndex(qint64)));
+    connect(channelsWidget, SIGNAL(channelsImported()), this,
+            SIGNAL(channelsImported()));
+    connect(channelsWidget, SIGNAL(enableSkipForward(bool)), mediaWidget,
+            SLOT(EnableSkipForward(bool)));
+    connect(channelsWidget, SIGNAL(enableSkipBack(bool)), mediaWidget,
+            SLOT(EnableSkipBack(bool)));
+    connect(this, SIGNAL(cancelImportChannels()), channelsWidget,
+            SIGNAL(cancelImportChannels()));
 #ifdef IPTVIEW_DBUS
     setupMprisDBus();
 #endif
-
 }
 
 void IPTViewMainWidget::ImportPlaylist(M3UList list)
@@ -49,7 +61,7 @@ void IPTViewMainWidget::ImportPlaylist(M3UList list)
     channelsWidget->ImportPlaylist(std::move(list));
 }
 
-void IPTViewMainWidget::ImportPlaylist(CollectedInfo list)
+void IPTViewMainWidget::ImportPlaylist(XStreamCollectedInfo list)
 {
     channelsWidget->ImportPlaylist(std::move(list));
 }
@@ -62,10 +74,10 @@ M3UList IPTViewMainWidget::GetM3UList() const
 void IPTViewMainWidget::fullScreen(bool flag)
 {
     emit showingFullScreen(flag);
-    if(flag)
+    if (flag)
     {
         contentMargins = this->contentsMargins();
-        this->setContentsMargins(0,0,0,0);
+        this->setContentsMargins(0, 0, 0, 0);
         channelsWidget->hide();
     }
     else
@@ -90,24 +102,36 @@ void IPTViewMainWidget::setupMprisDBus()
     dbus = new MPRISDBus(this);
     dbus->setObjectName("MPRISDBus");
     dbus->SetInitialVolume(mediaWidget->GetVolume());
-    connect(mediaWidget, SIGNAL(showingFullScreen(bool)), dbus, SLOT(SetFullscreen(bool)));
-    connect(mediaWidget, SIGNAL(playingTrack(int64_t)), dbus, SLOT(PlayingChannel(int64_t)));    
-    connect(mediaWidget, SIGNAL(volumeToggledSignal(bool)), dbus, SLOT(VolumeToggledExternal(bool)));
-    connect(mediaWidget, SIGNAL(volumeChangedSignal(int)), dbus, SLOT(VolumeChangedExternal(int)));
+    connect(mediaWidget, SIGNAL(showingFullScreen(bool)), dbus,
+            SLOT(SetFullscreen(bool)));
+    connect(mediaWidget, SIGNAL(playingTrack(int64_t)), dbus,
+            SLOT(PlayingChannel(int64_t)));
+    connect(mediaWidget, SIGNAL(volumeToggledSignal(bool)), dbus,
+            SLOT(VolumeToggledExternal(bool)));
+    connect(mediaWidget, SIGNAL(volumeChangedSignal(int)), dbus,
+            SLOT(VolumeChangedExternal(int)));
 
     connect(dbus, SIGNAL(skipForward()), channelsWidget, SLOT(SkipForward()));
     connect(dbus, SIGNAL(skipBack()), channelsWidget, SLOT(SkipBack()));
-    connect(channelsWidget, SIGNAL(selectChannel(int64_t)), dbus, SLOT(SelectedChannel(int64_t)));
+    connect(channelsWidget, SIGNAL(selectChannel(int64_t)), dbus,
+            SLOT(SelectedChannel(int64_t)));
 
-    connect(channelsWidget, SIGNAL(enableSkipForward(bool)), dbus, SLOT(EnableSkipForward(bool)));
-    connect(channelsWidget, SIGNAL(enableSkipBack(bool)), dbus, SLOT(EnableSkipBack(bool)));
+    connect(channelsWidget, SIGNAL(enableSkipForward(bool)), dbus,
+            SLOT(EnableSkipForward(bool)));
+    connect(channelsWidget, SIGNAL(enableSkipBack(bool)), dbus,
+            SLOT(EnableSkipBack(bool)));
 
-
-    connect(dbus, SIGNAL(playSelectedChannel()), mediaWidget, SLOT(PlaySelected()));
-    connect(dbus, SIGNAL(pausePlayingSelectedChannel()), mediaWidget, SLOT(Pause()));
-    connect(dbus, SIGNAL(stopPlayingSelectedChannel()), mediaWidget, SLOT(Stop()));
-    connect(dbus, SIGNAL(playPauseSelectedChannel()), mediaWidget, SLOT(PlayPause()));
-    connect(dbus, SIGNAL(volumeChanged(int)), mediaWidget, SLOT(VolumeChanged(int)));
-    //connect(dbus, SIGNAL(volumeToggledSignal(bool)), mediaWidget, SLOT(VolumeToggled(bool)));
+    connect(dbus, SIGNAL(playSelectedChannel()), mediaWidget,
+            SLOT(PlaySelected()));
+    connect(dbus, SIGNAL(pausePlayingSelectedChannel()), mediaWidget,
+            SLOT(Pause()));
+    connect(dbus, SIGNAL(stopPlayingSelectedChannel()), mediaWidget,
+            SLOT(Stop()));
+    connect(dbus, SIGNAL(playPauseSelectedChannel()), mediaWidget,
+            SLOT(PlayPause()));
+    connect(dbus, SIGNAL(volumeChanged(int)), mediaWidget,
+            SLOT(VolumeChanged(int)));
+    // connect(dbus, SIGNAL(volumeToggledSignal(bool)), mediaWidget,
+    // SLOT(VolumeToggled(bool)));
 }
 #endif

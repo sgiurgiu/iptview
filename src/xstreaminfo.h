@@ -5,7 +5,7 @@
 #include <QVariant>
 #include <QList>
 
-struct AuthenticationInfo
+struct XStreamAuthenticationInfo
 {
     QString username;
     QString password;
@@ -16,19 +16,20 @@ struct AuthenticationInfo
     QString serverSchema;
     QString rtmpPort;
     QString timezone;
+    int64_t id;
 };
 
-struct CategoryInfo
+struct XStreamCategoryInfo
 {
     QString categoryId;
     QString categoryName;
 };
 
-struct CollectedInfo
+struct XStreamCollectedInfo
 {
-    AuthenticationInfo authInfo;
-    QList<CategoryInfo> liveCategories;
-    QList<CategoryInfo> vodCategories;
+    XStreamAuthenticationInfo authInfo;
+    QList<XStreamCategoryInfo> liveCategories;
+    QList<XStreamCategoryInfo> vodCategories;
 };
 
 #endif // XSTREAMINFO_H

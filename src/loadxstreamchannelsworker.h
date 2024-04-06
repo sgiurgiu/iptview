@@ -12,8 +12,8 @@ class LoadXstreamChannelsWorker : public QObject
 {
     Q_OBJECT
 public:
-    explicit LoadXstreamChannelsWorker(CollectedInfo list, QObject *parent = nullptr);
-    void setDestinationThread(QThread* thread)
+    explicit LoadXstreamChannelsWorker(XStreamCollectedInfo list, QObject *parent = nullptr);
+    void setDestinationThread(QThread *thread)
     {
         this->destinationThread = thread;
     }
@@ -26,16 +26,18 @@ public slots:
     }
 signals:
     void finished();
-    void loadedGroup(GroupTreeItem*);
+    void loadedGroup(GroupTreeItem *);
+
 private:
-    void loadGroup(const CategoryInfo& category,
-                   const QString& action);
+    void loadGroup(const XStreamCategoryInfo &category,
+                   const QString &action);
+
 private:
-    QNetworkAccessManager* networkManager;
+    QNetworkAccessManager *networkManager;
     qsizetype totalCategories;
-    CollectedInfo list;
+    XStreamCollectedInfo list;
     qsizetype processedCategories = 0;
-    QThread* destinationThread = nullptr;
+    QThread *destinationThread = nullptr;
     std::atomic_bool cancelled = {false};
 };
 

@@ -22,16 +22,16 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
-XstreamCodeLoginPage::XstreamCodeLoginPage(QNetworkAccessManager* networkManager,QWidget* parent):QWizardPage{parent},
-    networkManager{networkManager}
+XstreamCodeLoginPage::XstreamCodeLoginPage(QNetworkAccessManager *networkManager, QWidget *parent) : QWizardPage{parent},
+                                                                                                     networkManager{networkManager}
 {
     setTitle("Xstream-Code Login Information");
-    QLabel* urlLabel = new QLabel("URL:");
+    QLabel *urlLabel = new QLabel("URL:");
     urlEdit = new QLineEdit;
     urlEdit->setPlaceholderText("http://example.com");
-    QLabel* usernameLabel = new QLabel("Username:");
+    QLabel *usernameLabel = new QLabel("Username:");
     usernameEdit = new QLineEdit;
-    QLabel* passwordLabel = new QLabel("Password:");
+    QLabel *passwordLabel = new QLabel("Password:");
     passwordEdit = new QLineEdit;
     passwordEdit->setEchoMode(QLineEdit::Password);
     verifiedLabel = new QLabel("Not verified");
@@ -58,14 +58,14 @@ void XstreamCodeLoginPage::verifyInfo()
     QUrl url{urlEdit->text()};
     url.setPath("/player_api.php");
     QUrlQuery query;
-    query.addQueryItem("username",usernameEdit->text());
-    query.addQueryItem("password",passwordEdit->text());
+    query.addQueryItem("username", usernameEdit->text());
+    query.addQueryItem("password", passwordEdit->text());
     url.setQuery(query);
     request.setUrl(url);
     request.setHeader(QNetworkRequest::UserAgentHeader, "IPTView 1.0");
     auto reply = networkManager->get(request);
     connect(reply, &QNetworkReply::finished, this, [reply, this]()
-    {
+            {
         verifyButton->setEnabled(true);
         if(reply->error())
         {
@@ -77,7 +77,7 @@ void XstreamCodeLoginPage::verifyInfo()
 
         QJsonDocument doc = QJsonDocument::fromJson(response);
         auto object = doc.object();
-        AuthenticationInfo info;
+        XStreamAuthenticationInfo info;
         if(object.contains("user_info"))
         {
             auto userInfo = object["user_info"].toObject();
@@ -104,8 +104,7 @@ void XstreamCodeLoginPage::verifyInfo()
         this->SetAuthInfo(info);
         infoVariant.setValue(info);
         this->setField("info",infoVariant);
-        emit completeChanged();
-    });
+        emit completeChanged(); });
 }
 
 bool XstreamCodeLoginPage::isComplete() const
@@ -116,10 +115,10 @@ bool XstreamCodeLoginPage::isComplete() const
 void XstreamCodeLoginPage::initializePage()
 {
     usernameEdit->setFocus();
-    auto infoField = field("info").value<AuthenticationInfo>();
+    auto infoField = field("info").value<XStreamAuthenticationInfo>();
     usernameEdit->setText(infoField.username);
     passwordEdit->setText(infoField.password);
-    if(!info.serverUrl.isEmpty())
+    if (!info.serverUrl.isEmpty())
     {
         QUrl url;
         url.setHost(info.serverUrl);
@@ -129,20 +128,20 @@ void XstreamCodeLoginPage::initializePage()
     }
 }
 
-XstreamCodeCategoriesPage::XstreamCodeCategoriesPage(QNetworkAccessManager* networkManager,QWidget* parent):QWizardPage{parent},
-    networkManager{networkManager}
+XstreamCodeCategoriesPage::XstreamCodeCategoriesPage(QNetworkAccessManager *networkManager, QWidget *parent) : QWizardPage{parent},
+                                                                                                               networkManager{networkManager}
 {
     setTitle("Select categories");
-    QWidget* liveCategoriesTab = new QWidget();
-    QVBoxLayout* liveCategoriesLayout = new QVBoxLayout(this);
+    QWidget *liveCategoriesTab = new QWidget();
+    QVBoxLayout *liveCategoriesLayout = new QVBoxLayout(this);
     liveCategoriesView = new QListView();
     liveCategoriesModel = new QStandardItemModel(liveCategoriesView);
     liveCategoriesView->setModel(liveCategoriesModel);
     {
-        QPushButton* selectAllButton = new QPushButton("Select all");
-        QPushButton* deselectAllButton = new QPushButton("Deselect all");
-        QPushButton* invertSelectionButton = new QPushButton("Invert selection");
-        QHBoxLayout* buttonsLayout = new QHBoxLayout();
+        QPushButton *selectAllButton = new QPushButton("Select all");
+        QPushButton *deselectAllButton = new QPushButton("Deselect all");
+        QPushButton *invertSelectionButton = new QPushButton("Invert selection");
+        QHBoxLayout *buttonsLayout = new QHBoxLayout();
         buttonsLayout->addWidget(selectAllButton);
         buttonsLayout->addWidget(deselectAllButton);
         buttonsLayout->addWidget(invertSelectionButton);
@@ -154,16 +153,16 @@ XstreamCodeCategoriesPage::XstreamCodeCategoriesPage(QNetworkAccessManager* netw
     liveCategoriesLayout->addWidget(liveCategoriesView, 1);
     liveCategoriesTab->setLayout(liveCategoriesLayout);
 
-    QWidget* vodCategoriesTab = new QWidget();
-    QVBoxLayout* vodCategoriesLayout = new QVBoxLayout(this);
+    QWidget *vodCategoriesTab = new QWidget();
+    QVBoxLayout *vodCategoriesLayout = new QVBoxLayout(this);
     vodCategoriesView = new QListView;
     vodCategoriesModel = new QStandardItemModel(vodCategoriesView);
     vodCategoriesView->setModel(vodCategoriesModel);
     {
-        QPushButton* selectAllButton = new QPushButton("Select all");
-        QPushButton* deselectAllButton = new QPushButton("Deselect all");
-        QPushButton* invertSelectionButton = new QPushButton("Invert selection");
-        QHBoxLayout* buttonsLayout = new QHBoxLayout();
+        QPushButton *selectAllButton = new QPushButton("Select all");
+        QPushButton *deselectAllButton = new QPushButton("Deselect all");
+        QPushButton *invertSelectionButton = new QPushButton("Invert selection");
+        QHBoxLayout *buttonsLayout = new QHBoxLayout();
         buttonsLayout->addWidget(selectAllButton);
         buttonsLayout->addWidget(deselectAllButton);
         buttonsLayout->addWidget(invertSelectionButton);
@@ -175,23 +174,23 @@ XstreamCodeCategoriesPage::XstreamCodeCategoriesPage(QNetworkAccessManager* netw
     vodCategoriesLayout->addWidget(vodCategoriesView, 1);
     vodCategoriesTab->setLayout(vodCategoriesLayout);
 
-    QTabWidget* tab = new QTabWidget(this);
+    QTabWidget *tab = new QTabWidget(this);
     tab->addTab(liveCategoriesTab, "Live Streams");
     tab->addTab(vodCategoriesTab, "VOD Streams");
 
-    QVBoxLayout* layout = new QVBoxLayout(this);
-    layout->addWidget(tab,1);
+    QVBoxLayout *layout = new QVBoxLayout(this);
+    layout->addWidget(tab, 1);
     setLayout(layout);
     setFinalPage(true);
 }
 void XstreamCodeCategoriesPage::initializePage()
 {
-    auto infoField = field("info").value<AuthenticationInfo>();
+    auto infoField = field("info").value<XStreamAuthenticationInfo>();
     grabLiveCategories(infoField);
     grabVodCategories(infoField);
 }
 
-void XstreamCodeCategoriesPage::grabLiveCategories(const AuthenticationInfo& info)
+void XstreamCodeCategoriesPage::grabLiveCategories(const XStreamAuthenticationInfo &info)
 {
     QNetworkRequest request;
     QUrl url;
@@ -200,15 +199,15 @@ void XstreamCodeCategoriesPage::grabLiveCategories(const AuthenticationInfo& inf
     url.setPort(info.serverPort.toInt());
     url.setPath("/player_api.php");
     QUrlQuery query;
-    query.addQueryItem("username",info.username);
-    query.addQueryItem("password",info.password);
-    query.addQueryItem("action","get_live_categories");
+    query.addQueryItem("username", info.username);
+    query.addQueryItem("password", info.password);
+    query.addQueryItem("action", "get_live_categories");
     url.setQuery(query);
     request.setUrl(url);
     request.setHeader(QNetworkRequest::UserAgentHeader, "IPTView 1.0");
     auto reply = networkManager->get(request);
     connect(reply, &QNetworkReply::finished, this, [reply, this]()
-    {
+            {
         if(reply->error())
         {
             reply->deleteLater();
@@ -223,7 +222,7 @@ void XstreamCodeCategoriesPage::grabLiveCategories(const AuthenticationInfo& inf
         {
             if(!cat.isObject()) continue;
             auto catObject = cat.toObject();
-            CategoryInfo catInfo;
+            XStreamCategoryInfo catInfo;
             catInfo.categoryId = catObject.value("category_id").toString("");
             catInfo.categoryName = catObject.value("category_name").toString("");
             QStandardItem* standardItem = new QStandardItem(catInfo.categoryName);
@@ -232,10 +231,9 @@ void XstreamCodeCategoriesPage::grabLiveCategories(const AuthenticationInfo& inf
             standardItem->setEditable(false);
             standardItem->setData(QVariant::fromValue(catInfo));
             liveCategoriesModel->appendRow(standardItem);
-        }
-    });
+        } });
 }
-void XstreamCodeCategoriesPage::grabVodCategories(const AuthenticationInfo& info)
+void XstreamCodeCategoriesPage::grabVodCategories(const XStreamAuthenticationInfo &info)
 {
     QNetworkRequest request;
     QUrl url;
@@ -244,15 +242,15 @@ void XstreamCodeCategoriesPage::grabVodCategories(const AuthenticationInfo& info
     url.setPort(info.serverPort.toInt());
     url.setPath("/player_api.php");
     QUrlQuery query;
-    query.addQueryItem("username",info.username);
-    query.addQueryItem("password",info.password);
-    query.addQueryItem("action","get_vod_categories");
+    query.addQueryItem("username", info.username);
+    query.addQueryItem("password", info.password);
+    query.addQueryItem("action", "get_vod_categories");
     url.setQuery(query);
     request.setUrl(url);
     request.setHeader(QNetworkRequest::UserAgentHeader, "IPTView 1.0");
     auto reply = networkManager->get(request);
     connect(reply, &QNetworkReply::finished, this, [reply, this]()
-    {
+            {
         if(reply->error())
         {
             reply->deleteLater();
@@ -266,7 +264,7 @@ void XstreamCodeCategoriesPage::grabVodCategories(const AuthenticationInfo& info
         {
             if(!cat.isObject()) continue;
             auto catObject = cat.toObject();
-            CategoryInfo catInfo;
+            XStreamCategoryInfo catInfo;
             catInfo.categoryId = catObject.value("category_id").toString("");
             catInfo.categoryName = catObject.value("category_name").toString("");
             QStandardItem* standardItem = new QStandardItem(catInfo.categoryName);
@@ -275,13 +273,12 @@ void XstreamCodeCategoriesPage::grabVodCategories(const AuthenticationInfo& info
             standardItem->setCheckState(Qt::CheckState::Unchecked);
             standardItem->setEditable(false);
             vodCategoriesModel->appendRow(standardItem);
-        }
-    });
+        } });
 }
 
 void XstreamCodeCategoriesPage::selectAllLive()
 {
-    for(int i=0;i<liveCategoriesModel->rowCount();i++)
+    for (int i = 0; i < liveCategoriesModel->rowCount(); i++)
     {
         auto item = liveCategoriesModel->item(i);
         item->setCheckState(Qt::CheckState::Checked);
@@ -289,7 +286,7 @@ void XstreamCodeCategoriesPage::selectAllLive()
 }
 void XstreamCodeCategoriesPage::deselectAllLive()
 {
-    for(int i=0;i<liveCategoriesModel->rowCount();i++)
+    for (int i = 0; i < liveCategoriesModel->rowCount(); i++)
     {
         auto item = liveCategoriesModel->item(i);
         item->setCheckState(Qt::CheckState::Unchecked);
@@ -297,7 +294,7 @@ void XstreamCodeCategoriesPage::deselectAllLive()
 }
 void XstreamCodeCategoriesPage::invertSelectionLive()
 {
-    for(int i=0;i<liveCategoriesModel->rowCount();i++)
+    for (int i = 0; i < liveCategoriesModel->rowCount(); i++)
     {
         auto item = liveCategoriesModel->item(i);
         auto checkState = item->checkState();
@@ -306,7 +303,7 @@ void XstreamCodeCategoriesPage::invertSelectionLive()
 }
 void XstreamCodeCategoriesPage::selectAllVod()
 {
-    for(int i=0;i<vodCategoriesModel->rowCount();i++)
+    for (int i = 0; i < vodCategoriesModel->rowCount(); i++)
     {
         auto item = vodCategoriesModel->item(i);
         item->setCheckState(Qt::CheckState::Checked);
@@ -314,7 +311,7 @@ void XstreamCodeCategoriesPage::selectAllVod()
 }
 void XstreamCodeCategoriesPage::deselectAllVod()
 {
-    for(int i=0;i<vodCategoriesModel->rowCount();i++)
+    for (int i = 0; i < vodCategoriesModel->rowCount(); i++)
     {
         auto item = vodCategoriesModel->item(i);
         item->setCheckState(Qt::CheckState::Unchecked);
@@ -322,7 +319,7 @@ void XstreamCodeCategoriesPage::deselectAllVod()
 }
 void XstreamCodeCategoriesPage::invertSelectionVod()
 {
-    for(int i=0;i<vodCategoriesModel->rowCount();i++)
+    for (int i = 0; i < vodCategoriesModel->rowCount(); i++)
     {
         auto item = vodCategoriesModel->item(i);
         auto checkState = item->checkState();
@@ -333,29 +330,29 @@ void XstreamCodeCategoriesPage::invertSelectionVod()
 bool XstreamCodeCategoriesPage::validatePage()
 {
 
-    for(int i=0;i<liveCategoriesModel->rowCount();i++)
+    for (int i = 0; i < liveCategoriesModel->rowCount(); i++)
     {
         auto item = liveCategoriesModel->item(i);
         auto checkState = item->checkState();
-        if(checkState == Qt::CheckState::Checked)
+        if (checkState == Qt::CheckState::Checked)
         {
-            liveCategories.append(item->data().value<CategoryInfo>());
+            liveCategories.append(item->data().value<XStreamCategoryInfo>());
         }
     }
-    for(int i=0;i<vodCategoriesModel->rowCount();i++)
+    for (int i = 0; i < vodCategoriesModel->rowCount(); i++)
     {
         auto item = vodCategoriesModel->item(i);
         auto checkState = item->checkState();
-        if(checkState == Qt::CheckState::Checked)
+        if (checkState == Qt::CheckState::Checked)
         {
-            vodCategories.append(item->data().value<CategoryInfo>());
+            vodCategories.append(item->data().value<XStreamCategoryInfo>());
         }
     }
 
     return !(liveCategories.empty() && vodCategories.empty());
 }
 
-CollectedInfo XstreamCodeWizard::ImportXstreamCodes(QWidget* parent,QNetworkAccessManager* networkManager)
+XStreamCollectedInfo XstreamCodeWizard::ImportXstreamCodes(QWidget *parent, QNetworkAccessManager *networkManager)
 {
     QWizard wizard(parent, Qt::Dialog);
     wizard.setModal(true);
@@ -363,10 +360,10 @@ CollectedInfo XstreamCodeWizard::ImportXstreamCodes(QWidget* parent,QNetworkAcce
     wizard.addPage(new XstreamCodeLoginPage(networkManager));
     auto categoriesPage = new XstreamCodeCategoriesPage(networkManager);
     wizard.addPage(categoriesPage);
-    CollectedInfo info;
-    if(wizard.exec() == QDialog::Accepted)
+    XStreamCollectedInfo info;
+    if (wizard.exec() == QDialog::Accepted)
     {
-        info.authInfo = wizard.field("info").value<AuthenticationInfo>();
+        info.authInfo = wizard.field("info").value<XStreamAuthenticationInfo>();
         info.liveCategories = categoriesPage->GetLiveCategories();
         info.vodCategories = categoriesPage->GetVodCategories();
     }

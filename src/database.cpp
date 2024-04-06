@@ -3,18 +3,17 @@
 #include "channeltreeitem.h"
 #include "grouptreeitem.h"
 
-
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QThread>
 
-Database::Database(ConstructorKey, const std::filesystem::path& dbPath)
+Database::Database(ConstructorKey, const std::filesystem::path &dbPath)
 {
     auto name = QString("DB%1").arg(qintptr(QThread::currentThreadId()));
-    if(QSqlDatabase::contains(name))
+    if (QSqlDatabase::contains(name))
     {
         db = QSqlDatabase::database(name);
-        if(!db.isValid())
+        if (!db.isValid())
         {
             db = QSqlDatabase::addDatabase("QSQLITE", name);
             db.setConnectOptions("SQLITE_CONFIG_SERIALIZED");
@@ -29,9 +28,9 @@ Database::Database(ConstructorKey, const std::filesystem::path& dbPath)
         db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=30000");
         db.setDatabaseName(dbPath.string().c_str());
     }
-    if(!db.isValid() || !db.open())
+    if (!db.isValid() || !db.open())
     {
-        throw DatabaseException(QString{("Cannot open database "+dbPath.string()).c_str()});
+        throw DatabaseException(QString{("Cannot open database " + dbPath.string()).c_str()});
     }
 
     executeStatement("PRAGMA journal_mode=WAL", "Cannot enable WAL journal mode");
@@ -41,31 +40,33 @@ void Database::SetupSchema()
 {
     executeStatement("CREATE TABLE IF NOT EXISTS SCHEMA_VERSION(VERSION INT)", "Cannot create table SCHEMA_VERSION");
     executeStatement("CREATE TABLE IF NOT EXISTS CHANNEL_GROUPS(GROUP_ID INTEGER NOT NULL PRIMARY KEY, "
-                     "PARENT_GROUP_ID INTEGER, NAME TEXT, FOREIGN KEY (PARENT_GROUP_ID) REFERENCES CHANNEL_GROUPS(GROUP_ID))", "Cannot create table CHANNEL_GROUPS");
+                     "PARENT_GROUP_ID INTEGER, NAME TEXT, FOREIGN KEY (PARENT_GROUP_ID) REFERENCES CHANNEL_GROUPS(GROUP_ID))",
+                     "Cannot create table CHANNEL_GROUPS");
     executeStatement("CREATE TABLE IF NOT EXISTS CHANNELS(CHANNEL_ID INTEGER NOT NULL PRIMARY KEY, "
                      "GROUP_ID INTEGER, NAME TEXT, URI TEXT, LOGO_URI TEXT, LOGO BLOB, FAVOURITE BOOLEAN DEFAULT 0 NOT NULL CHECK (FAVOURITE IN (0, 1)),"
-                     "FOREIGN KEY (GROUP_ID) REFERENCES CHANNEL_GROUPS(GROUP_ID))", "Cannot create table CHANNELS");
+                     "FOREIGN KEY (GROUP_ID) REFERENCES CHANNEL_GROUPS(GROUP_ID))",
+                     "Cannot create table CHANNELS");
     executeStatement("CREATE TABLE IF NOT EXISTS XSTREAM_SERVERS(SERVER_ID INTEGER NOT NULL PRIMARY KEY,"
-                 "HOST TEXT, PORT TEXT, SERVER_URL_SCHEMA TEXT, USERNAME TEXT, PASSWORD TEXT, TIMEZONE TEXT)", "Cannot create table XSTREAM_SERVERS");
+                     "HOST TEXT, PORT TEXT, SERVER_URL_SCHEMA TEXT, USERNAME TEXT, PASSWORD TEXT, TIMEZONE TEXT)",
+                     "Cannot create table XSTREAM_SERVERS");
 
     int version = getSchemaVersion();
-    if(version < 1)
+    if (version < 1)
     {
         executeStatement("ALTER TABLE CHANNELS ADD COLUMN EPG_CHANNEL_URI TEXT", "Cannot alter table CHANNELS");
         executeStatement("ALTER TABLE CHANNELS ADD COLUMN EPG_CHANNEL_ID TEXT", "Cannot alter table CHANNELS");
         incrementSchemaVersion(version);
-
     }
-    if(version < 2)
+    if (version < 2)
     {
         executeStatement("ALTER TABLE CHANNELS ADD COLUMN XSTREAM_SERVER_ID INT", "Cannot alter table CHANNELS");
         incrementSchemaVersion(version);
     }
 }
-void Database::executeStatement(const char* sql, const char* errMsg) const
+void Database::executeStatement(const char *sql, const char *errMsg) const
 {
     QSqlQuery query{db};
-    if(!query.exec(sql))
+    if (!query.exec(sql))
     {
         throw DatabaseException(errMsg + query.lastError().text());
     }
@@ -75,17 +76,17 @@ QString Database::GetXStreamServerTimezone(int64_t id) const
     QSqlQuery query{db};
     query.prepare("SELECT TIMEZONE FROM XSTREAM_SERVERS WHERE SERVER_ID = ?");
     query.bindValue(0, (qint64)id);
-    if(!query.exec())
+    if (!query.exec())
     {
         throw DatabaseException("Cannot select from XSTREAM_SERVERS " + query.lastError().text());
     }
-    if(query.next())
+    if (query.next())
     {
         return query.value(0).toString();
     }
     return "";
 }
-int64_t Database::AddRetrieveXStreamServer(const AuthenticationInfo& xstreamServerInfo) const
+int64_t Database::AddRetrieveXStreamServer(const XStreamAuthenticationInfo &xstreamServerInfo) const
 {
     {
         QSqlQuery query{db};
@@ -96,11 +97,11 @@ int64_t Database::AddRetrieveXStreamServer(const AuthenticationInfo& xstreamServ
         query.bindValue(3, xstreamServerInfo.username);
         query.bindValue(4, xstreamServerInfo.password);
         query.bindValue(5, xstreamServerInfo.timezone);
-        if(!query.exec())
+        if (!query.exec())
         {
             throw DatabaseException("Cannot select from XSTREAM_SERVERS " + query.lastError().text());
         }
-        if(query.next())
+        if (query.next())
         {
             return query.value(0).toLongLong();
         }
@@ -116,11 +117,11 @@ int64_t Database::AddRetrieveXStreamServer(const AuthenticationInfo& xstreamServ
         query.bindValue(4, xstreamServerInfo.password);
         query.bindValue(5, xstreamServerInfo.timezone);
 
-        if(!query.exec())
+        if (!query.exec())
         {
             throw DatabaseException("Cannot insert into XSTREAM_SERVERS " + query.lastError().text());
         }
-        if(query.next())
+        if (query.next())
         {
             return query.value(0).toLongLong();
         }
@@ -129,37 +130,62 @@ int64_t Database::AddRetrieveXStreamServer(const AuthenticationInfo& xstreamServ
     return -1;
 }
 
+std::vector<XStreamAuthenticationInfo> Database::GetAllXStreamServers() const
+{
+    std::vector<XStreamAuthenticationInfo> servers;
+    QSqlQuery query{db};
+    query.prepare("SELECT SERVER_ID, HOST, PORT, SERVER_URL_SCHEMA, USERNAME, PASSWORD, TIMEZONE FROM XSTREAM_SERVERS");
+    if (!query.exec())
+    {
+        throw DatabaseException("Cannot select from XSTREAM_SERVERS " + query.lastError().text());
+    }
+    while (query.next())
+    {
+        XStreamAuthenticationInfo server;
+        server.id = query.value(0).toLongLong();
+        server.serverUrl = query.value(1).toString();
+        server.serverPort = query.value(2).toString();
+        server.serverSchema = query.value(3).toString();
+        server.username = query.value(4).toString();
+        server.password = query.value(5).toString();
+        server.timezone = query.value(6).toString();
+        servers.push_back(std::move(server));
+    }
+
+    return servers;
+}
+
 int Database::GetGroupsCount()
 {
     QSqlQuery query{db};
-    if(!query.exec("SELECT COUNT(*) FROM CHANNEL_GROUPS WHERE PARENT_GROUP_ID IS NULL"))
+    if (!query.exec("SELECT COUNT(*) FROM CHANNEL_GROUPS WHERE PARENT_GROUP_ID IS NULL"))
     {
         throw DatabaseException("Cannot select from CHANNEL_GROUPS " + query.lastError().text());
     }
-    if(query.next())
+    if (query.next())
     {
         return query.value(0).toInt();
     }
     return 0;
 }
-GroupTreeItem* Database::AddGroup(const QString& text, std::optional<int64_t> parentGroupId) const
+GroupTreeItem *Database::AddGroup(const QString &text, std::optional<int64_t> parentGroupId) const
 {
-    auto group = new GroupTreeItem(text, (RootTreeItem*)nullptr);
-    addGroup(group,parentGroupId);
+    auto group = new GroupTreeItem(text, (RootTreeItem *)nullptr);
+    addGroup(group, parentGroupId);
     return group;
 }
-std::vector<ChannelTreeItem*> Database::GetFavouriteChannels() const
+std::vector<ChannelTreeItem *> Database::GetFavouriteChannels() const
 {
-    std::vector<ChannelTreeItem*> channels;
+    std::vector<ChannelTreeItem *> channels;
     QSqlQuery query{db};
     query.prepare("SELECT CHANNEL_ID,NAME,URI,LOGO_URI,LOGO,EPG_CHANNEL_ID,EPG_CHANNEL_URI,XSTREAM_SERVER_ID FROM CHANNELS WHERE FAVOURITE = 1");
 
-    if(!query.exec())
+    if (!query.exec())
     {
         throw DatabaseException("Cannot select from CHANNELS " + query.lastError().text());
     }
 
-    while(query.next())
+    while (query.next())
     {
         int64_t id = query.value(0).toLongLong();
         QString name = query.value(1).toString();
@@ -169,7 +195,7 @@ std::vector<ChannelTreeItem*> Database::GetFavouriteChannels() const
         QString epgChannelId = query.value(5).toString();
         QString epgChannelUri = query.value(6).toString();
         int64_t xstreamServerId = query.value(7).toLongLong();
-        auto channel = new ChannelTreeItem(name,uri,logoUri,logo,nullptr);
+        auto channel = new ChannelTreeItem(name, uri, logoUri, logo, nullptr);
         channel->setID(id);
         channel->setEpgChannelId(epgChannelId);
         channel->setEpgChannelUri(epgChannelUri);
@@ -178,18 +204,18 @@ std::vector<ChannelTreeItem*> Database::GetFavouriteChannels() const
     }
     return channels;
 }
-ChannelTreeItem* Database::GetChannel(int64_t id) const
+ChannelTreeItem *Database::GetChannel(int64_t id) const
 {
     QSqlQuery query{db};
     query.prepare("SELECT NAME,URI,LOGO_URI,LOGO,EPG_CHANNEL_ID,EPG_CHANNEL_URI,XSTREAM_SERVER_ID FROM CHANNELS WHERE CHANNEL_ID = ?");
     query.bindValue(0, static_cast<qlonglong>(id));
 
-    if(!query.exec())
+    if (!query.exec())
     {
         throw DatabaseException("Cannot select from CHANNELS " + query.lastError().text());
     }
 
-    if(query.next())
+    if (query.next())
     {
         QString name = query.value(0).toString();
         QString uri = query.value(1).toString();
@@ -198,7 +224,7 @@ ChannelTreeItem* Database::GetChannel(int64_t id) const
         QString epgChannelId = query.value(4).toString();
         QString epgChannelUri = query.value(5).toString();
         int64_t xstreamServerId = query.value(6).toLongLong();
-        auto channel = new ChannelTreeItem(name,uri,logoUri,logo,nullptr);
+        auto channel = new ChannelTreeItem(name, uri, logoUri, logo, nullptr);
         channel->setID(id);
         channel->setEpgChannelId(epgChannelId);
         channel->setEpgChannelUri(epgChannelUri);
@@ -208,29 +234,29 @@ ChannelTreeItem* Database::GetChannel(int64_t id) const
     return nullptr;
 }
 
-void Database::LoadChannelsAndGroups(RootTreeItem* rootItem) const
+void Database::LoadChannelsAndGroups(RootTreeItem *rootItem) const
 {
     loadAllGroups(rootItem);
     int childCount = rootItem->childCount();
-    for(int i=0;i<childCount;i++)
+    for (int i = 0; i < childCount; i++)
     {
         auto child = rootItem->child(i);
-        if(child->getType() == ChannelTreeItemType::Group)
+        if (child->getType() == ChannelTreeItemType::Group)
         {
-            loadGroupsChannels(dynamic_cast<GroupTreeItem*>(child));
+            loadGroupsChannels(dynamic_cast<GroupTreeItem *>(child));
         }
     }
     loadRootChannels(rootItem);
 }
-std::vector<GroupTreeItem*> Database::GetAllGroups() const
+std::vector<GroupTreeItem *> Database::GetAllGroups() const
 {
-    std::vector<GroupTreeItem*> groups;
+    std::vector<GroupTreeItem *> groups;
     QSqlQuery query{db};
-    if(!query.exec("SELECT GROUP_ID,NAME FROM CHANNEL_GROUPS WHERE PARENT_GROUP_ID IS NULL ORDER BY GROUP_ID"))
+    if (!query.exec("SELECT GROUP_ID,NAME FROM CHANNEL_GROUPS WHERE PARENT_GROUP_ID IS NULL ORDER BY GROUP_ID"))
     {
         throw DatabaseException("Cannot select from CHANNEL_GROUPS " + query.lastError().text());
     }
-    while(query.next())
+    while (query.next())
     {
         int64_t id = query.value(0).toLongLong();
         QString name = query.value(1).toString();
@@ -241,18 +267,18 @@ std::vector<GroupTreeItem*> Database::GetAllGroups() const
     }
     return groups;
 }
-void Database::LoadChannels(GroupTreeItem* parentItem) const
+void Database::LoadChannels(GroupTreeItem *parentItem) const
 {
     loadGroupsChannels(parentItem);
 }
-void Database::loadRootChannels(RootTreeItem* rootItem) const
+void Database::loadRootChannels(RootTreeItem *rootItem) const
 {
     QSqlQuery query{db};
-    if(!query.exec("SELECT CHANNEL_ID,NAME,URI,LOGO_URI,LOGO,FAVOURITE,EPG_CHANNEL_ID,EPG_CHANNEL_URI,XSTREAM_SERVER_ID FROM CHANNELS WHERE GROUP_ID IS NULL ORDER BY CHANNEL_ID"))
+    if (!query.exec("SELECT CHANNEL_ID,NAME,URI,LOGO_URI,LOGO,FAVOURITE,EPG_CHANNEL_ID,EPG_CHANNEL_URI,XSTREAM_SERVER_ID FROM CHANNELS WHERE GROUP_ID IS NULL ORDER BY CHANNEL_ID"))
     {
         throw DatabaseException("Cannot select from CHANNELS " + query.lastError().text());
     }
-    while(query.next())
+    while (query.next())
     {
         int64_t id = query.value(0).toLongLong();
         QString name = query.value(1).toString();
@@ -271,23 +297,23 @@ void Database::loadRootChannels(RootTreeItem* rootItem) const
         channel->setXStreamServerId(xstreamServerId);
 
         rootItem->addChannel(channel);
-        if(favourite)
+        if (favourite)
         {
             rootItem->addToFavourites(channel);
         }
     }
 }
-void Database::loadGroupsChannels(GroupTreeItem* parent) const
+void Database::loadGroupsChannels(GroupTreeItem *parent) const
 {
     QSqlQuery query{db};
     query.prepare("SELECT CHANNEL_ID,NAME,URI,LOGO_URI,LOGO,FAVOURITE,EPG_CHANNEL_ID,EPG_CHANNEL_URI,XSTREAM_SERVER_ID FROM CHANNELS WHERE GROUP_ID = ? ORDER BY CHANNEL_ID");
     query.bindValue(0, static_cast<qlonglong>(parent->getID()));
 
-    if(!query.exec())
+    if (!query.exec())
     {
         throw DatabaseException("Cannot select from CHANNELS " + query.lastError().text());
     }
-    while(query.next())
+    while (query.next())
     {
         int64_t id = query.value(0).toLongLong();
         QString name = query.value(1).toString();
@@ -308,14 +334,14 @@ void Database::loadGroupsChannels(GroupTreeItem* parent) const
         parent->addChannel(channel);
     }
 }
-void Database::loadAllGroups(RootTreeItem* rootItem) const
+void Database::loadAllGroups(RootTreeItem *rootItem) const
 {
     QSqlQuery query{db};
-    if(!query.exec("SELECT GROUP_ID,NAME FROM CHANNEL_GROUPS WHERE PARENT_GROUP_ID IS NULL ORDER BY GROUP_ID"))
+    if (!query.exec("SELECT GROUP_ID,NAME FROM CHANNEL_GROUPS WHERE PARENT_GROUP_ID IS NULL ORDER BY GROUP_ID"))
     {
         throw DatabaseException("Cannot select from CHANNEL_GROUPS " + query.lastError().text());
     }
-    while(query.next())
+    while (query.next())
     {
         int64_t id = query.value(0).toLongLong();
         QString name = query.value(1).toString();
@@ -325,16 +351,16 @@ void Database::loadAllGroups(RootTreeItem* rootItem) const
         rootItem->addGroup(group);
     }
 }
-void Database::loadChildGroups(GroupTreeItem* parent) const
+void Database::loadChildGroups(GroupTreeItem *parent) const
 {
     QSqlQuery query{db};
     query.prepare("SELECT GROUP_ID,NAME FROM CHANNEL_GROUPS WHERE PARENT_GROUP_ID = ? ORDER BY GROUP_ID");
     query.bindValue(0, static_cast<qlonglong>(parent->getID()));
-    if(!query.exec())
+    if (!query.exec())
     {
         throw DatabaseException("Cannot select from CHANNEL_GROUPS " + query.lastError().text());
     }
-    while(query.next())
+    while (query.next())
     {
         int64_t id = query.value(0).toLongLong();
         QString name = query.value(1).toString();
@@ -345,7 +371,7 @@ void Database::loadChildGroups(GroupTreeItem* parent) const
     }
 }
 
-void Database::SetChannelLogo(ChannelTreeItem* channel) const
+void Database::SetChannelLogo(ChannelTreeItem *channel) const
 {
     QSqlQuery query{db};
     query.prepare("UPDATE CHANNELS SET LOGO =? WHERE CHANNEL_ID =?");
@@ -353,25 +379,25 @@ void Database::SetChannelLogo(ChannelTreeItem* channel) const
     query.bindValue(0, channel->getLogo());
     query.bindValue(1, static_cast<qlonglong>(channel->getID()));
 
-    if(!query.exec())
+    if (!query.exec())
     {
         throw DatabaseException("Cannot update CHANNELS " + query.lastError().text());
     }
 }
-ChannelTreeItem* Database::AddChannel(const QString& name,const QString& url,const QString& icon, std::optional<int64_t> parentGroupId) const
+ChannelTreeItem *Database::AddChannel(const QString &name, const QString &url, const QString &icon, std::optional<int64_t> parentGroupId) const
 {
     auto channel = new ChannelTreeItem(name, url, icon, QByteArray{}, nullptr);
     addChannel(channel, parentGroupId);
     return channel;
 }
-void Database::AddChannelAndGroup(ChannelTreeItem* channel) const
+void Database::AddChannelAndGroup(ChannelTreeItem *channel) const
 {
     auto parent = channel->getParent();
-    if(parent && parent->getType() == ChannelTreeItemType::Group)
+    if (parent && parent->getType() == ChannelTreeItemType::Group)
     {
-        auto group = dynamic_cast<GroupTreeItem*>(parent);
+        auto group = dynamic_cast<GroupTreeItem *>(parent);
         assert(((void)"AbstractChannelTreeItem of type Group is not GroupTreeItem", group != nullptr));
-        if(group->getID() < 0)
+        if (group->getID() < 0)
         {
             addGroupTree(group);
         }
@@ -383,7 +409,7 @@ void Database::AddChannelAndGroup(ChannelTreeItem* channel) const
     }
 }
 
-void Database::addChannel(ChannelTreeItem* channel, std::optional<int64_t> groupId) const
+void Database::addChannel(ChannelTreeItem *channel, std::optional<int64_t> groupId) const
 {
     QSqlQuery query{db};
     query.prepare("INSERT INTO CHANNELS(NAME, URI, LOGO_URI, LOGO, FAVOURITE, GROUP_ID,EPG_CHANNEL_ID,EPG_CHANNEL_URI,XSTREAM_SERVER_ID) VALUES (?,?,?,?,0,?,?,?,?) RETURNING CHANNEL_ID");
@@ -393,7 +419,7 @@ void Database::addChannel(ChannelTreeItem* channel, std::optional<int64_t> group
     query.bindValue(2, channel->getLogoUri());
     query.bindValue(3, channel->getLogo());
 
-    if(groupId)
+    if (groupId)
     {
         query.bindValue(4, static_cast<qlonglong>(groupId.value()));
     }
@@ -404,25 +430,25 @@ void Database::addChannel(ChannelTreeItem* channel, std::optional<int64_t> group
     query.bindValue(5, channel->getEpgChannelId());
     query.bindValue(6, channel->getEpgChannelUri());
     query.bindValue(7, (qint64)channel->getXStreamServerId());
-    if(!query.exec())
+    if (!query.exec())
     {
         throw DatabaseException("Cannot insert into CHANNELS " + query.lastError().text());
     }
 
-    if(query.next())
+    if (query.next())
     {
         channel->setID(query.value(0).toLongLong());
     }
 }
 
-void Database::addGroup(GroupTreeItem* group, std::optional<int64_t> parentGroupId) const
+void Database::addGroup(GroupTreeItem *group, std::optional<int64_t> parentGroupId) const
 {
     QSqlQuery query{db};
     query.prepare("INSERT INTO CHANNEL_GROUPS(NAME, PARENT_GROUP_ID) VALUES (?,?) RETURNING GROUP_ID");
 
     query.bindValue(0, group->getName());
 
-    if(parentGroupId)
+    if (parentGroupId)
     {
         query.bindValue(1, static_cast<qlonglong>(parentGroupId.value()));
     }
@@ -431,12 +457,12 @@ void Database::addGroup(GroupTreeItem* group, std::optional<int64_t> parentGroup
         query.bindValue(1, QVariant{});
     }
 
-    if(!query.exec())
+    if (!query.exec())
     {
         throw DatabaseException("Cannot insert into groups " + query.lastError().text());
     }
 
-    if(query.next())
+    if (query.next())
     {
         group->setID(query.value(0).toLongLong());
     }
@@ -450,14 +476,15 @@ void Database::SetFavourite(int64_t id, bool flag) const
     query.bindValue(0, flag);
     query.bindValue(1, static_cast<qlonglong>(id));
 
-    if(!query.exec())
+    if (!query.exec())
     {
         throw DatabaseException("Cannot update CHANNELS " + query.lastError().text());
     }
 }
-void Database::AddGroup(GroupTreeItem* group)
+void Database::AddGroup(GroupTreeItem *group)
 {
-    WithTransaction([group, this](){
+    WithTransaction([group, this]()
+                    {
         addGroup(group, {});
         for(int i=0;i<group->childCount();i++)
         {
@@ -470,15 +497,14 @@ void Database::AddGroup(GroupTreeItem* group)
             {
                 addChannel(static_cast<ChannelTreeItem*>(child), group->getID());
             }
-        }
-    });
+        } });
 }
-void Database::addGroupTree(GroupTreeItem* group) const
+void Database::addGroupTree(GroupTreeItem *group) const
 {
     auto parent = group->getParent();
-    if(parent && parent->getType() == ChannelTreeItemType::Group)
+    if (parent && parent->getType() == ChannelTreeItemType::Group)
     {
-        auto parentGroup = dynamic_cast<GroupTreeItem*>(parent);
+        auto parentGroup = dynamic_cast<GroupTreeItem *>(parent);
         assert(((void)"AbstractChannelTreeItem of type Group is not GroupTreeItem", parentGroup != nullptr));
         addGroupTree(parentGroup);
         addGroup(group, parentGroup->getID());
@@ -497,7 +523,7 @@ void Database::WithTransaction(std::function<void()> callback)
         callback();
         db.commit();
     }
-    catch(...)
+    catch (...)
     {
         db.rollback();
     }
@@ -507,27 +533,27 @@ int Database::getSchemaVersion() const
 {
     QSqlQuery query{db};
     query.prepare("SELECT VERSION FROM SCHEMA_VERSION");
-    if(!query.exec())
+    if (!query.exec())
     {
         throw DatabaseException("Cannot find SCHEMA_VERSION " + query.lastError().text());
     }
 
-    if(query.next())
+    if (query.next())
     {
         return query.value(0).toInt();
     }
     return 0;
 }
-void Database::incrementSchemaVersion(int& version) const
+void Database::incrementSchemaVersion(int &version) const
 {
-    if(version == 0)
+    if (version == 0)
     {
         executeStatement("INSERT INTO SCHEMA_VERSION (VERSION) VALUES(1)", "Cannot add version");
-        version=1;
+        version = 1;
     }
     else
     {
-        executeStatement(("UPDATE SCHEMA_VERSION SET VERSION="+std::to_string(version+1)).c_str(), "Cannot update version");
+        executeStatement(("UPDATE SCHEMA_VERSION SET VERSION=" + std::to_string(version + 1)).c_str(), "Cannot update version");
         ++version;
     }
 }
@@ -537,7 +563,7 @@ void Database::RemoveGroup(int64_t id) const
         QSqlQuery query{db};
         query.prepare("DELETE FROM CHANNELS WHERE GROUP_ID=?");
         query.bindValue(0, static_cast<qlonglong>(id));
-        if(!query.exec())
+        if (!query.exec())
         {
             throw DatabaseException("Cannot delete from CHANNELS " + query.lastError().text());
         }
@@ -547,11 +573,11 @@ void Database::RemoveGroup(int64_t id) const
         QSqlQuery query{db};
         query.prepare("SELECT GROUP_ID FROM CHANNEL_GROUPS WHERE PARENT_GROUP_ID = ?");
         query.bindValue(0, static_cast<qlonglong>(id));
-        if(!query.exec())
+        if (!query.exec())
         {
             throw DatabaseException("Cannot select from CHANNEL_GROUPS " + query.lastError().text());
         }
-        while(query.next())
+        while (query.next())
         {
             int64_t id = query.value(0).toLongLong();
             RemoveGroup(id);
@@ -562,7 +588,7 @@ void Database::RemoveGroup(int64_t id) const
         QSqlQuery query{db};
         query.prepare("DELETE FROM CHANNEL_GROUPS WHERE GROUP_ID = ?");
         query.bindValue(0, static_cast<qlonglong>(id));
-        if(!query.exec())
+        if (!query.exec())
         {
             throw DatabaseException("Cannot delete from CHANNEL_GROUPS " + query.lastError().text());
         }
@@ -573,7 +599,7 @@ void Database::RemoveChannel(int64_t id) const
     QSqlQuery query{db};
     query.prepare("DELETE FROM CHANNELS WHERE CHANNEL_ID=?");
     query.bindValue(0, static_cast<qlonglong>(id));
-    if(!query.exec())
+    if (!query.exec())
     {
         throw DatabaseException("Cannot delete from CHANNELS " + query.lastError().text());
     }

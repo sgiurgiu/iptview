@@ -1,57 +1,63 @@
 #include "mediawidget.h"
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QToolBar>
 #include <QAction>
-#include <QSlider>
-#include <QDebug>
-#include <QTimer>
-#include <QToolButton>
-#include <QMenu>
 #include <QActionGroup>
-#include <QLabel>
-#include <QSettings>
 #include <QDBusConnection>
 #include <QDBusInterface>
 #include <QDBusReply>
+#include <QDebug>
+#include <QHBoxLayout>
 #include <QKeyEvent>
+#include <QLabel>
+#include <QMenu>
+#include <QSettings>
 #include <QSignalBlocker>
+#include <QSlider>
+#include <QTimer>
+#include <QToolBar>
+#include <QToolButton>
+#include <QVBoxLayout>
 
+#include "database.h"
+#include "databaseprovider.h"
 #include "epgwidget.h"
 #include "mpvwidget.h"
-#include "databaseprovider.h"
-#include "database.h"
 
 namespace
 {
-    constexpr int VOLUME_OVERLAY_ID = 0;
-    // TODO: make it a preference
-    constexpr int MAX_FILE_LOAD_RETRY_TIMES = 10;
-}
+constexpr int VOLUME_OVERLAY_ID = 0;
+// TODO: make it a preference
+constexpr int MAX_FILE_LOAD_RETRY_TIMES = 10;
+} // namespace
 
-MediaWidget::MediaWidget(QNetworkAccessManager* networkManager,QWidget *parent)
-    : QWidget{parent}
+MediaWidget::MediaWidget(QNetworkAccessManager* networkManager, QWidget* parent)
+: QWidget{ parent }
 {
-    QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(0,0,0,0);
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
     mpvWidget = new MpvWidget(this);
-    connect(mpvWidget,SIGNAL(wheelScrolled(QPoint)), this, SLOT(mediaWheelEvent(QPoint)));
-    connect(mpvWidget,SIGNAL(fileLoaded()), this, SLOT(fileLoaded()));
-    connect(mpvWidget, SIGNAL(doubleClicked()),this, SLOT(mpvDoubleClicked()));
+    connect(mpvWidget, SIGNAL(wheelScrolled(QPoint)), this,
+            SLOT(mediaWheelEvent(QPoint)));
+    connect(mpvWidget, SIGNAL(fileLoaded()), this, SLOT(fileLoaded()));
+    connect(mpvWidget, SIGNAL(doubleClicked()), this, SLOT(mpvDoubleClicked()));
 
-    connect(mpvWidget, SIGNAL(fileLoadingError(QString)),this, SLOT(fileLoadingError(QString)));
-    connect(mpvWidget, SIGNAL(fileUnknownFormatError(QString)),this, SLOT(fileUnknownFormatError(QString)));
-    connect(mpvWidget, SIGNAL(unsupportedSystemError(QString)),this, SLOT(unsupportedSystemError(QString)));
-    connect(mpvWidget, SIGNAL(outputInitializationError(QString)),this, SLOT(outputInitializationError(QString)));
+    connect(mpvWidget, SIGNAL(fileLoadingError(QString)), this,
+            SLOT(fileLoadingError(QString)));
+    connect(mpvWidget, SIGNAL(fileUnknownFormatError(QString)), this,
+            SLOT(fileUnknownFormatError(QString)));
+    connect(mpvWidget, SIGNAL(unsupportedSystemError(QString)), this,
+            SLOT(unsupportedSystemError(QString)));
+    connect(mpvWidget, SIGNAL(outputInitializationError(QString)), this,
+            SLOT(outputInitializationError(QString)));
 
     layout->addWidget(mpvWidget, 1);
 
     volumeOsdTimer = new QTimer(this);
     volumeOsdTimer->setSingleShot(true);
     volumeOsdTimer->setInterval(1000);
-    connect(volumeOsdTimer, SIGNAL(timeout()), this, SLOT(volumeOsdTimerTimeout()));
+    connect(volumeOsdTimer, SIGNAL(timeout()), this,
+            SLOT(volumeOsdTimerTimeout()));
 
     controlsWidget = createControlsWidget(networkManager);
     layout->addWidget(controlsWidget, 0);
@@ -71,55 +77,69 @@ QWidget* MediaWidget::createControlsWidget(QNetworkAccessManager* networkManager
     playPauseAction = new QAction(playIcon, "", this);
     playPauseAction->setCheckable(false);
     playPauseAction->setEnabled(false);
-    playPauseAction->setShortcut(QKeySequence{settings.value("player/pause", Qt::Key_Space).toInt()});
+    playPauseAction->setShortcut(
+        QKeySequence{ settings.value("player/pause", Qt::Key_Space).toInt() });
     connect(playPauseAction, SIGNAL(triggered(bool)), this, SLOT(PlayPause()));
 
     skipForwardAction = new QAction(playSkipForwardIcon, "", this);
     skipForwardAction->setCheckable(false);
     skipForwardAction->setEnabled(false);
     skipForwardAction->setToolTip("Next Channel");
-    connect(skipForwardAction, SIGNAL(triggered(bool)), this, SLOT(skipForwardTriggered()));
+    connect(skipForwardAction, SIGNAL(triggered(bool)), this,
+            SLOT(skipForwardTriggered()));
 
     skipBackAction = new QAction(playSkipBackIcon, "", this);
     skipBackAction->setCheckable(false);
     skipBackAction->setEnabled(false);
     skipBackAction->setToolTip("Previous Channel");
-    connect(skipBackAction, SIGNAL(triggered(bool)), this, SLOT(skipBackTriggered()));
+    connect(skipBackAction, SIGNAL(triggered(bool)), this,
+            SLOT(skipBackTriggered()));
 
     volumeAction = new QAction(volumeMediumIcon, "", this);
     volumeAction->setCheckable(true);
     volumeAction->setEnabled(true);
     volumeAction->setObjectName("Volume Mute toggle");
-    volumeAction->setShortcut(QKeySequence{settings.value("player/mute", Qt::Key_M).toInt()});
+    volumeAction->setShortcut(
+        QKeySequence{ settings.value("player/mute", Qt::Key_M).toInt() });
     connect(volumeAction, SIGNAL(toggled(bool)), this, SLOT(VolumeToggled(bool)));
-    connect(volumeAction, SIGNAL(toggled(bool)), this, SIGNAL(volumeToggledSignal(bool)));
+    connect(volumeAction, SIGNAL(toggled(bool)), this,
+            SIGNAL(volumeToggledSignal(bool)));
 
     fullScreenAction = new QAction(fullScreenIcon, "", this);
     fullScreenAction->setCheckable(true);
     fullScreenAction->setEnabled(false);
     fullScreenAction->setToolTip("Full Screen");
-    fullScreenAction->setShortcuts(QList<QKeySequence>() << QKeySequence{settings.value("player/fullscreen", Qt::Key_F).toInt()} << QKeySequence::FullScreen);
-    connect(fullScreenAction, SIGNAL(triggered(bool)), this, SLOT(fullScreenActionToggled(bool)));
+    fullScreenAction->setShortcuts(
+        QList<QKeySequence>()
+        << QKeySequence{ settings.value("player/fullscreen", Qt::Key_F).toInt() }
+        << QKeySequence::FullScreen);
+    connect(fullScreenAction, SIGNAL(triggered(bool)), this,
+            SLOT(fullScreenActionToggled(bool)));
 
     volumeSlider = new QSlider(Qt::Horizontal, this);
     volumeSlider->setMinimum(0);
-    volumeSlider->setMaximum(150);    
+    volumeSlider->setMaximum(150);
     volumeSlider->setSingleStep(5);
     volumeSlider->setObjectName("Volume Slider");
-    volumeSlider->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
-    connect(volumeSlider,SIGNAL(valueChanged(int)), this, SLOT(VolumeChanged(int)));
-    connect(volumeSlider,SIGNAL(valueChanged(int)), this, SIGNAL(volumeChangedSignal(int)));
+    volumeSlider->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    connect(volumeSlider, SIGNAL(valueChanged(int)), this,
+            SLOT(VolumeChanged(int)));
+    connect(volumeSlider, SIGNAL(valueChanged(int)), this,
+            SIGNAL(volumeChangedSignal(int)));
     volumeSlider->setValue(settings.value("player/volume", 100.0).toDouble());
-    mpvWidget->setProperty("volume", settings.value("player/volume", 100.0).toDouble());
+    mpvWidget->setProperty("volume",
+                           settings.value("player/volume", 100.0).toDouble());
 
     subtitlesChoicesButton = new QToolButton(this);
-    subtitlesChoicesButton->setIcon(QIcon(":/icons/chatbox-ellipses-outline.png"));
+    subtitlesChoicesButton->setIcon(
+        QIcon(":/icons/chatbox-ellipses-outline.png"));
     subtitlesChoicesButton->setPopupMode(QToolButton::MenuButtonPopup);
     subtitlesChoicesButton->setEnabled(false);
     subtitlesChoicesButton->setCheckable(true);
     subtitlesChoicesButton->setChecked(false);
     subtitlesChoicesButton->setToolTip("Subtitles");
-    connect(subtitlesChoicesButton, SIGNAL(clicked(bool)),this,SLOT(subtitlesToggled(bool)));
+    connect(subtitlesChoicesButton, SIGNAL(clicked(bool)), this,
+            SLOT(subtitlesToggled(bool)));
     subtitlesChoicesActionGroup = new QActionGroup(this);
     subtitlesMenu = new QMenu(this);
     subtitlesChoicesButton->setMenu(subtitlesMenu);
@@ -140,12 +160,11 @@ QWidget* MediaWidget::createControlsWidget(QNetworkAccessManager* networkManager
     widget->addWidget(epgWidget);
 
     QWidget* empty = new QWidget(this);
-    empty->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+    empty->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     widget->addWidget(empty);
 
     widget->addAction(volumeAction);
     widget->addWidget(volumeSlider);
-
 
     widget->setFloatable(false);
     widget->setOrientation(Qt::Orientation::Horizontal);
@@ -157,17 +176,17 @@ int MediaWidget::GetVolume() const
 }
 void MediaWidget::PlayPause()
 {
-    if(stopped && selectedChannel)
+    if (stopped && selectedChannel)
     {
         playChannel(std::move(selectedChannel));
         return;
     }
     auto pausedVariant = mpvWidget->getProperty("pause");
     bool paused = pausedVariant.toBool();
-    qInfo() << "paused property is:"<<paused;
+    qInfo() << "paused property is:" << paused;
     playPauseAction->setToolTip(paused ? "Pause" : "Play");
     playPauseAction->setIcon(paused ? pauseIcon : playIcon);
-    mpvWidget->setProperty("pause", QVariant{!paused});
+    mpvWidget->setProperty("pause", QVariant{ !paused });
 }
 
 void MediaWidget::Stop()
@@ -189,24 +208,26 @@ void MediaWidget::skipForwardTriggered()
 }
 void MediaWidget::playChannel(std::unique_ptr<ChannelTreeItem> channel)
 {
-    if(!channel) return;
+    if (!channel)
+        return;
     selectedChannel = std::move(channel);
     subtitles.clear();
     epgWidget->ClearChannel();
     mpvWidget->command(QStringList() << "stop");
     mpvWidget->stopRenderingMedia();
-//    mpvWidget->command(QStringList() << "apply-profile" << "gpu-hq");
+    //    mpvWidget->command(QStringList() << "apply-profile" << "gpu-hq");
     mpvWidget->command(QStringList() << "loadfile" << selectedChannel->getUri());
     playPauseAction->setEnabled(true);
     playPauseAction->setIcon(pauseIcon);
     playPauseAction->setToolTip("Pause");
     stopAction->setEnabled(true);
     fullScreenAction->setEnabled(true);
-    mpvWidget->setProperty("pause", QVariant{false});
-    mpvWidget->setProperty("sid", QVariant{"no"});
-    mpvWidget->setProperty("loop-playlist", QVariant{"inf"});
+    mpvWidget->setProperty("pause", QVariant{ false });
+    mpvWidget->setProperty("sid", QVariant{ "no" });
+    mpvWidget->setProperty("loop-playlist", QVariant{ "inf" });
     mediaTitleLabel->setStyleSheet("");
-    mediaTitleLabel->setText(QString("Loading %1 ...").arg(selectedChannel->getName()));
+    mediaTitleLabel->setText(
+        QString("Loading %1 ...").arg(selectedChannel->getName()));
 
     stopped = false;
     toggleSystemSleep();
@@ -214,13 +235,21 @@ void MediaWidget::playChannel(std::unique_ptr<ChannelTreeItem> channel)
 void MediaWidget::PlayChannel(int64_t id)
 {
     fileLoadRetryTimes = 0;
-    playChannel(std::unique_ptr<ChannelTreeItem>{DatabaseProvider::GetDatabase()->GetChannel(id)});
+    playChannel(std::unique_ptr<ChannelTreeItem>{
+        DatabaseProvider::GetDatabase()->GetChannel(id) });
+}
+void MediaWidget::PlayChannel(ChannelTreeItem* channel)
+{
+    fileLoadRetryTimes = 0;
+    playChannel(std::unique_ptr<ChannelTreeItem>{ channel->clone(nullptr) });
 }
 void MediaWidget::SelectChannel(int64_t id)
 {
-    if(selectedChannel && !stopped) return;
+    if (selectedChannel && !stopped)
+        return;
     auto channel = DatabaseProvider::GetDatabase()->GetChannel(id);
-    if(!channel) return;
+    if (!channel)
+        return;
     selectedChannel.reset(channel);
     playPauseAction->setEnabled(true);
     playPauseAction->setIcon(playIcon);
@@ -229,13 +258,13 @@ void MediaWidget::SelectChannel(int64_t id)
 }
 void MediaWidget::VolumeToggled(bool checked)
 {
-    mpvWidget->setProperty("mute", QVariant{checked});
-    volumeAction->setIcon(checked ? volumeMuteIcon: getVolumeIcon());
+    mpvWidget->setProperty("mute", QVariant{ checked });
+    volumeAction->setIcon(checked ? volumeMuteIcon : getVolumeIcon());
     QVariantMap map;
     map["name"] = "osd-overlay";
     map["id"] = VOLUME_OVERLAY_ID;
     map["format"] = "ass-events";
-    map["data"] = QString(R"({\an9\fs36}Mute %1)").arg(checked?"on":"off");
+    map["data"] = QString(R"({\an9\fs36}Mute %1)").arg(checked ? "on" : "off");
     map["res_x"] = width();
     map["res_y"] = height();
     mpvWidget->command(map);
@@ -244,15 +273,15 @@ void MediaWidget::VolumeToggled(bool checked)
 QIcon MediaWidget::getVolumeIcon()
 {
     int volume = volumeSlider->value();
-    if(volume < 10)
+    if (volume < 10)
     {
         return volumeOffIcon;
     }
-    else if(volume < 50)
+    else if (volume < 50)
     {
         return volumeLowIcon;
     }
-    else if(volume < 85)
+    else if (volume < 85)
     {
         return volumeMediumIcon;
     }
@@ -263,8 +292,8 @@ QIcon MediaWidget::getVolumeIcon()
 }
 void MediaWidget::VolumeChanged(int volume)
 {
-    qDebug() << "volume changed:"<<volume;
-    if(sender() != volumeSlider)
+    qDebug() << "volume changed:" << volume;
+    if (sender() != volumeSlider)
     {
         QSignalBlocker volumeActionBlocker(volumeAction);
         QSignalBlocker volumeSliderBlocker(volumeSlider);
@@ -273,12 +302,13 @@ void MediaWidget::VolumeChanged(int volume)
         volumeSlider->setSliderPosition(volume);
     }
     double vol = static_cast<double>(volume);
-    mpvWidget->setProperty("volume", QVariant{vol});
+    mpvWidget->setProperty("volume", QVariant{ vol });
     volumeAction->setIcon(getVolumeIcon());
     volumeAction->setChecked(false);
     QSettings settings;
     settings.setValue("player/volume", vol);
-    if(!selectedChannel) return;
+    if (!selectedChannel)
+        return;
 
     QVariantMap map;
     map["name"] = "osd-overlay";
@@ -304,7 +334,7 @@ void MediaWidget::mediaWheelEvent(QPoint delta)
 {
     int volume = volumeSlider->value();
     int step = volumeSlider->singleStep() * (delta.y() < 0 ? -1 : 1);
-    volumeSlider->setValue(volume+step);
+    volumeSlider->setValue(volume + step);
 }
 
 void MediaWidget::fileLoaded()
@@ -314,27 +344,32 @@ void MediaWidget::fileLoaded()
     mpvWidget->startRenderingMedia();
     subtitles.clear();
     int tracksCount = mpvWidget->getProperty("track-list/count").toInt();
-    qDebug() << "track count "<<tracksCount;
-    Subtitle offSub = {"no", "Off", ""};
+    qDebug() << "track count " << tracksCount;
+    Subtitle offSub = { "no", "Off", "" };
     subtitles.append(std::move(offSub));
-    for(int i=0;i<tracksCount;i++)
+    for (int i = 0; i < tracksCount; i++)
     {
-        QString type = mpvWidget->getProperty(QString("track-list/%1/type").arg(i)).toString();
-        QString id = mpvWidget->getProperty(QString("track-list/%1/id").arg(i)).toString();
-        QString title = mpvWidget->getProperty(QString("track-list/%1/title").arg(i)).toString();
-        QString lang = mpvWidget->getProperty(QString("track-list/%1/lang").arg(i)).toString();
-        qDebug() << "track "<<i<<" type "<<type<<", id "<<id << ", title "<<title <<", lang "<<lang;
-        if(type == "sub")
+        QString type =
+            mpvWidget->getProperty(QString("track-list/%1/type").arg(i)).toString();
+        QString id =
+            mpvWidget->getProperty(QString("track-list/%1/id").arg(i)).toString();
+        QString title =
+            mpvWidget->getProperty(QString("track-list/%1/title").arg(i)).toString();
+        QString lang =
+            mpvWidget->getProperty(QString("track-list/%1/lang").arg(i)).toString();
+        qDebug() << "track " << i << " type " << type << ", id " << id
+                 << ", title " << title << ", lang " << lang;
+        if (type == "sub")
         {
-            if(title.isEmpty())
+            if (title.isEmpty())
             {
                 title = QString("Subtitle %1").arg(id);
             }
-            if(!lang.isEmpty())
+            if (!lang.isEmpty())
             {
-                title.append(" ("+lang+")");
+                title.append(" (" + lang + ")");
             }
-            Subtitle sub = {id, title, lang};
+            Subtitle sub = { id, title, lang };
             subtitles.append(std::move(sub));
         }
     }
@@ -348,20 +383,21 @@ void MediaWidget::setupSubtitlesMenu()
 {
     subtitlesMenu->clear();
     auto actions = subtitlesChoicesActionGroup->actions();
-    for(auto action : actions)
+    for (auto action : actions)
     {
         subtitlesChoicesActionGroup->removeAction(action);
         delete action;
     }
 
-    for(const auto& sub : subtitles)
+    for (const auto& sub : subtitles)
     {
         auto action = subtitlesChoicesActionGroup->addAction(sub.title);
         action->setData(sub.id);
         action->setCheckable(true);
-        connect(action, SIGNAL(triggered(bool)), this, SLOT(subtitleChanged(bool)));
+        connect(action, SIGNAL(triggered(bool)), this,
+                SLOT(subtitleChanged(bool)));
     }
-    if(!subtitles.empty())
+    if (!subtitles.empty())
     {
         setSubtitle(subtitles.front().id);
         subtitlesChoicesActionGroup->actions().constFirst()->setChecked(true);
@@ -381,19 +417,22 @@ void MediaWidget::subtitlesToggled(bool toggled)
     // and if we're toggled, we select the first subtitle, if it's available
     auto actions = subtitlesChoicesActionGroup->actions();
     auto actionIndex = toggled ? 1 : 0;
-    if(actionIndex >= actions.size()) return;
+    if (actionIndex >= actions.size())
+        return;
 
     actions.at(actionIndex)->setChecked(true);
     setSubtitle(actions.at(actionIndex)->data().toString());
 }
 void MediaWidget::subtitleChanged(bool checked)
 {
-    if(!checked) return;
+    if (!checked)
+        return;
     auto checkedAction = subtitlesChoicesActionGroup->checkedAction();
-    if(checkedAction)
+    if (checkedAction)
     {
         setSubtitle(checkedAction->data().toString());
-        auto index = subtitlesChoicesActionGroup->actions().indexOf(checkedAction);
+        auto index =
+            subtitlesChoicesActionGroup->actions().indexOf(checkedAction);
         subtitlesChoicesButton->setChecked(index != 0);
     }
 }
@@ -403,37 +442,33 @@ void MediaWidget::toggleSystemSleep()
     const int MAX_SERVICES = 2;
 
     QDBusConnection bus = QDBusConnection::sessionBus();
-    if(bus.isConnected())
+    if (bus.isConnected())
     {
-        QString services[MAX_SERVICES] =
-        {
-            "org.freedesktop.ScreenSaver",
-            "org.gnome.SessionManager"
-        };
-        QString paths[MAX_SERVICES] =
-        {
-            "/org/freedesktop/ScreenSaver",
-            "/org/gnome/SessionManager"
-        };
+        QString services[MAX_SERVICES] = { "org.freedesktop.ScreenSaver",
+                                           "org.gnome.SessionManager" };
+        QString paths[MAX_SERVICES] = { "/org/freedesktop/ScreenSaver",
+                                        "/org/gnome/SessionManager" };
 
         static uint cookies[2];
 
-        for(int i = 0; i < MAX_SERVICES ; i++)
+        for (int i = 0; i < MAX_SERVICES; i++)
         {
-            QDBusInterface screenSaverInterface( services[i], paths[i],services[i], bus);
+            QDBusInterface screenSaverInterface(services[i], paths[i],
+                                                services[i], bus);
 
             if (!screenSaverInterface.isValid())
                 continue;
 
             QDBusReply<uint> reply;
 
-            if(!stopped)
+            if (!stopped)
             {
-                reply = screenSaverInterface.call("Inhibit", "iptview", "playing video");
+                reply = screenSaverInterface.call("Inhibit", "iptview",
+                                                  "playing video");
             }
             else
             {
-                reply  = screenSaverInterface.call("UnInhibit", cookies[i]);
+                reply = screenSaverInterface.call("UnInhibit", cookies[i]);
             }
 
             if (reply.isValid())
@@ -450,30 +485,32 @@ void MediaWidget::toggleSystemSleep()
         }
     }
 
-#elif defined  Q_OS_WIN
+#elif defined Q_OS_WIN
 
     EXECUTION_STATE result;
 
-    if(!stopped)
-        result = SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
+    if (!stopped)
+        result = SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED |
+                                         ES_DISPLAY_REQUIRED);
     else
         result = SetThreadExecutionState(ES_CONTINUOUS);
 
-    if(result == NULL)
+    if (result == NULL)
         qDebug() << "EXECUTION_STATE failed";
 
 #endif
 }
 void MediaWidget::toggleFullScreen()
 {
-    if(stopped) return;
+    if (stopped)
+        return;
     fullScreen = !fullScreen;
     emit showingFullScreen(fullScreen);
-    if(fullScreen)
+    if (fullScreen)
     {
         mpvWidget->setCursor(Qt::BlankCursor);
         contentMargins = this->contentsMargins();
-        this->setContentsMargins(0,0,0,0);
+        this->setContentsMargins(0, 0, 0, 0);
         controlsWidget->hide();
         window()->showFullScreen();
     }
@@ -490,28 +527,30 @@ void MediaWidget::mpvDoubleClicked()
 {
     toggleFullScreen();
 }
-void MediaWidget::keyPressEvent(QKeyEvent *event)
+void MediaWidget::keyPressEvent(QKeyEvent* event)
 {
-    qDebug() << "MediaWidget::keyPressEvent:"<<event->key();
+    qDebug() << "MediaWidget::keyPressEvent:" << event->key();
     bool matchesFullScreenAction = false;
-    for(const auto& shortcut : fullScreenAction->shortcuts())
+    for (const auto& shortcut : fullScreenAction->shortcuts())
     {
-        matchesFullScreenAction |= (shortcut == (event->key() | event->modifiers()));
+        matchesFullScreenAction |=
+            (shortcut == (event->key() | event->modifiers()));
     }
     bool matchesPlayPauseAction = false;
-    for(const auto& shortcut : playPauseAction->shortcuts())
+    for (const auto& shortcut : playPauseAction->shortcuts())
     {
-        matchesPlayPauseAction |= (shortcut == (event->key() | event->modifiers()));
+        matchesPlayPauseAction |=
+            (shortcut == (event->key() | event->modifiers()));
     }
 
-    if(fullScreen)
+    if (fullScreen)
     {
-        if(event->matches(QKeySequence::Cancel) || matchesFullScreenAction)
+        if (event->matches(QKeySequence::Cancel) || matchesFullScreenAction)
         {
             toggleFullScreen();
             event->accept();
         }
-        else if(matchesPlayPauseAction)
+        else if (matchesPlayPauseAction)
         {
             PlayPause();
             event->accept();
@@ -526,9 +565,12 @@ void MediaWidget::fullScreenActionToggled(bool)
 }
 
 void MediaWidget::fileLoadingError(QString message)
-{    
-    QString errorMessage = QString("%1. Retrying (attempt %2 of %3)... ").arg(message).arg(fileLoadRetryTimes+1).arg(MAX_FILE_LOAD_RETRY_TIMES);
-    if(fileLoadRetryTimes >= MAX_FILE_LOAD_RETRY_TIMES || stopped)
+{
+    QString errorMessage = QString("%1. Retrying (attempt %2 of %3)... ")
+                               .arg(message)
+                               .arg(fileLoadRetryTimes + 1)
+                               .arg(MAX_FILE_LOAD_RETRY_TIMES);
+    if (fileLoadRetryTimes >= MAX_FILE_LOAD_RETRY_TIMES || stopped)
     {
         errorMessage = QString("%1. No more retries ").arg(message);
     }
@@ -536,12 +578,14 @@ void MediaWidget::fileLoadingError(QString message)
     mediaTitleLabel->setText(errorMessage);
     mediaTitleLabel->setStyleSheet("QLabel { color : red; }");
 
-    if(fileLoadRetryTimes < MAX_FILE_LOAD_RETRY_TIMES && !stopped)
+    if (fileLoadRetryTimes < MAX_FILE_LOAD_RETRY_TIMES && !stopped)
     {
-        QTimer::singleShot(2000, this, [this](){
-            playChannel(std::move(selectedChannel));
-            ++fileLoadRetryTimes;
-        });
+        QTimer::singleShot(2000, this,
+                           [this]()
+                           {
+                               playChannel(std::move(selectedChannel));
+                               ++fileLoadRetryTimes;
+                           });
     }
 }
 void MediaWidget::fileUnknownFormatError(QString message)
@@ -570,9 +614,7 @@ void MediaWidget::EnableSkipBack(bool flag)
 
 void MediaWidget::Pause()
 {
-
 }
 void MediaWidget::PlaySelected()
 {
-
 }

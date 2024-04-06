@@ -31,6 +31,8 @@ set(IPTVIEWLIB_SRCS
     xstreaminfo.h
     loadxstreamchannelsworker.h loadxstreamchannelsworker.cpp
     epgwidget.h epgwidget.cpp
+    xstreamchannelsmodel.h xstreamchannelsmodel.cpp
+    servertreeitem.h servertreeitem.cpp
     )
 
 if(ENABLE_DBUS)

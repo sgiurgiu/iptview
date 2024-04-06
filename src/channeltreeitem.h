@@ -2,7 +2,7 @@
 #define CHANNELTREEITEM_H
 
 #include "abstractchanneltreeitem.h"
- #include <QFutureWatcher>
+#include <QFutureWatcher>
 
 class MediaSegment;
 
@@ -10,9 +10,19 @@ class ChannelTreeItem : public AbstractChannelTreeItem
 {
     Q_OBJECT
 public:
-    explicit ChannelTreeItem(const MediaSegment& segment, AbstractChannelTreeItem* parent);
-    explicit ChannelTreeItem(QString name, QString uri, QString logoUri, QByteArray logo, AbstractChannelTreeItem* parent);
-    explicit ChannelTreeItem(QString name, QString uri, QString logoUri, QByteArray logo, QIcon icon, AbstractChannelTreeItem* parent);
+    explicit ChannelTreeItem(const MediaSegment& segment,
+                             AbstractChannelTreeItem* parent);
+    explicit ChannelTreeItem(QString name,
+                             QString uri,
+                             QString logoUri,
+                             QByteArray logo,
+                             AbstractChannelTreeItem* parent);
+    explicit ChannelTreeItem(QString name,
+                             QString uri,
+                             QString logoUri,
+                             QByteArray logo,
+                             QIcon icon,
+                             AbstractChannelTreeItem* parent);
     virtual ~ChannelTreeItem();
     virtual ChannelTreeItemType getType() const override
     {
@@ -34,9 +44,9 @@ public:
     {
         return logo;
     }
-    void setLogo(const QByteArray& logo )
+    void setLogo(const QByteArray& logo)
     {
-        this->logo=logo;
+        this->logo = logo;
     }
     bool isFavourite() const
     {
@@ -86,7 +96,7 @@ private:
     bool favourite = false;
     QFuture<void> iconFutureLoader;
     int64_t xstreamServerId = -1;
-
 };
+Q_DECLARE_METATYPE(ChannelTreeItem)
 
 #endif // CHANNELTREEITEM_H
