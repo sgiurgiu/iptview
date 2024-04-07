@@ -90,6 +90,9 @@ ChannelsWidget::ChannelsWidget(QNetworkAccessManager* networkManager,
 
     connect(xstreamChannels, SIGNAL(doubleClicked(QModelIndex)), this,
             SLOT(onDoubleClickedXStreamTreeItem(QModelIndex)));
+    connect(xstreamChannels->selectionModel(),
+            SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this,
+            SLOT(xstreamItemsSelectionChanged(QItemSelection, QItemSelection)));
 
     localChannelsContextMenu = new QMenu(localChannelsTabWidget);
     addToFavouritesAction = new QAction("Add to Favourites", this);
@@ -212,6 +215,39 @@ void ChannelsWidget::itemsSelectionChanged(const QItemSelection& selected,
         emit enableSkipBack(
             backIndex.isValid() &&
             backIndex.data(ChannelsModel::ChannelRoles::IdRole).isValid());
+    }
+}
+void ChannelsWidget::xstreamItemsSelectionChanged(const QItemSelection& selected,
+                                                  const QItemSelection& deselected)
+{
+    Q_UNUSED(deselected);
+    if (selected.isEmpty())
+        return;
+    auto firstSelectedProxyIndex = selected.indexes().front();
+    if (!firstSelectedProxyIndex.isValid())
+    {
+        return;
+    }
+    auto firstSelected =
+        xstreamChannelsProxyModel->mapToSource(firstSelectedProxyIndex);
+    if (!firstSelected.isValid())
+    {
+        return;
+    }
+
+    auto data = firstSelected.data(XStreamChannelsModel::ChannelRoles::DataRole);
+    if (data.isValid())
+    {
+        emit selectChannel(data.value<ChannelTreeItem*>());
+
+        auto nextIndex = firstSelected.siblingAtRow(firstSelected.row() + 1);
+        auto backIndex = firstSelected.siblingAtRow(firstSelected.row() - 1);
+        emit enableSkipForward(
+            nextIndex.isValid() &&
+            nextIndex.data(XStreamChannelsModel::ChannelRoles::IdRole).isValid());
+        emit enableSkipBack(
+            backIndex.isValid() &&
+            backIndex.data(XStreamChannelsModel::ChannelRoles::IdRole).isValid());
     }
 }
 void ChannelsWidget::onCustomContextMenu(const QPoint& point)
@@ -484,7 +520,16 @@ void ChannelsWidget::onAddNewChannelGroup()
     }
 }
 
-void ChannelsWidget::SkipForward()
+void ChannelsWidget::skipForwardLocalChannels()
+{
+    skipLocalChannels(1);
+}
+
+void ChannelsWidget::skipBackLocalChannels()
+{
+    skipLocalChannels(-1);
+}
+void ChannelsWidget::skipLocalChannels(int amount)
 {
     if (!localChannels->selectionModel()->hasSelection())
         return;
@@ -492,7 +537,7 @@ void ChannelsWidget::SkipForward()
     if (!currentSelectedIndex.isValid())
         return;
     auto nextIndex =
-        currentSelectedIndex.siblingAtRow(currentSelectedIndex.row() + 1);
+        currentSelectedIndex.siblingAtRow(currentSelectedIndex.row() + amount);
     if (!nextIndex.isValid())
         return;
     auto id = nextIndex.data(ChannelsModel::ChannelRoles::IdRole);
@@ -512,31 +557,74 @@ void ChannelsWidget::SkipForward()
         backIndex.isValid() &&
         backIndex.data(ChannelsModel::ChannelRoles::IdRole).isValid());
 }
-void ChannelsWidget::SkipBack()
+
+void ChannelsWidget::skipXStreamChannels(int amount)
 {
-    if (!localChannels->selectionModel()->hasSelection())
+    if (!xstreamChannels->selectionModel()->hasSelection())
         return;
-    auto currentSelectedIndex = localChannels->selectionModel()->currentIndex();
+    auto currentSelectedIndex = xstreamChannels->selectionModel()->currentIndex();
     if (!currentSelectedIndex.isValid())
         return;
-    auto backIndex =
-        currentSelectedIndex.siblingAtRow(currentSelectedIndex.row() - 1);
-    if (!backIndex.isValid())
+    auto nextIndex =
+        currentSelectedIndex.siblingAtRow(currentSelectedIndex.row() + amount);
+    if (!nextIndex.isValid())
         return;
-    auto id = backIndex.data(ChannelsModel::ChannelRoles::IdRole);
-    if (!id.isValid())
+    auto channel = nextIndex.data(XStreamChannelsModel::ChannelRoles::DataRole);
+    if (!channel.isValid())
         return;
-    localChannels->selectionModel()->clearSelection();
-    localChannels->selectionModel()->setCurrentIndex(
-        backIndex, QItemSelectionModel::SelectionFlag::Select);
-    emit playChannel(id.toLongLong());
+    xstreamChannels->selectionModel()->clearSelection();
+    xstreamChannels->selectionModel()->setCurrentIndex(
+        nextIndex, QItemSelectionModel::SelectionFlag::Select);
 
-    auto nextIndex = backIndex.siblingAtRow(backIndex.row() + 1);
-    auto backIndex2 = backIndex.siblingAtRow(backIndex.row() - 1);
+    emit playChannel(channel.value<ChannelTreeItem*>());
+
+    auto nextIndex2 = nextIndex.siblingAtRow(nextIndex.row() + 1);
+    auto backIndex = nextIndex.siblingAtRow(nextIndex.row() - 1);
     emit enableSkipForward(
-        nextIndex.isValid() &&
-        nextIndex.data(ChannelsModel::ChannelRoles::IdRole).isValid());
+        nextIndex2.isValid() &&
+        nextIndex2.data(XStreamChannelsModel::ChannelRoles::IdRole).isValid());
     emit enableSkipBack(
-        backIndex2.isValid() &&
-        backIndex2.data(ChannelsModel::ChannelRoles::IdRole).isValid());
+        backIndex.isValid() &&
+        backIndex.data(XStreamChannelsModel::ChannelRoles::IdRole).isValid());
+}
+
+void ChannelsWidget::skipForwardXStreamChannels()
+{
+    skipXStreamChannels(1);
+}
+
+void ChannelsWidget::skipBackXStreamChannels()
+{
+    skipXStreamChannels(-1);
+}
+
+void ChannelsWidget::SkipForward()
+{
+    int selectedTab = currentIndex();
+    switch (selectedTab)
+    {
+    case 0:
+        skipForwardLocalChannels();
+        break;
+    case 1:
+        skipForwardXStreamChannels();
+        break;
+    default:
+        return;
+    }
+}
+void ChannelsWidget::SkipBack()
+{
+    int selectedTab = currentIndex();
+    switch (selectedTab)
+    {
+    case 0:
+        skipBackLocalChannels();
+        break;
+    case 1:
+        skipBackXStreamChannels();
+        break;
+    default:
+        return;
+    }
 }

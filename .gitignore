@@ -77,4 +77,5 @@ CMakeSettings.json
 .vs
 .vscode/
 docker
+build-release
 

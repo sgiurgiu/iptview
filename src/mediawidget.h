@@ -26,6 +26,7 @@ public slots:
     void PlayChannel(int64_t);
     void PlayChannel(ChannelTreeItem*);
     void SelectChannel(int64_t);
+    void SelectChannel(ChannelTreeItem*);
     void EnableSkipForward(bool);
     void EnableSkipBack(bool);
     void Stop();

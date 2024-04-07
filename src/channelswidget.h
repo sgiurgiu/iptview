@@ -31,6 +31,7 @@ signals:
     void playChannel(int64_t id);
     void playChannel(ChannelTreeItem*);
     void selectChannel(int64_t id);
+    void selectChannel(ChannelTreeItem*);
     void updateImportedChannelIndex(qint64);
     void channelsImported();
     void enableSkipForward(bool);
@@ -47,12 +48,21 @@ private slots:
     void onRemoveFromFavourites();
     void itemsSelectionChanged(const QItemSelection& selected,
                                const QItemSelection& deselected);
+    void xstreamItemsSelectionChanged(const QItemSelection& selected,
+                                      const QItemSelection& deselected);
     void searchTextChanged(const QString& text);
     void onAddNewChannel();
     void onRemoveChannelGroup();
     void onAddNewChannelGroup();
 
 private:
+    void skipForwardLocalChannels();
+    void skipForwardXStreamChannels();
+    void skipBackLocalChannels();
+    void skipBackXStreamChannels();
+    void skipLocalChannels(int amount);
+    void skipXStreamChannels(int amount);
+
 private:
     QTreeView* localChannels;
     ChannelsModel* localChannelsModel;

@@ -256,6 +256,19 @@ void MediaWidget::SelectChannel(int64_t id)
     playPauseAction->setToolTip("Play");
     mediaTitleLabel->setText(selectedChannel->getName());
 }
+void MediaWidget::SelectChannel(ChannelTreeItem* channel)
+{
+    if (!channel)
+        return;
+    if (selectedChannel && !stopped)
+        return;
+    selectedChannel.reset(channel->clone(nullptr));
+    playPauseAction->setEnabled(true);
+    playPauseAction->setIcon(playIcon);
+    playPauseAction->setToolTip("Play");
+    mediaTitleLabel->setText(selectedChannel->getName());
+}
+
 void MediaWidget::VolumeToggled(bool checked)
 {
     mpvWidget->setProperty("mute", QVariant{ checked });

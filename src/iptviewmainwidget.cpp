@@ -41,6 +41,8 @@ IPTViewMainWidget::IPTViewMainWidget(QNetworkAccessManager* networkManager,
             SLOT(PlayChannel(ChannelTreeItem*)));
     connect(channelsWidget, SIGNAL(selectChannel(int64_t)), mediaWidget,
             SLOT(SelectChannel(int64_t)));
+    connect(channelsWidget, SIGNAL(selectChannel(ChannelTreeItem*)),
+            mediaWidget, SLOT(SelectChannel(ChannelTreeItem*)));
     connect(channelsWidget, SIGNAL(updateImportedChannelIndex(qint64)), this,
             SIGNAL(updateImportedChannelIndex(qint64)));
     connect(channelsWidget, SIGNAL(channelsImported()), this,
