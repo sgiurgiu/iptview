@@ -44,6 +44,7 @@ private slots:
     void onDoubleClickedXStreamTreeItem(const QModelIndex& index);
     void onDoubleClickedTreeItem(const QModelIndex& index);
     void onCustomContextMenu(const QPoint& point);
+    void onCustomXStreamContextMenu(const QPoint& point);
     void onAddToFavourites();
     void onRemoveFromFavourites();
     void itemsSelectionChanged(const QItemSelection& selected,
@@ -54,6 +55,7 @@ private slots:
     void onAddNewChannel();
     void onRemoveChannelGroup();
     void onAddNewChannelGroup();
+    void refreshXStreamItems();
 
 private:
     void skipForwardLocalChannels();
@@ -72,6 +74,9 @@ private:
     QAction* addNewChannelAction;
     QAction* addNewChannelGroupAction;
     QAction* removeChannelGroupAction;
+    QMenu* xstreamChannelsContextMenu;
+    QAction* refreshXstreamItemsAction;
+
     QLineEdit* localChannelsSearchField;
     ChannelsFilteringModel* localChannelsProxyModel;
     QTreeView* xstreamChannels;

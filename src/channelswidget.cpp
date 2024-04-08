@@ -114,6 +114,14 @@ ChannelsWidget::ChannelsWidget(QNetworkAccessManager* networkManager,
     connect(addNewChannelGroupAction, SIGNAL(triggered(bool)), this,
             SLOT(onAddNewChannelGroup()));
 
+    xstreamChannelsContextMenu = new QMenu(xstreamChannelsTabWidget);
+    refreshXstreamItemsAction = new QAction("Refresh", this);
+    xstreamChannels->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(xstreamChannels, SIGNAL(customContextMenuRequested(QPoint)), this,
+            SLOT(onCustomXStreamContextMenu(QPoint)));
+    connect(refreshXstreamItemsAction, SIGNAL(triggered(bool)), this,
+            SLOT(refreshXStreamItems()));
+
     connect(localChannelsModel, SIGNAL(updateImportedChannelIndex(qint64)),
             this, SIGNAL(updateImportedChannelIndex(qint64)));
     connect(localChannelsModel, SIGNAL(channelsImported()), this,
@@ -248,6 +256,37 @@ void ChannelsWidget::xstreamItemsSelectionChanged(const QItemSelection& selected
         emit enableSkipBack(
             backIndex.isValid() &&
             backIndex.data(XStreamChannelsModel::ChannelRoles::IdRole).isValid());
+    }
+}
+void ChannelsWidget::onCustomXStreamContextMenu(const QPoint& point)
+{
+    xstreamChannelsContextMenu->clear();
+    auto selectedIndexes = xstreamChannels->selectionModel()->selectedIndexes();
+    if (selectedIndexes.count() != 1)
+    {
+        return;
+    }
+    QModelIndex proxyIndex = selectedIndexes.front();
+    auto index = xstreamChannelsProxyModel->mapToSource(proxyIndex);
+    if (!index.isValid())
+    {
+        return;
+    }
+    auto treeItem =
+        static_cast<AbstractChannelTreeItem*>(index.internalPointer());
+    if (!treeItem)
+        return;
+    switch (treeItem->getType())
+    {
+    case ChannelTreeItemType::Server:
+    case ChannelTreeItemType::Group:
+        refreshXstreamItemsAction->setData(QVariant::fromValue(treeItem));
+        xstreamChannelsContextMenu->addAction(refreshXstreamItemsAction);
+        xstreamChannelsContextMenu->exec(
+            xstreamChannels->viewport()->mapToGlobal(point));
+        break;
+    default:
+        return;
     }
 }
 void ChannelsWidget::onCustomContextMenu(const QPoint& point)
@@ -519,7 +558,10 @@ void ChannelsWidget::onAddNewChannelGroup()
         localChannelsModel->AddChild(group, treeItemIndex.index);
     }
 }
-
+void ChannelsWidget::refreshXStreamItems()
+{
+    xstreamChannelModel->refreshItemsChildren(refreshXstreamItemsAction->data());
+}
 void ChannelsWidget::skipForwardLocalChannels()
 {
     skipLocalChannels(1);

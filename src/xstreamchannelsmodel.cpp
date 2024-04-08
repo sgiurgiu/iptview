@@ -49,7 +49,7 @@ void XStreamChannelsModel::onServerChildrenLoaded(ServerTreeItem *treeItem)
 {
     auto index = indexFromItem(treeItem);
     // for the Loading item
-    beginRemoveRows(index, 0, 0);
+    beginRemoveRows(index, 0, treeItem->childCount() - 1);
     endRemoveRows();
     beginInsertRows(index, 0, treeItem->childCount() - 1);
     endInsertRows();
@@ -59,12 +59,25 @@ void XStreamChannelsModel::onChannelsLoaded(GroupTreeItem *treeItem)
 {
     auto index = indexFromItem(treeItem);
     // for the Loading item
-    beginRemoveRows(index, 0, 0);
+    beginRemoveRows(index, 0, treeItem->childCount() - 1);
     endRemoveRows();
     beginInsertRows(index, 0, treeItem->childCount() - 1);
     endInsertRows();
 }
-
+void XStreamChannelsModel::refreshItemsChildren(const QVariant &itemVariant)
+{
+    auto treeItem = itemVariant.value<AbstractChannelTreeItem *>();
+    if (treeItem->getType() == ChannelTreeItemType::Server)
+    {
+        ServerTreeItem *serverTreeItem = dynamic_cast<ServerTreeItem *>(treeItem);
+        serverTreeItem->loadChildren(networkManager);
+    }
+    else if (treeItem->getType() == ChannelTreeItemType::Group)
+    {
+        GroupTreeItem *groupTreeItem = dynamic_cast<GroupTreeItem *>(treeItem);
+        groupTreeItem->loadChannels(networkManager);
+    }
+}
 QVariant XStreamChannelsModel::headerData(int section,
                                           Qt::Orientation orientation,
                                           int role) const

@@ -36,6 +36,7 @@ public:
                                 Qt::Orientation orientation,
                                 int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
+    void refreshItemsChildren(const QVariant &itemVariant);
     enum ChannelRoles
     {
         NameRole = Qt::UserRole + 1,
