@@ -255,6 +255,7 @@ void GroupTreeItem::loadChannels(QNetworkAccessManager* networkManager)
                     channelTreeItem->setEpgChannelId(
                         channelObject.value("epg_channel_id").toString(""));
                     channelTreeItem->setEpgChannelUri(epgUrl.toString());
+                    channelTreeItem->setXStreamServerId(server.id);
                     addChannel(channelTreeItem);
                 }
 

@@ -106,8 +106,8 @@ void IPTViewMainWidget::setupMprisDBus()
     dbus->SetInitialVolume(mediaWidget->GetVolume());
     connect(mediaWidget, SIGNAL(showingFullScreen(bool)), dbus,
             SLOT(SetFullscreen(bool)));
-    connect(mediaWidget, SIGNAL(playingTrack(int64_t)), dbus,
-            SLOT(PlayingChannel(int64_t)));
+    connect(mediaWidget, SIGNAL(playingTrack(ChannelTreeItem*)), dbus,
+            SLOT(PlayingChannel(ChannelTreeItem*)));
     connect(mediaWidget, SIGNAL(volumeToggledSignal(bool)), dbus,
             SLOT(VolumeToggledExternal(bool)));
     connect(mediaWidget, SIGNAL(volumeChangedSignal(int)), dbus,
@@ -115,8 +115,8 @@ void IPTViewMainWidget::setupMprisDBus()
 
     connect(dbus, SIGNAL(skipForward()), channelsWidget, SLOT(SkipForward()));
     connect(dbus, SIGNAL(skipBack()), channelsWidget, SLOT(SkipBack()));
-    connect(channelsWidget, SIGNAL(selectChannel(int64_t)), dbus,
-            SLOT(SelectedChannel(int64_t)));
+    connect(channelsWidget, SIGNAL(selectChannel(ChannelTreeItem*)), dbus,
+            SLOT(SelectedChannel(ChannelTreeItem*)));
 
     connect(channelsWidget, SIGNAL(enableSkipForward(bool)), dbus,
             SLOT(EnableSkipForward(bool)));

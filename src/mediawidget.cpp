@@ -387,9 +387,10 @@ void MediaWidget::fileLoaded()
         }
     }
     setupSubtitlesMenu();
-    epgWidget->SetChannel(selectedChannel->getID());
 
-    emit playingTrack(selectedChannel->getID());
+    epgWidget->SetChannel(selectedChannel->clone(nullptr));
+
+    emit playingTrack(selectedChannel.get());
 }
 
 void MediaWidget::setupSubtitlesMenu()

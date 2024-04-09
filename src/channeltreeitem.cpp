@@ -91,5 +91,7 @@ ChannelTreeItem* ChannelTreeItem::clone(AbstractChannelTreeItem* newParent) cons
     auto channel = new ChannelTreeItem(name, uri, logoUri, logo, icon, newParent);
     channel->id = id;
     channel->channelEpgUri = channelEpgUri;
+    channel->epgChannelId = epgChannelId;
+    channel->xstreamServerId = xstreamServerId;
     return channel;
 }

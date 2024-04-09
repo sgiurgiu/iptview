@@ -1,11 +1,12 @@
 #ifndef MPRISDBUS_H
 #define MPRISDBUS_H
 
-#include <QObject>
 #include <QDBusAbstractAdaptor>
 #include <QDBusVariant>
-#include <QStringList>
 #include <QGuiApplication>
+#include <QObject>
+#include <QStringList>
+class ChannelTreeItem;
 
 class DBusTracklist : public QDBusAbstractAdaptor
 {
@@ -14,8 +15,9 @@ class DBusTracklist : public QDBusAbstractAdaptor
     Q_PROPERTY(QStringList Tracks READ Tracks WRITE SetTracks)
     Q_PROPERTY(bool CanEditTracks READ CanEditTracks CONSTANT)
 public:
-    DBusTracklist(QObject *parent);
-    QList<QMap<QString,QDBusVariant>> GetTracksMetadata(const QList<QString>& trackIds) const;
+    DBusTracklist(QObject* parent);
+    QList<QMap<QString, QDBusVariant>>
+    GetTracksMetadata(const QList<QString>& trackIds) const;
     void AddTrack(const QString& uri, const QString& afterTrack, bool setCurrent);
     void RemoveTrack(const QString& track);
     void GoTo(const QString& track);
@@ -33,14 +35,17 @@ public:
         this->tracks = tracks;
     }
 signals:
-    void TrackListReplaced(const QList<QString>& trackIds, const QString& currentTrack);
-    void TrackAdded(const QMap<QString,QDBusVariant>& metadata, const QString& afterTrack);
+    void TrackListReplaced(const QList<QString>& trackIds,
+                           const QString& currentTrack);
+    void TrackAdded(const QMap<QString, QDBusVariant>& metadata,
+                    const QString& afterTrack);
     void TrackRemoved(const QString& track);
-    void TrackMetadataChanged(const QString& track, const QMap<QString,QDBusVariant>& metadata);
+    void TrackMetadataChanged(const QString& track,
+                              const QMap<QString, QDBusVariant>& metadata);
+
 private:
     QStringList tracks;
 };
-
 
 class MPRISDBus : public QObject
 {
@@ -70,12 +75,12 @@ class MPRISDBus : public QObject
     Q_PROPERTY(bool CanControl READ CanControl CONSTANT)
 
 public:
-    explicit MPRISDBus(QObject *parent = nullptr);
+    explicit MPRISDBus(QObject* parent = nullptr);
     void SetInitialVolume(int volume);
 public slots:
     void SetFullscreen(bool flag);
-    void PlayingChannel(int64_t);
-    void SelectedChannel(int64_t);
+    void PlayingChannel(ChannelTreeItem*);
+    void SelectedChannel(ChannelTreeItem*);
     void EnableSkipForward(bool);
     void EnableSkipBack(bool);
     void VolumeToggledExternal(bool);
@@ -155,7 +160,8 @@ private:
         return 1.0;
     }
     void SetRate(double)
-    {}
+    {
+    }
     QVariantMap Metadata() const
     {
         return metadata;
@@ -223,9 +229,11 @@ private:
     }
 
     void emitManagerChangedPropertySignal();
-    void notifyManagerChangedProperties(const QString& property, const QVariant& value);
+    void notifyManagerChangedProperties(const QString& property,
+                                        const QVariant& value);
     void emitPlayerChangedPropertySignal();
-    void notifyPlayerChangedProperties(const QString& property, const QVariant& value);
+    void notifyPlayerChangedProperties(const QString& property,
+                                       const QVariant& value);
 
 private:
     DBusTracklist* tracklist = nullptr;
