@@ -48,6 +48,7 @@ public:
     {
         return loadedRemoteChannels;
     }
+    virtual QIcon getIcon() const;
     QList<MediaSegment> GetMediaSegments() const;
     ChannelTreeItem* addMediaSegment(const MediaSegment& segment);
     void addChannel(ChannelTreeItem* channel);
@@ -63,9 +64,10 @@ private:
     QString name;
     QHash<int64_t, GroupTreeItem*> groupsIdMap;
     QHash<int64_t, ChannelTreeItem*> channelsIdMap;
-    bool loadedRemoteChannels = false;
+    bool loadedRemoteChannels = true;
     QString categoryId;
     XStreamAuthenticationInfo server;
+    QIcon unloadedIcon;
 };
 
 #endif // GROUPTREEITEM_H

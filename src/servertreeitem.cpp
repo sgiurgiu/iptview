@@ -11,20 +11,52 @@
 #include <QNetworkRequest>
 #include <QUrlQuery>
 
+#include <QColor>
+#include <QGraphicsColorizeEffect>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsScene>
+#include <QPainter>
+
 ServerTreeItem::ServerTreeItem(XStreamAuthenticationInfo server,
                                AbstractChannelTreeItem* parent)
 : AbstractChannelTreeItem(parent), server{ std::move(server) }
 {
     icon = QIcon(":/icons/server.png");
+    {
+        auto sizes = icon.availableSizes();
+
+        for (const auto& size : sizes)
+        {
+            // prepare graphics scene and pixmap
+            QGraphicsScene scene;
+            QGraphicsPixmapItem item;
+            auto pixmap = icon.pixmap(size);
+            item.setPixmap(pixmap);
+
+            QGraphicsColorizeEffect effect;
+            effect.setColor(QColor(Qt::GlobalColor::lightGray));
+            effect.setStrength(0.7);
+            item.setGraphicsEffect(&effect);
+            scene.addItem(&item);
+            QPainter ptr(&pixmap);
+            scene.render(&ptr, QRectF(),
+                         QRectF(0, 0, size.width(), size.height()));
+            unloadedIcon.addPixmap(pixmap);
+        }
+    }
+
     appendChild(new LoadingTreeItem(this));
 }
 void ServerTreeItem::emitChildrenLoaded()
 {
     emit childrenLoaded(this);
 }
+QIcon ServerTreeItem::getIcon() const
+{
+    return loadedChildren ? icon : unloadedIcon;
+}
 void ServerTreeItem::loadChildren(QNetworkAccessManager* networkManager)
 {
-    loadedChildren = true;
     QNetworkRequest request;
     QUrl url;
     url.setScheme(server.serverSchema);
@@ -42,6 +74,7 @@ void ServerTreeItem::loadChildren(QNetworkAccessManager* networkManager)
     connect(reply, &QNetworkReply::finished,
             [reply, this]()
             {
+                loadedChildren = true;
                 reply->deleteLater();
                 clear();
                 if (reply->error())

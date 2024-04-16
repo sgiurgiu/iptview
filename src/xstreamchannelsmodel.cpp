@@ -53,6 +53,7 @@ void XStreamChannelsModel::onServerChildrenLoaded(ServerTreeItem *treeItem)
     endRemoveRows();
     beginInsertRows(index, 0, treeItem->childCount() - 1);
     endInsertRows();
+    emit dataChanged(index, index);
 }
 
 void XStreamChannelsModel::onChannelsLoaded(GroupTreeItem *treeItem)
@@ -63,6 +64,7 @@ void XStreamChannelsModel::onChannelsLoaded(GroupTreeItem *treeItem)
     endRemoveRows();
     beginInsertRows(index, 0, treeItem->childCount() - 1);
     endInsertRows();
+    emit dataChanged(index, index);
 }
 void XStreamChannelsModel::refreshItemsChildren(const QVariant &itemVariant)
 {
@@ -90,19 +92,39 @@ QVariant XStreamChannelsModel::headerData(int section,
 
     return QVariant();
 }
-
-int XStreamChannelsModel::rowCount(const QModelIndex &parent) const
+bool XStreamChannelsModel::canFetchMore(const QModelIndex &parent) const
 {
     AbstractChannelTreeItem *parentItem;
-    if (parent.column() > 0)
-        return 0;
-
     if (!parent.isValid())
         parentItem = rootItem.get();
     else
         parentItem =
             static_cast<AbstractChannelTreeItem *>(parent.internalPointer());
 
+    if (parentItem->getType() == ChannelTreeItemType::Server)
+    {
+        ServerTreeItem *serverTreeItem =
+            dynamic_cast<ServerTreeItem *>(parentItem);
+
+        return !serverTreeItem->areChildrenLoaded();
+    }
+    else if (parentItem->getType() == ChannelTreeItemType::Group)
+    {
+        GroupTreeItem *groupTreeItem = dynamic_cast<GroupTreeItem *>(parentItem);
+
+        return !groupTreeItem->areChannelsLoaded();
+    }
+
+    return false;
+}
+void XStreamChannelsModel::fetchMore(const QModelIndex &parent)
+{
+    AbstractChannelTreeItem *parentItem;
+    if (!parent.isValid())
+        parentItem = rootItem.get();
+    else
+        parentItem =
+            static_cast<AbstractChannelTreeItem *>(parent.internalPointer());
     if (parentItem->getType() == ChannelTreeItemType::Server)
     {
         ServerTreeItem *serverTreeItem =
@@ -122,6 +144,19 @@ int XStreamChannelsModel::rowCount(const QModelIndex &parent) const
             groupTreeItem->loadChannels(networkManager);
         }
     }
+}
+int XStreamChannelsModel::rowCount(const QModelIndex &parent) const
+{
+    AbstractChannelTreeItem *parentItem;
+    if (parent.column() > 0)
+        return 0;
+
+    if (!parent.isValid())
+        parentItem = rootItem.get();
+    else
+        parentItem =
+            static_cast<AbstractChannelTreeItem *>(parent.internalPointer());
+
     return parentItem->childCount();
 }
 int XStreamChannelsModel::columnCount(const QModelIndex &parent) const

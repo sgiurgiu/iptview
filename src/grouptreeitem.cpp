@@ -13,6 +13,12 @@
 #include <QNetworkRequest>
 #include <QUrlQuery>
 
+#include <QColor>
+#include <QGraphicsColorizeEffect>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsScene>
+#include <QPainter>
+
 namespace
 {
 Q_GLOBAL_STATIC(QIcon, defaultGroupIcon);
@@ -23,6 +29,7 @@ GroupTreeItem::GroupTreeItem(QString name,
                              ServerTreeItem* parent)
 : AbstractChannelTreeItem(parent)
 , name{ std::move(name) }
+, loadedRemoteChannels{ false }
 , categoryId{ std::move(categoryId) }
 , server{ std::move(server) }
 {
@@ -31,6 +38,29 @@ GroupTreeItem::GroupTreeItem(QString name,
         defaultGroupIcon->addFile(":/icons/folder-open.png");
     }
     icon = *defaultGroupIcon;
+    {
+        auto sizes = icon.availableSizes();
+
+        for (const auto& size : sizes)
+        {
+            // prepare graphics scene and pixmap
+            QGraphicsScene scene;
+            QGraphicsPixmapItem item;
+            auto pixmap = icon.pixmap(size);
+            item.setPixmap(pixmap);
+
+            QGraphicsColorizeEffect effect;
+            effect.setColor(QColor(Qt::GlobalColor::lightGray));
+            effect.setStrength(0.7);
+            item.setGraphicsEffect(&effect);
+            scene.addItem(&item);
+            QPainter ptr(&pixmap);
+            scene.render(&ptr, QRectF(),
+                         QRectF(0, 0, size.width(), size.height()));
+            unloadedIcon.addPixmap(pixmap);
+        }
+    }
+
     appendChild(new LoadingTreeItem(this));
 }
 
@@ -60,6 +90,10 @@ GroupTreeItem::GroupTreeItem(QString name)
         defaultGroupIcon->addFile(":/icons/folder-open.png");
     }
     icon = *defaultGroupIcon;
+}
+QIcon GroupTreeItem::getIcon() const
+{
+    return loadedRemoteChannels ? icon : unloadedIcon;
 }
 QList<MediaSegment> GroupTreeItem::GetMediaSegments() const
 {
@@ -184,7 +218,6 @@ void GroupTreeItem::clear()
 }
 void GroupTreeItem::loadChannels(QNetworkAccessManager* networkManager)
 {
-    loadedRemoteChannels = true;
     QNetworkRequest request;
     QUrl url;
     url.setHost(server.serverUrl);
@@ -204,6 +237,7 @@ void GroupTreeItem::loadChannels(QNetworkAccessManager* networkManager)
     connect(reply, &QNetworkReply::finished, this,
             [reply, this]()
             {
+                loadedRemoteChannels = true;
                 clear();
                 reply->deleteLater();
                 if (reply->error())

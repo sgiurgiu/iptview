@@ -67,6 +67,7 @@ public:
     }
 
     void loadChildren(QNetworkAccessManager* networkManager);
+    virtual QIcon getIcon() const;
 signals:
     void childrenLoaded(ServerTreeItem*);
     void channelsLoaded(GroupTreeItem*);
@@ -77,5 +78,6 @@ private:
 private:
     XStreamAuthenticationInfo server;
     bool loadedChildren = false;
+    QIcon unloadedIcon;
 };
 #endif
