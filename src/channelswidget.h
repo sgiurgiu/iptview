@@ -52,6 +52,7 @@ private slots:
     void xstreamItemsSelectionChanged(const QItemSelection& selected,
                                       const QItemSelection& deselected);
     void searchTextChanged(const QString& text);
+    void xstreamSearchTextChanged(const QString& text);
     void onAddNewChannel();
     void onRemoveChannelGroup();
     void onAddNewChannelGroup();

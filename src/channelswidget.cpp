@@ -88,6 +88,8 @@ ChannelsWidget::ChannelsWidget(QNetworkAccessManager* networkManager,
             SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this,
             SLOT(itemsSelectionChanged(QItemSelection, QItemSelection)));
 
+    connect(xstreamChannelsSearchField, SIGNAL(textChanged(QString)), this,
+            SLOT(xstreamSearchTextChanged(QString)));
     connect(xstreamChannels, SIGNAL(doubleClicked(QModelIndex)), this,
             SLOT(onDoubleClickedXStreamTreeItem(QModelIndex)));
     connect(xstreamChannels->selectionModel(),
@@ -137,6 +139,10 @@ M3UList ChannelsWidget::GetM3UList() const
 void ChannelsWidget::searchTextChanged(const QString& text)
 {
     localChannelsProxyModel->setFilterWildcard(text);
+}
+void ChannelsWidget::xstreamSearchTextChanged(const QString& text)
+{
+    xstreamChannelsProxyModel->setFilterWildcard(text);
 }
 void ChannelsWidget::ImportPlaylist(M3UList list)
 {
