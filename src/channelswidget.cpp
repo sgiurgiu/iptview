@@ -72,7 +72,7 @@ ChannelsWidget::ChannelsWidget(QNetworkAccessManager* networkManager,
     xstreamChannelsSearchField = new QLineEdit(xstreamChannelsTabWidget);
     xstreamChannelsSearchField->setPlaceholderText("Search");
 
-    QVBoxLayout* xstreamLayout = new QVBoxLayout(localChannelsTabWidget);
+    QVBoxLayout* xstreamLayout = new QVBoxLayout(xstreamChannelsTabWidget);
     xstreamLayout->addWidget(xstreamChannelsSearchField, 0);
     xstreamLayout->addWidget(xstreamChannels, 1);
     xstreamChannelsTabWidget->setLayout(xstreamLayout);
