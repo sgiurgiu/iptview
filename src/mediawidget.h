@@ -47,11 +47,13 @@ private slots:
     void skipBackTriggered();
     void skipForwardTriggered();
     void volumeOsdTimerTimeout();
+    void cursorBlankTimerTimeout();
     void mediaWheelEvent(QPoint delta);
     void fileLoaded();
     void subtitleChanged(bool);
     void subtitlesToggled(bool);
     void mpvDoubleClicked();
+    void mpvMouseMoved(QMouseEvent*);
     void fullScreenActionToggled(bool);
 
     void fileLoadingError(QString message);
@@ -111,6 +113,7 @@ private:
     QWidget* controlsWidget = nullptr;
     QMargins contentMargins;
     int fileLoadRetryTimes = 0;
+    QTimer* cursorBlankTimer = nullptr;
 };
 
 #endif // MEDIAWIDGET_H

@@ -41,6 +41,8 @@ MediaWidget::MediaWidget(QNetworkAccessManager* networkManager, QWidget* parent)
             SLOT(mediaWheelEvent(QPoint)));
     connect(mpvWidget, SIGNAL(fileLoaded()), this, SLOT(fileLoaded()));
     connect(mpvWidget, SIGNAL(doubleClicked()), this, SLOT(mpvDoubleClicked()));
+    connect(mpvWidget, SIGNAL(mouseMoved(QMouseEvent*)), this,
+            SLOT(mpvMouseMoved(QMouseEvent*)));
 
     connect(mpvWidget, SIGNAL(fileLoadingError(QString)), this,
             SLOT(fileLoadingError(QString)));
@@ -58,6 +60,12 @@ MediaWidget::MediaWidget(QNetworkAccessManager* networkManager, QWidget* parent)
     volumeOsdTimer->setInterval(1000);
     connect(volumeOsdTimer, SIGNAL(timeout()), this,
             SLOT(volumeOsdTimerTimeout()));
+
+    cursorBlankTimer = new QTimer(this);
+    cursorBlankTimer->setSingleShot(true);
+    cursorBlankTimer->setInterval(1000);
+    connect(cursorBlankTimer, SIGNAL(timeout()), this,
+            SLOT(cursorBlankTimerTimeout()));
 
     controlsWidget = createControlsWidget(networkManager);
     layout->addWidget(controlsWidget, 0);
@@ -522,7 +530,7 @@ void MediaWidget::toggleFullScreen()
     emit showingFullScreen(fullScreen);
     if (fullScreen)
     {
-        mpvWidget->setCursor(Qt::BlankCursor);
+        cursorBlankTimer->start();
         contentMargins = this->contentsMargins();
         this->setContentsMargins(0, 0, 0, 0);
         controlsWidget->hide();
@@ -530,7 +538,8 @@ void MediaWidget::toggleFullScreen()
     }
     else
     {
-        mpvWidget->setCursor(Qt::ArrowCursor);
+        setCursor(Qt::ArrowCursor);
+        cursorBlankTimer->stop();
         this->setContentsMargins(contentMargins);
         controlsWidget->show();
         window()->showNormal();
@@ -631,4 +640,17 @@ void MediaWidget::Pause()
 }
 void MediaWidget::PlaySelected()
 {
+}
+void MediaWidget::mpvMouseMoved(QMouseEvent* event)
+{
+    if (fullScreen)
+    {
+        setCursor(Qt::ArrowCursor);
+        cursorBlankTimer->start();
+    }
+}
+
+void MediaWidget::cursorBlankTimerTimeout()
+{
+    setCursor(Qt::BlankCursor);
 }
