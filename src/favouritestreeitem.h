@@ -15,8 +15,9 @@ public:
         return ChannelTreeItemType::Favourite;
     }
 
-    //returns the last child or nullptr if none
+    // returns the last child or nullptr if none
     AbstractChannelTreeItem* removeFavouriteChild(AbstractChannelTreeItem* item);
+    virtual void appendChild(AbstractChannelTreeItem* child) override;
 };
 
 #endif // FAVOURITESTREEITEM_H
